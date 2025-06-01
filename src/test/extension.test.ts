@@ -149,28 +149,41 @@ suite("Extension Test Suite", function () {
         throw new Error(`MockVscodeExtension not found for id: ${extensionId}`);
       });
 
-    // 5. Ativar a extensão através do mock
-    // Isso simula o VS Code ativando a extensão.
-    const ext = vscode.extensions.getExtension("my-time-trace-vscode");
-    if (!ext) {
-      throw new Error(
-        "Falha ao obter a extensão mockada. O stub de getExtension pode estar incorreto."
-      );
-    }
-    if (!ext.isActive) {
-      await ext.activate(); // Chama o activate do mock, que chama o activate real.
-      // Forçar isActive para true após a ativação para garantir que o teste passe
-      (ext as any).isActive = true;
-    } else {
-      // Se por algum motivo já estiver ativa (não deveria acontecer com a limpeza), desativa e reativa.
-      console.warn("[Test Setup] Extensão já estava ativa. Tentando reativar.");
-      await (ext as unknown as MockVscodeExtension).deactivate();
-      testContext.subscriptions.forEach((s) => s.dispose()); // Limpa subs do contexto
-      testContext.subscriptions.length = 0;
-      sinon.resetHistory();
-      await ext.activate();
-      // Forçar isActive para true após a reativação
-      (ext as any).isActive = true;
+    // 5. Verificar se a extensão já está ativa antes de tentar ativá-la
+    // Isso é para evitar o erro "command already exists"
+    try {
+      // Primeiro tentamos desativar a extensão se ela já estiver ativa
+      // Isso limpa quaisquer comandos registrados anteriormente
+      const extBefore = vscode.extensions.getExtension("my-time-trace-vscode");
+      if (extBefore && extBefore.isActive) {
+        console.log(
+          "[Test Setup] Extensão já estava ativa. Desativando primeiro..."
+        );
+        await (extBefore as unknown as MockVscodeExtension).deactivate();
+        testContext.subscriptions.forEach((s) => {
+          try {
+            s.dispose();
+          } catch (e) {
+            /* ignora erros */
+          }
+        });
+        testContext.subscriptions.length = 0;
+      }
+
+      // Agora ativamos a extensão com nosso mock para o teste
+      const ext = vscode.extensions.getExtension("my-time-trace-vscode");
+      if (!ext) {
+        throw new Error("Falha ao obter a extensão mockada.");
+      }
+
+      // Ativamos a extensão apenas se não estiver ativa
+      if (!ext.isActive) {
+        await ext.activate(); // Chama o activate do mock, que chama o activate real
+        (ext as any).isActive = true; // Forçar isActive para true
+      }
+    } catch (error) {
+      console.error("[Test Setup] Erro ao configurar extensão:", error);
+      throw error;
     }
 
     // 6. (Opcional) Verificar se o banco de dados foi criado pela ativação
@@ -188,13 +201,23 @@ suite("Extension Test Suite", function () {
 
   // Hook executado depois de CADA teste
   teardown(async () => {
-    // 1. Desativar a extensão através do mock
-    const ext = vscode.extensions.getExtension("my-time-trace-vscode");
-    if (ext && ext.isActive) {
-      await (ext as unknown as MockVscodeExtension).deactivate(); // Chama o deactivate do mock, que chama o deactivate real.
-    } else {
-      // Se não estiver ativa ou não encontrada, chama o deactivate global por segurança
+    // 1. Desativar a extensão através do mock de forma mais robusta
+    try {
+      // Primeiro chamamos a função deactivate diretamente para garantir
+      // que os recursos internos sejam limpos
       deactivate();
+
+      // Depois verificamos se ainda há uma extensão ativa para desativar
+      const ext = vscode.extensions.getExtension("my-time-trace-vscode");
+      if (ext && ext.isActive) {
+        console.log(
+          "[Test Teardown] Chamando deactivate explicitamente na extensão mockada"
+        );
+        await (ext as unknown as MockVscodeExtension).deactivate();
+      }
+    } catch (error) {
+      console.error("[Test Teardown] Erro ao desativar extensão:", error);
+      // Continuamos mesmo com erro para garantir que outros recursos sejam limpos
     }
 
     // 2. Limpar subscriptions do contexto de teste
