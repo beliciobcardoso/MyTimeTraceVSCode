@@ -32,19 +32,19 @@
       }
     ],
     "configuration": {
-      "title": "MyTimeTracker",
+      "title": "MyTimeTraceVSCode",
       "properties": {
-        "myTimeTracker.idleTimeout": {
+        "myTimeTraceVSCode.idleTimeout": {
           "type": "number",
           "default": 5,
           "description": "Tempo em minutos antes de considerar o usuário inativo"
         },
-        "myTimeTracker.autoStart": {
+        "myTimeTraceVSCode.autoStart": {
           "type": "boolean",
           "default": true,
           "description": "Iniciar o rastreamento automaticamente ao abrir o VS Code"
         },
-        "myTimeTracker.showInStatusBar": {
+        "myTimeTraceVSCode.showInStatusBar": {
           "type": "boolean",
           "default": true,
           "description": "Mostrar o tempo gasto na barra de status"

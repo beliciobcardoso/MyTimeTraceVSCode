@@ -1,4 +1,4 @@
-# myTimeTracker (Beta 0.1.0)
+# My Time Trace VSCode (Beta 0.1.0)
 
 Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo!
 
@@ -37,9 +37,9 @@ No momento, esta extensão está em desenvolvimento e não está disponível no 
 
 As seguintes configurações já estão disponíveis:
 
-- `myTimeTracker.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
-- `myTimeTracker.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
-- `myTimeTracker.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
+- `myTimeTrace.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
+- `myTimeTrace.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
+- `myTimeTrace.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
 
 ## Melhorias Planejadas
 
@@ -119,4 +119,4 @@ Para testar a extensão:
 1. Pressione F5 no VS Code para iniciar uma nova janela com a extensão carregada
 2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo
 
-**Aproveite o myTimeTracker e monitore seu tempo de desenvolvimento de forma eficiente!**
+**Aproveite o My Time Trace VSCode e monitore seu tempo de desenvolvimento de forma eficiente!**

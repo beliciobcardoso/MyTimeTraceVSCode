@@ -1,6 +1,6 @@
 # Changelog
 
-Todas as alterações notáveis na extensão "My Time Tracker" serão documentadas neste arquivo.
+Todas as alterações notáveis na extensão "My Time Trace VSCode" serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](http://keepachangelog.com/).
 
