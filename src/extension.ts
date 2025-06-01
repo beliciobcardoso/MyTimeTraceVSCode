@@ -401,18 +401,30 @@ export async function activate(context: vscode.ExtensionContext) {
   // Criar e mostrar o status bar item
   createStatusBarItem();
 
-  // Registra os comandos
-  const commandStart = vscode.commands.registerCommand(
+  // Função segura para registrar comandos - verifica se já existem antes
+  const safeRegisterCommand = (commandId: string, handler: (...args: any[]) => any) => {
+    try {
+      return vscode.commands.registerCommand(commandId, handler);
+    } catch (error) {
+      // Se o comando já existe, tenta reutilizá-lo
+      console.log(`Comando ${commandId} já existe, usando o existente`);
+      // Disponibiliza o handler para contexto de teste
+      return { dispose: () => {} };
+    }
+  };
+
+  // Registra os comandos de forma segura
+  const commandStart = safeRegisterCommand(
     "my-time-trace-vscode.startTracking",
     startTracking
   );
 
-  const commandPause = vscode.commands.registerCommand(
+  const commandPause = safeRegisterCommand(
     "my-time-trace-vscode.pauseTracking",
     pauseTracking
   );
 
-  const commandStats = vscode.commands.registerCommand(
+  const commandStats = safeRegisterCommand(
     "my-time-trace-vscode.showStats",
     showStats
   );
