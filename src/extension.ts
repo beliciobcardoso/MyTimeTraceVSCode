@@ -304,72 +304,191 @@ async function showStats() {
     return;
   }
 
-  db.all(
+  // Primeiro obtemos a lista de projetos com seus totais
+  db!.all(
     `SELECT 
       project, 
-      SUM(duration_seconds) as total_seconds, 
-      COUNT(*) as entries 
+      SUM(duration_seconds) as total_seconds 
     FROM time_entries 
     WHERE is_idle = 0 
     GROUP BY project 
     ORDER BY total_seconds DESC`,
     [],
-    (err: Error | null, rows: any[]) => {
+    (err: Error | null, projectRows: any[]) => {
       if (err) {
         vscode.window.showErrorMessage(
-          `Erro ao carregar estatísticas: ${err.message}`
+          `Erro ao carregar estatísticas de projetos: ${err.message}`
         );
         return;
       }
 
-      // Criando o painel
-      const panel = vscode.window.createWebviewPanel(
-        "timeTrackerStats",
-        "Estatísticas de Tempo",
-        vscode.ViewColumn.One,
-        {}
+      // Obtém os detalhes de cada arquivo por projeto
+      db!.all(
+        `SELECT 
+          project, 
+          file,
+          SUM(duration_seconds) as file_seconds
+        FROM time_entries 
+        WHERE is_idle = 0 
+        GROUP BY project, file
+        ORDER BY project, file_seconds DESC`,
+        [],
+        (fileErr: Error | null, fileRows: any[]) => {
+          if (fileErr) {
+            vscode.window.showErrorMessage(
+              `Erro ao carregar estatísticas de arquivos: ${fileErr.message}`
+            );
+            return;
+          }
+
+          // Agrupa os arquivos por projeto
+          const projectsWithFiles: {
+            [projectName: string]: {
+              totalSeconds: number;
+              files: {
+                name: string;
+                seconds: number;
+              }[];
+            };
+          } = {};
+
+          // Inicializa os projetos com os dados totais
+          projectRows.forEach((project) => {
+            projectsWithFiles[project.project] = {
+              totalSeconds: project.total_seconds,
+              files: [],
+            };
+          });
+
+          // Adiciona os arquivos aos seus projetos correspondentes
+          fileRows.forEach((fileRow) => {
+            if (projectsWithFiles[fileRow.project]) {
+              projectsWithFiles[fileRow.project].files.push({
+                name: fileRow.file,
+                seconds: fileRow.file_seconds,
+              });
+            }
+          });
+
+          // Criando o painel
+          const panel = vscode.window.createWebviewPanel(
+            "timeTrackerStats",
+            "Estatísticas de Tempo",
+            vscode.ViewColumn.One,
+            {}
+          );
+
+          let statsHtml = `
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px 0px;}
+              h1, h2 { color: #fff; }
+              .project-header { 
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 10px; 
+                margin-bottom: 0;
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+              }
+              table { border-collapse: collapse; width: 100%; margin-bottom: 0px; border: 1px solid #000; border-radius: 5px;}
+              th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+              th { background-color: #4682B4; color: white; }
+              tr:nth-child(even) { background-color: #f2f2f2; color: #000000; }
+              .file-name { font-family: monospace; }
+              .project-section { margin-bottom: 0px; padding: 0px;}
+            </style>
+          </head>
+          <body>
+            <h1>Estatísticas de Tempo por Projeto</h1>
+          `;
+
+          // Para cada projeto, criar uma seção com seus arquivos
+          Object.entries(projectsWithFiles).forEach(
+            ([projectName, projectData]) => {
+              statsHtml += `
+            <div class="project-section">
+              <h2 class="project-header">Projeto: ${projectName} - Total ${formatTime(
+                projectData.totalSeconds
+              )}</h2>
+              <table>
+                <tr>
+                  <th>Arquivos</th>
+                  <th>Tempo</th>
+                </tr>
+            `;
+
+              // Adiciona cada arquivo do projeto
+              projectData.files.forEach((file) => {
+                // Extrai apenas o caminho relativo do projeto, removendo o caminho absoluto inicial
+                let displayPath = file.name;
+
+                // Abordagem 1: Se o nome do projeto estiver no caminho, pega a partir dele
+                if (displayPath.includes(projectName)) {
+                  displayPath = displayPath.substring(
+                    displayPath.indexOf(projectName)
+                  );
+                }
+                // Abordagem 2: Pega só o nome do arquivo se for IDLE ou unknown-file
+                else if (
+                  displayPath === "IDLE" ||
+                  displayPath === "unknown-file"
+                ) {
+                  // Mantém sem alterações
+                }
+                // Abordagem 3: Remove caminhos absolutos comuns
+                else {
+                  // Remove prefixos comuns de caminho absoluto (como /home/, C:\Users\, etc)
+                  const patterns = [
+                    "/home/",
+                    "/Users/",
+                    "C:\\Users\\",
+                    "/var/",
+                    "/tmp/",
+                    "C:\\",
+                  ];
+                  for (const pattern of patterns) {
+                    if (displayPath.includes(pattern)) {
+                      // Encontra a posição após o diretório /home/usuário/
+                      const parts = displayPath.split(pattern);
+                      if (parts.length > 1) {
+                        // Pula a primeira parte (vazia) e o nome do usuário
+                        const userParts = parts[1].split("/");
+                        if (userParts.length > 1) {
+                          // Remove /home/usuário e começa a partir do primeiro diretório de projetos
+                          displayPath = userParts.slice(1).join("/");
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+
+                statsHtml += `
+              <tr>
+                <td class="file-name">${displayPath}</td>
+                <td>${formatTime(file.seconds)}</td>
+              </tr>
+              `;
+              });
+
+              statsHtml += `
+              </table>
+            </div>
+            `;
+            }
+          );
+
+          statsHtml += `
+            <p><em>Dados coletados até: ${new Date().toLocaleString()}</em></p>
+          </body>
+          </html>
+          `;
+
+          panel.webview.html = statsHtml;
+        }
       );
-
-      let statsHtml = `
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #fff; }
-          table { border-collapse: collapse; width: 100%; }
-          th, td { text-align: left; padding: 8px; border-bottom: 1px solid #001177; }
-          tr:nth-child(even) { background-color: #f2f2f2; color: #000000; }
-          th { background-color: #4CAF50; color: white; }
-        </style>
-      </head>
-      <body>
-        <h1>Estatísticas de Tempo por Projeto</h1>
-        <table>
-          <tr>
-            <th>Projeto</th>
-            <th>Tempo Total</th>
-            <th>Entradas</th>
-          </tr>
-      `;
-
-      rows.forEach((row) => {
-        statsHtml += `
-        <tr>
-          <td>${row.project}</td>
-          <td>${formatTime(row.total_seconds)}</td>
-          <td>${row.entries}</td>
-        </tr>
-        `;
-      });
-
-      statsHtml += `
-        </table>
-        <p><em>Dados coletados até: ${new Date().toLocaleString()}</em></p>
-      </body>
-      </html>
-      `;
-
-      panel.webview.html = statsHtml;
     }
   );
 }
@@ -402,7 +521,10 @@ export async function activate(context: vscode.ExtensionContext) {
   createStatusBarItem();
 
   // Função segura para registrar comandos - verifica se já existem antes
-  const safeRegisterCommand = (commandId: string, handler: (...args: any[]) => any) => {
+  const safeRegisterCommand = (
+    commandId: string,
+    handler: (...args: any[]) => any
+  ) => {
     try {
       return vscode.commands.registerCommand(commandId, handler);
     } catch (error) {
