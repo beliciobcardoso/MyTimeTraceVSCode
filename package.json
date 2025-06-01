@@ -1,7 +1,7 @@
 {
-  "name": "MyTimeTraceVSCode",
-  "displayName": "my-time-trace-vscode",
-  "description": "",
+  "name": "mymtimetracevscode",
+  "displayName": "MyTimeTrace VSCode",
+  "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.100.0"
@@ -9,15 +9,60 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "MyTimeTraceVSCode.helloWorld",
-        "title": "Hello World"
+        "command": "my-time-trace-vscode.startTracking",
+        "title": "Iniciar Rastreamento",
+        "icon": "$(play)"
+      },
+      {
+        "command": "my-time-trace-vscode.pauseTracking",
+        "title": "Pausar Rastreamento",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "my-time-trace-vscode.showStats",
+        "title": "Mostrar Estatísticas",
+        "icon": "$(graph)"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "MyTimeTracker",
+      "properties": {
+        "myTimeTracker.idleTimeout": {
+          "type": "number",
+          "default": 5,
+          "description": "Tempo em minutos antes de considerar o usuário inativo"
+        },
+        "myTimeTracker.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Iniciar o rastreamento automaticamente ao abrir o VS Code"
+        },
+        "myTimeTracker.showInStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mostrar o tempo gasto na barra de status"
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "my-time-trace-vscode.startTracking",
+          "when": "!isTracking"
+        },
+        {
+          "command": "my-time-trace-vscode.pauseTracking",
+          "when": "isTracking"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -26,6 +71,9 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "@types/vscode": "^1.100.0",
@@ -36,6 +84,17 @@
     "eslint": "^9.25.1",
     "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2"
-  }
+    "@vscode/test-electron": "^2.5.2",
+    "@types/sqlite3": "^3.1.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/MyTimeTraceVSCode"
+  },
+  "keywords": [
+    "time tracking",
+    "productivity",
+    "statistics",
+    "development"
+  ]
 }
