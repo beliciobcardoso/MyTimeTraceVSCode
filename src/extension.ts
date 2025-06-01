@@ -12,6 +12,7 @@ let timeSpentOnFile: number = 0; // Em segundos
 let statusBarItem: vscode.StatusBarItem | undefined;
 let isTracking: boolean = false;
 let db: sqlite3.Database | undefined; // Instância do banco de dados
+let globalContext: vscode.ExtensionContext | null = null;
 
 // Interface para os dados de atividade
 interface ActivityData {
@@ -334,10 +335,10 @@ async function showStats() {
       <head>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #333; }
+          h1 { color: #fff; }
           table { border-collapse: collapse; width: 100%; }
-          th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-          tr:nth-child(even) { background-color: #f2f2f2; }
+          th, td { text-align: left; padding: 8px; border-bottom: 1px solid #001177; }
+          tr:nth-child(even) { background-color: #f2f2f2; color: #000000; }
           th { background-color: #4CAF50; color: white; }
         </style>
       </head>
@@ -375,6 +376,7 @@ async function showStats() {
 
 // Ativação da extensão
 export async function activate(context: vscode.ExtensionContext) {
+  globalContext = context; // Armazena o contexto globalmente
   // Adicionando logs detalhados para depuração
   console.log("=======================================");
   console.log('Extensão "my-time-trace-vscode" ativada!');
@@ -400,28 +402,29 @@ export async function activate(context: vscode.ExtensionContext) {
   createStatusBarItem();
 
   // Registra os comandos
-  let disposableStart = vscode.commands.registerCommand(
+  const commandStart = vscode.commands.registerCommand(
     "my-time-trace-vscode.startTracking",
     startTracking
   );
 
-  let disposablePause = vscode.commands.registerCommand(
+  const commandPause = vscode.commands.registerCommand(
     "my-time-trace-vscode.pauseTracking",
     pauseTracking
   );
 
-  let disposableStats = vscode.commands.registerCommand(
+  const commandStats = vscode.commands.registerCommand(
     "my-time-trace-vscode.showStats",
     showStats
   );
 
   // Registra os eventos para monitoramento
-  let editorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
+  const eventEditorChange = vscode.window.onDidChangeActiveTextEditor(
     (editor) => {
-      if (!db) {
+      if (!db || !isTracking) {
+        // Verifica também se isTracking é true
         return;
       }
-      lastActiveTime = Date.now(); // Atualiza lastActiveTime em uma interação
+      lastActiveTime = Date.now();
       if (editor) {
         const newFile = editor.document.fileName;
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(
@@ -436,7 +439,7 @@ export async function activate(context: vscode.ExtensionContext) {
           currentFile = newFile;
           projectRoot = newProjectRoot;
           timeSpentOnFile = 0;
-          console.log(
+          console.info(
             `Foco no arquivo: ${currentFile} no projeto ${projectRoot}`
           );
           updateStatusBarItem();
@@ -450,24 +453,22 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  let textChangeDisposable = vscode.workspace.onDidChangeTextDocument(
-    (event) => {
-      if (!db) {
-        return;
-      }
-      // Considera apenas edições reais
-      if (event.contentChanges.length > 0) {
-        lastActiveTime = Date.now();
-        if (!currentFile && vscode.window.activeTextEditor) {
-          console.log("Texto alterado, reativando rastreamento do arquivo.");
-          startTrackingFile();
-          updateStatusBarItem();
-        }
+  const eventTextChange = vscode.workspace.onDidChangeTextDocument((event) => {
+    if (!db || !isTracking) {
+      // Verifica também se isTracking é true
+      return;
+    }
+    if (event.contentChanges.length > 0) {
+      lastActiveTime = Date.now();
+      if (!currentFile && vscode.window.activeTextEditor) {
+        console.log("Texto alterado, reativando rastreamento do arquivo.");
+        startTrackingFile();
+        updateStatusBarItem();
       }
     }
-  );
+  });
 
-  let windowStateDisposable = vscode.window.onDidChangeWindowState(
+  const eventWindowStateChange = vscode.window.onDidChangeWindowState(
     (windowState) => {
       if (!db) {
         return;
@@ -475,58 +476,127 @@ export async function activate(context: vscode.ExtensionContext) {
       if (windowState.focused) {
         lastActiveTime = Date.now();
         console.log("Janela do VSCode focada.");
-        if (!currentFile && vscode.window.activeTextEditor) {
+        if (isTracking && !currentFile && vscode.window.activeTextEditor) {
+          // Verifica isTracking
           startTrackingFile();
           updateStatusBarItem();
         }
       } else {
-        console.log("Janela do VSCode perdeu o foco. Salvando tempo atual.");
-        resetFileTimerAndSave();
-        updateStatusBarItem();
+        console.log(
+          "Janela do VSCode perdeu o foco. Salvando tempo atual se rastreando."
+        );
+        if (isTracking) {
+          // Só salva se estiver rastreando
+          resetFileTimerAndSave();
+        }
+        updateStatusBarItem(); // Atualiza status bar mesmo se não estava rastreando (para mostrar pausado)
       }
     }
   );
 
   // Adiciona todos os subscriptions ao contexto para serem descartados ao desativar
-  context.subscriptions.push(disposableStart);
-  context.subscriptions.push(disposablePause);
-  context.subscriptions.push(disposableStats);
-  context.subscriptions.push(editorChangeDisposable);
-  context.subscriptions.push(textChangeDisposable);
-  context.subscriptions.push(windowStateDisposable);
+  context.subscriptions.push(commandStart);
+  context.subscriptions.push(commandPause);
+  context.subscriptions.push(commandStats);
+  context.subscriptions.push(eventEditorChange);
+  context.subscriptions.push(eventTextChange);
+  context.subscriptions.push(eventWindowStateChange);
 
-  // Adiciona cleanup handler
+  // Adiciona um handler de dispose para o timerInterval, caso ele exista
+  // Isso é importante para garantir que o timer seja limpo quando a extensão for desativada.
   context.subscriptions.push({
     dispose: () => {
-      console.log("Desativando a extensão e fechando o banco de dados.");
-      resetFileTimerAndSave(); // Salva o último período
       if (timerInterval) {
         clearInterval(timerInterval);
-      }
-      if (db) {
-        db.close((err: Error | null) => {
-          if (err) {
-            return console.error(
-              "Erro ao fechar o banco de dados SQLite:",
-              err.message
-            );
-          }
-          console.log("Banco de dados SQLite fechado.");
-        });
-      }
-      if (statusBarItem) {
-        statusBarItem.dispose();
+        timerInterval = undefined;
+        console.log("TimerInterval limpo via context.subscriptions.");
       }
     },
   });
 
-  // Inicia o monitoramento automaticamente se configurado
+  // Adiciona um handler de dispose para o statusBarItem
+  context.subscriptions.push({
+    dispose: () => {
+      if (statusBarItem) {
+        statusBarItem.dispose();
+        statusBarItem = undefined;
+        console.log("StatusBarItem limpo via context.subscriptions.");
+      }
+    },
+  });
+
+  // Auto-iniciar se configurado
+  const userConfig = getConfig();
   if (userConfig.autoStart) {
-    vscode.commands.executeCommand("my-time-trace-vscode.startTracking");
+    // Pequeno delay para garantir que a extensão esteja totalmente carregada
+    setTimeout(() => {
+      if (!isTracking) {
+        // Só inicia se não estiver já rastreando (ex: reativação)
+        vscode.commands.executeCommand("my-time-trace-vscode.startTracking");
+      }
+    }, 100);
+  } else {
+    // Se não for autoStart, garante que o estado inicial seja 'pausado'
+    isTracking = false;
+    updateStatusBarItem();
   }
 }
 
+// Desativação da extensão
 export function deactivate() {
-  console.log('Extensão "my-time-trace-vscode" explicitamente desativada!');
-  // A lógica de limpeza está no dispose dos subscriptions registrados
+  console.log("=======================================");
+  console.log('Extensão "my-time-trace-vscode" desativada!');
+  console.log("Data/Hora: " + new Date().toISOString());
+  console.log("=======================================");
+
+  // 1. Parar o timer e salvar dados pendentes
+  // O timerInterval deve ser limpo pelas subscriptions, mas por segurança:
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = undefined;
+    console.log("TimerInterval explicitamente limpo em deactivate.");
+  }
+  // Salva qualquer tempo pendente ANTES de limpar subscriptions de comandos
+  resetFileTimerAndSave();
+
+  // 2. Limpar subscriptions (comandos, listeners, statusBarItem)
+  // O VS Code chama dispose em cada item em context.subscriptions quando a extensão é desativada.
+  // Se globalContext foi setado e tem subscriptions, elas serão limpas.
+  // Não precisamos iterar manualmente aqui se a activate as adicionou corretamente.
+  // Apenas garantimos que o globalContext seja limpo.
+  if (globalContext) {
+    // As subscriptions em globalContext.subscriptions são descartadas pelo VS Code.
+    // Apenas limpamos nossa referência.
+    console.log(
+      `Limpando ${globalContext.subscriptions.length} subscriptions do globalContext.`
+    );
+  }
+
+  // 3. Fechar o banco de dados
+  if (db) {
+    db.close((err: Error | null) => {
+      if (err) {
+        console.error(
+          "Erro ao fechar o banco de dados em deactivate:",
+          err.message
+        );
+      } else {
+        console.log("Banco de dados fechado com sucesso em deactivate.");
+      }
+      db = undefined; // Importante para o próximo teste
+    });
+  } else {
+    console.log(
+      "Banco de dados já estava fechado ou não inicializado em deactivate."
+    );
+  }
+
+  // 4. Resetar estado global da extensão
+  isTracking = false;
+  currentFile = undefined;
+  projectRoot = undefined;
+  timeSpentOnFile = 0;
+  // statusBarItem já deve ter sido disposed via subscriptions.
+  statusBarItem = undefined;
+  globalContext = null; // Limpa a referência ao contexto global
 }
