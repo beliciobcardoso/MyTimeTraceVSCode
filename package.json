@@ -2,7 +2,7 @@
   "name": "my-time-trace-vscode",
   "displayName": "MyTimeTrace VSCode",
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.100.0"
   },
