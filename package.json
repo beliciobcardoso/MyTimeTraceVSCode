@@ -1,10 +1,22 @@
 {
   "name": "my-time-trace-vscode",
-  "displayName": "MyTimeTrace VSCode",
+  "displayName": "My Time Trace VSCode",
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code",
+  "icon": "images/opengraph-image.png",
+  "publisher": "Belicio Batista Cardoso",
   "version": "0.1.0",
+  "author": {
+    "name": "Belicio Batista Cardoso",
+    "email": "belloinfo@gmail.com"
+  },
   "engines": {
     "vscode": "^1.100.0"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/beliciobcardoso/MyTimeTraceVSCode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beliciobcardoso/MyTimeTraceVSCode"
   },
   "categories": [
     "Other"
@@ -89,12 +101,11 @@
     "sinon": "20.0.0",
     "typescript": "^5.8.3"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/seu-usuario/MyTimeTraceVSCode"
-  },
   "keywords": [
     "time tracking",
+    "monitoring",
+    "Trace code",
+    "time code",
     "productivity",
     "statistics",
     "development"
