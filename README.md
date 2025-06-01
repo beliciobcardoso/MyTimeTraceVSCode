@@ -1,71 +1,112 @@
-# MyTimeTraceVSCode README
+# myTimeTracker
 
-This is the README for your extension "MyTimeTraceVSCode". After writing up a brief description, we recommend including the following sections.
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento.
 
-## Features
+## Funcionalidades
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Monitoramento Automático**: Registra automaticamente o tempo gasto em cada arquivo quando você trabalha no VS Code.
+- **Rastreamento por Projeto**: Organiza os dados por projeto para melhor análise de tempo.
+- **Detecção de Inatividade**: Detecta períodos de inatividade (após 5 minutos) para registros de tempo mais precisos.
+- **Persistência Local**: Armazena todos os dados localmente em um banco de dados SQLite.
+- **Baixo Consumo de Recursos**: Opera silenciosamente em segundo plano sem impactar o desempenho.
 
-For example if there is an image subfolder under your extension project workspace:
+## Como Funciona
 
-\!\[feature X\]\(images/feature-x.png\)
+1. A extensão começa a monitorar automaticamente quando o VS Code é iniciado
+2. Registra o tempo que você passa em cada arquivo
+3. Detecta quando você muda de arquivos ou projetos
+4. Registra períodos de inatividade para melhorar a precisão dos dados
+5. Armazena todos os dados localmente para acesso posterior
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Requisitos
 
-## Requirements
+- Visual Studio Code 1.100.0 ou superior
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Instalação
 
-## Extension Settings
+No momento, esta extensão está em desenvolvimento e não está disponível no VS Code Marketplace. Para instalá-la:
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+1. Clone o repositório
+2. Execute `npm install` para instalar as dependências
+3. Execute `npm run package` para criar o arquivo VSIX
+4. Use "Extensions: Install from VSIX..." no VS Code para instalar a extensão
 
-For example:
+## Configurações da Extensão
 
-This extension contributes the following settings:
+Configurações planejadas para versões futuras:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- `myTimeTracker.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo.
+- `myTimeTracker.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado.
 
-## Known Issues
+## Problemas Conhecidos
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Atualmente, a extensão não fornece uma interface visual para visualizar os dados coletados.
 
-## Release Notes
+## Melhorias Planejadas
 
-Users appreciate release notes as you update your extension.
+- **Status Bar Item**: Mostrar o tempo atual do arquivo ou o status do monitoramento na barra de status do VS Code.
+- **Heartbeat**: Implementar "heartbeats" periódicos para uma contagem de tempo mais precisa.
+- **Interface de Visualização**: Adicionar painéis e gráficos para visualizar os dados de tempo coletados.
+- **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos.
+- **Tratamento de Erros**: Melhora o tratamento de erros de rede e outras exceções.
+- **Autenticação**: Planeja-se implementar um método de autenticação (como API Key) para permitir a sincronização segura dos dados com um servidor externo em versões futuras.
+- **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
+- **Melhor tratamento de erros**: Adicionar tratamento de exceções mais robusto
+- **Visualização de dados**: Implementar painéis para visualizar as estatísticas de tempo
+- **Status Bar interativa**: Melhorar a interação com o usuário através da barra de status
 
-### 1.0.0
+## Notas de Lançamento
 
-Initial release of ...
+### 0.0.1
 
-### 1.0.1
+Lançamento inicial com funcionalidades básicas:
 
-Fixed issue #.
+- Monitoramento automático de tempo por arquivo
+- Persistência local usando SQLite
+- Detecção de inatividade
+- Rastreamento por projeto
 
-### 1.1.0
+## Como Contribuir
 
-Added features X, Y, and Z.
+Contribuições são bem-vindas! Se você tem alguma sugestão ou encontrou um bug:
+
+1. Faça um fork deste repositório
+2. Crie uma branch com sua feature ou correção (`git checkout -b minha-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona uma nova feature'`)
+4. Push para a branch (`git push origin minha-feature`)
+5. Abra um Pull Request
+
+## Tecnologias Utilizadas
+
+- TypeScript
+- VS Code Extension API
+- SQLite (via sqlite3)
+- ESBuild para bundle
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
 
 ---
 
-## Following extension guidelines
+## Desenvolvimento
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Para iniciar o desenvolvimento:
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+```bash
+# Instalar dependências
+npm install
 
-## Working with Markdown
+# Compilar a extensão em modo de desenvolvimento
+npm run compile
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+# Compilar e observar mudanças
+npm run watch
+```
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+Para testar a extensão:
 
-## For more information
+1. Pressione F5 no VS Code para iniciar uma nova janela com a extensão carregada
+2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Aproveite o myTimeTracker e monitore seu tempo de desenvolvimento de forma eficiente!**
