@@ -9,7 +9,10 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Detecta períodos de inatividade (após 5 minutos) para registros de tempo mais precisos.
 - **Persistência Local**: Armazena todos os dados localmente em um banco de dados SQLite.
 - **Baixo Consumo de Recursos**: Opera silenciosamente em segundo plano sem impactar o desempenho.
-- **Visualização de Estatísticas**: Exibe o tempo gasto por projeto e por arquivo em uma interface gráfica organizada.
+- **Visualização de Estatísticas**: Exibe o tempo gasto por projeto e por arquivo em uma interface gráfica organizada com opções de visualização:
+  - **Estatísticas Simples**: Visualização básica agrupada por projeto
+  - **Estatísticas com Filtros**: Interface avançada com filtros por data e projeto específicos
+- **Filtros Avançados**: Filtre dados por intervalo de datas e projetos específicos para análise detalhada
 - **Formatação Inteligente de Caminhos**: Apresenta os caminhos de arquivo de forma mais legível, removendo prefixos absolutos.
 
 ## Como Funciona

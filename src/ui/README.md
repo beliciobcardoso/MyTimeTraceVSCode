@@ -10,6 +10,8 @@ Contém a classe `StatsPanel` responsável por:
 - Formatação de dados de tempo e caminhos de arquivos
 - Geração de HTML, CSS e JavaScript para os painéis
 - Interface responsiva com temas do VS Code
+- **Filtros interativos** por data e projeto
+- Painéis avançados com controles de filtragem em tempo real
 
 ### `index.ts`
 Arquivo de barrel export que centraliza as exportações da pasta UI.
@@ -19,6 +21,8 @@ Arquivo de barrel export que centraliza as exportações da pasta UI.
 - `FileTimeData`: Dados de tempo para um arquivo específico
 - `ProjectTimeData`: Dados de tempo para um projeto com seus arquivos
 - `ProjectsData`: Coleção de todos os projetos com dados de tempo
+- `TimeEntry`: Entrada individual de tempo com timestamp e metadados
+- `StatsFilters`: Estrutura para filtros de data e projeto
 
 ## Funcionalidades
 
@@ -26,9 +30,16 @@ Arquivo de barrel export que centraliza as exportações da pasta UI.
 - **Interatividade**: JavaScript para expandir/colapsar seções de projetos
 - **Formatação Inteligente**: Formatação de caminhos de arquivo e tempo
 - **Responsividade**: Interface adaptável a diferentes tamanhos de tela
+- **Filtros Avançados**: 
+  - Filtro por intervalo de datas (data inicial e final)
+  - Filtro por projetos específicos (seleção múltipla)
+  - Aplicação de filtros em tempo real
+  - Resumo estatístico dos dados filtrados
+  - Botões para aplicar e limpar filtros
 
 ## Uso
 
+### Painel Simples
 ```typescript
 import { StatsPanel, ProjectsData } from '../ui';
 
@@ -45,9 +56,43 @@ const projectsData: ProjectsData = {
 const panel = StatsPanel.createStatsPanel(projectsData);
 ```
 
+### Painel com Filtros
+```typescript
+import { StatsPanel, TimeEntry } from '../ui';
+
+const rawData: TimeEntry[] = [
+  {
+    id: 1,
+    timestamp: '2025-06-28T10:00:00Z',
+    project: 'meu-projeto',
+    file: 'src/index.ts',
+    duration_seconds: 1800,
+    is_idle: 0,
+    synced: 0
+  }
+];
+
+const availableProjects = ['meu-projeto', 'outro-projeto'];
+const panel = StatsPanel.createStatsWithFiltersPanel(rawData, availableProjects);
+```
+
+### Filtragem de Dados
+```typescript
+import { StatsPanel, StatsFilters } from '../ui';
+
+const filters: StatsFilters = {
+  startDate: '2025-06-01',
+  endDate: '2025-06-30',
+  projects: ['meu-projeto']
+};
+
+const filteredData = StatsPanel.filterData(rawData, filters);
+const projectsData = StatsPanel.convertToProjectsData(filteredData);
+```
+
 ## Melhorias Futuras
 
 - Gráficos interativos
-- Filtros por data/projeto
+- ✅ **Filtros por data/projeto** - Implementado com interface completa
 - Exportação de dados
 - Dashboards customizáveis

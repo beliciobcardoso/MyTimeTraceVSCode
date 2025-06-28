@@ -1,1 +1,8 @@
-export { StatsPanel, ProjectsData, ProjectTimeData, FileTimeData } from './statsPanel';
+export { 
+  StatsPanel, 
+  ProjectsData, 
+  ProjectTimeData, 
+  FileTimeData,
+  TimeEntry,
+  StatsFilters
+} from './statsPanel';

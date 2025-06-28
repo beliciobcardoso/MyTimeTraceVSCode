@@ -18,6 +18,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Módulo de comandos (`commands.ts`) com classe `CommandManager`
 - **Pasta UI (`src/ui/`)** com componentes de interface separados:
   - `StatsPanel` classe para gerenciar painéis de estatísticas
+  - **Filtros interativos** por data e projeto nas estatísticas
+  - Interface avançada com controles de filtragem em tempo real
+  - Seleção de tipo de visualização (simples ou com filtros)
+  - Resumo estatístico de dados filtrados
   - Melhor organização de código de interface do usuário
   - CSS e JavaScript separados por responsabilidade
 - Melhor organização do código com classes especializadas
