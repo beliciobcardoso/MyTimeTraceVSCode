@@ -29,17 +29,17 @@
     "commands": [
       {
         "command": "my-time-trace-vscode.startTracking",
-        "title": "Iniciar Rastreamento",
+        "title": "My Time Trace: Iniciar Rastreamento",
         "icon": "$(play)"
       },
       {
-        "command": "my-time-trace-vscode.pauseTracking",
-        "title": "Pausar Rastreamento",
+        "command": "my-time-trace-vscode.pauseTracking", 
+        "title": "My Time Trace: Pausar Rastreamento",
         "icon": "$(debug-pause)"
       },
       {
         "command": "my-time-trace-vscode.showStats",
-        "title": "Mostrar Estatísticas",
+        "title": "My Time Trace: Mostrar Estatísticas",
         "icon": "$(graph)"
       }
     ],
@@ -66,12 +66,13 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "my-time-trace-vscode.startTracking",
-          "when": "!isTracking"
+          "command": "my-time-trace-vscode.startTracking"
         },
         {
-          "command": "my-time-trace-vscode.pauseTracking",
-          "when": "isTracking"
+          "command": "my-time-trace-vscode.pauseTracking"
+        },
+        {
+          "command": "my-time-trace-vscode.showStats"
         }
       ]
     }
