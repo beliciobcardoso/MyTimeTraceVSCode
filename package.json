@@ -4,7 +4,7 @@
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code",
   "icon": "images/opengraph-image.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"
@@ -80,6 +80,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "package": "vsce package",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"

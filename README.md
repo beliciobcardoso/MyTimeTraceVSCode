@@ -1,4 +1,4 @@
-# My Time Trace VSCode (Beta 0.1.0)
+# My Time Trace VSCode (Beta 0.2.0)
 
 Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo!
 
@@ -49,14 +49,27 @@ As seguintes configurações já estão disponíveis:
 - ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos.
 - ❌ **Tratamento de Erros**: Melhora o tratamento de erros de rede e outras exceções.
 - ❌ **Autenticação**: Planeja-se implementar um método de autenticação (como API Key) para permitir a sincronização segura dos dados com um servidor externo em versões futuras.
-- ❌ **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
+- ✅ **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
 - ✅ **Melhor tratamento de erros**: Adicionar tratamento de exceções mais robusto (implementado safeRegisterCommand)
 - ✅ **Visualização de dados**: Implementar painéis para visualizar as estatísticas de tempo por projeto
 - ✅ **Status Bar interativa**: Melhorar a interação com o usuário através da barra de status
 
 ## Notas de Lançamento
 
-### 0.1.0 - Beta (01/06/2025)
+### 0.2.0 - Beta (28/06/2025)
+
+Terceira versão com refatoração completa:
+
+- Separação de responsabilidades em módulos específicos
+- Módulos especializados: configuração, banco de dados, status bar, estatísticas, rastreamento e comandos
+- Melhor organização do código com classes especializadas
+- Tratamento de erros aprimorado com async/await
+- Refatoração completa do arquivo extension.ts para usar arquitetura modular
+- Melhoria na gestão de recursos e limpeza de memória
+- Melhor isolamento de responsabilidades evitando acoplamento
+- Correção de possíveis vazamentos de memória
+
+### 0.1.0 - Beta (18/06/2025)
 
 Segunda versão com melhorias significativas:
 
@@ -64,8 +77,10 @@ Segunda versão com melhorias significativas:
 - Exibição hierárquica de arquivos agrupados por projeto
 - Formatação inteligente de caminhos de arquivos para melhor legibilidade
 - Interface visual aprimorada para visualização dos dados coletados
+- Seções de projetos colapsáveis para melhor organização das estatísticas
 - Correção do problema "command already exists" nos testes
 - Implementação de registro seguro de comandos para evitar conflitos
+- Correção da funcionalidade de toggle para todos os projetos na visualização
 
 ### 0.0.1 - (31/05/2025)
 
