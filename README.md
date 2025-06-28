@@ -1,6 +1,6 @@
 # My Time Trace VSCode (Beta 0.2.0)
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo com filtros avançados!
 
 ## Funcionalidades
 
@@ -9,11 +9,19 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Detecta períodos de inatividade (após 5 minutos) para registros de tempo mais precisos.
 - **Persistência Local**: Armazena todos os dados localmente em um banco de dados SQLite.
 - **Baixo Consumo de Recursos**: Opera silenciosamente em segundo plano sem impactar o desempenho.
-- **Visualização de Estatísticas**: Exibe o tempo gasto por projeto e por arquivo em uma interface gráfica organizada com opções de visualização:
+- **Visualização Avançada de Estatísticas**: Interface moderna e responsiva com múltiplas opções:
   - **Estatísticas Simples**: Visualização básica agrupada por projeto
-  - **Estatísticas com Filtros**: Interface avançada com filtros por data e projeto específicos
-- **Filtros Avançados**: Filtre dados por intervalo de datas e projetos específicos para análise detalhada
+  - **Estatísticas com Filtros**: Interface avançada com controles interativos
+  - **Layout Responsivo**: Design em grid 40/60 para melhor aproveitamento do espaço
+  - **Header Fixo**: Navegação sempre visível durante o scroll
+  - **Projetos Expansíveis**: Clique para expandir/colapsar detalhes dos projetos
+- **Filtros Interativos Avançados**: 
+  - Filtragem por intervalo de datas (data inicial e final)
+  - Seleção múltipla de projetos específicos
+  - Aplicação de filtros em tempo real
+  - Resumo dinâmico dos dados filtrados (total de entradas, tempo e projetos)
 - **Formatação Inteligente de Caminhos**: Apresenta os caminhos de arquivo de forma mais legível, removendo prefixos absolutos.
+- **Interface Robusta**: JavaScript com verificações de segurança e tratamento de erros
 
 ## Como Funciona
 
@@ -22,6 +30,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 3. Detecta quando você muda de arquivos ou projetos
 4. Registra períodos de inatividade para melhorar a precisão dos dados
 5. Armazena todos os dados localmente para acesso posterior
+6. Oferece visualização avançada com filtros interativos para análise detalhada
 
 ## Requisitos
 
@@ -33,8 +42,8 @@ No momento, esta extensão está em desenvolvimento e não está disponível no 
 
 1. Clone o repositório
 2. Execute `npm install` para instalar as dependências
-3. Execute `npm run package` para criar o arquivo VSIX
-4. Use "Extensions: Install from VSIX..." no VS Code para instalar a extensão
+3. Execute `npm run compile` para compilar o TypeScript
+4. Execute `F5` para testar em modo debug ou crie um VSIX com `vsce package`
 
 ## Configurações da Extensão
 
@@ -61,16 +70,30 @@ As seguintes configurações já estão disponíveis:
 
 ### 0.2.0 - Beta (28/06/2025)
 
-Terceira versão com refatoração completa:
+Terceira versão com refatoração completa e interface avançada:
 
+**Arquitetura Modular:**
 - Separação de responsabilidades em módulos específicos
 - Módulos especializados: configuração, banco de dados, status bar, estatísticas, rastreamento e comandos
 - Melhor organização do código com classes especializadas
 - Tratamento de erros aprimorado com async/await
 - Refatoração completa do arquivo extension.ts para usar arquitetura modular
+
+**Interface de Estatísticas Avançada:**
+- **Layout Responsivo**: Design em grid 40/60 com aproveitamento otimizado do espaço
+- **Header Fixo**: Título sempre visível durante a navegação
+- **Filtros Interativos**: Controles por data (início/fim) e seleção múltipla de projetos
+- **Resumo Dinâmico**: Estatísticas em tempo real dos dados filtrados
+- **Projetos Expansíveis**: Interface colapsável para melhor organização visual
+- **CSS Modular**: Estilos organizados usando variáveis do tema VS Code
+- **JavaScript Robusto**: Verificações de segurança e tratamento de erros
+
+**Melhorias Técnicas:**
 - Melhoria na gestão de recursos e limpeza de memória
 - Melhor isolamento de responsabilidades evitando acoplamento
-- Correção de possíveis vazamentos de memória
+- Correção de bug crítico com elemento HTML ausente
+- Verificações de elementos DOM antes do acesso
+- Layout responsivo funcionando em diferentes tamanhos de tela
 
 ### 0.1.0 - Beta (18/06/2025)
 

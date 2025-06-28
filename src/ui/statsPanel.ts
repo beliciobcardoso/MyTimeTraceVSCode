@@ -82,7 +82,14 @@ export class StatsPanel {
     }
     // Abordagem 3: Remove caminhos absolutos comuns
     else {
-      const patterns = ["/home/", "/Users/", "C:\\Users\\", "/var/", "/tmp/", "C:\\"];
+      const patterns = [
+        "/home/",
+        "/Users/",
+        "C:\\Users\\",
+        "/var/",
+        "/tmp/",
+        "C:\\",
+      ];
       for (const pattern of patterns) {
         if (displayPath.includes(pattern)) {
           const parts = displayPath.split(pattern);
@@ -122,7 +129,7 @@ export class StatsPanel {
    * Cria um painel webview com filtros e dados brutos
    */
   static createStatsWithFiltersPanel(
-    rawData: TimeEntry[], 
+    rawData: TimeEntry[],
     availableProjects: string[]
   ): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
@@ -135,7 +142,10 @@ export class StatsPanel {
       }
     );
 
-    panel.webview.html = this.generateStatsWithFiltersHtml(rawData, availableProjects);
+    panel.webview.html = this.generateStatsWithFiltersHtml(
+      rawData,
+      availableProjects
+    );
     return panel;
   }
 
@@ -143,17 +153,17 @@ export class StatsPanel {
    * Filtra dados por critérios específicos
    */
   static filterData(data: TimeEntry[], filters: StatsFilters): TimeEntry[] {
-    return data.filter(entry => {
+    return data.filter((entry) => {
       // Filtro por data
       if (filters.startDate) {
-        const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+        const entryDate = new Date(entry.timestamp).toISOString().split("T")[0];
         if (entryDate < filters.startDate) {
           return false;
         }
       }
-      
+
       if (filters.endDate) {
-        const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+        const entryDate = new Date(entry.timestamp).toISOString().split("T")[0];
         if (entryDate > filters.endDate) {
           return false;
         }
@@ -182,9 +192,10 @@ export class StatsPanel {
     const projectsData: ProjectsData = {};
 
     // Agrupa por projeto e arquivo
-    const projectFileMap: { [project: string]: { [file: string]: number } } = {};
+    const projectFileMap: { [project: string]: { [file: string]: number } } =
+      {};
 
-    filteredData.forEach(entry => {
+    filteredData.forEach((entry) => {
       if (!projectFileMap[entry.project]) {
         projectFileMap[entry.project] = {};
       }
@@ -209,7 +220,7 @@ export class StatsPanel {
 
       projectsData[projectName] = {
         totalSeconds,
-        files: fileData
+        files: fileData,
       };
     });
 
@@ -240,7 +251,9 @@ export class StatsPanel {
       statsHtml += `
       <div class="project-section">
         <div class="project-header">
-          <h2>Projeto: ${projectName} - Total ${this.formatTime(projectData.totalSeconds)}</h2>
+          <h2>Projeto: ${projectName} - Total ${this.formatTime(
+        projectData.totalSeconds
+      )}</h2>
           <i class="toggle-icon toggle-icon-down">▼</i>
           <i class="toggle-icon toggle-icon-up">▲</i>
         </div>
@@ -284,7 +297,7 @@ export class StatsPanel {
    * Gera o HTML para exibir as estatísticas com filtros
    */
   private static generateStatsWithFiltersHtml(
-    rawData: TimeEntry[], 
+    rawData: TimeEntry[],
     availableProjects: string[]
   ): string {
     // Gera o JSON dos dados para usar no JavaScript
@@ -304,36 +317,49 @@ export class StatsPanel {
     </head>
     <body>
       <h1>Estatísticas de Tempo por Projeto</h1>
-      
-      <!-- Seção de Filtros -->
-      <div class="filters-section">
-        <h3>Filtros</h3>
-        <div class="filters-container">
-          <div class="filter-group">
-            <label for="startDate">Data Inicial:</label>
-            <input type="date" id="startDate" class="filter-input">
+      <div class="filter-main">
+
+          <!-- Resumo dos resultados filtrados -->
+          <div id="resultsSummary">
+              <div id="loadingMessage">Carregando estatísticas...</div>
           </div>
-          
-          <div class="filter-group">
-            <label for="endDate">Data Final:</label>
-            <input type="date" id="endDate" class="filter-input">
-          </div>
-          
-          <div class="filter-group">
-            <label for="projectFilter">Projetos:</label>
-            <select id="projectFilter" multiple class="filter-input">
-              <option value="">Todos os projetos</option>
-              ${availableProjects.map(project => 
-                `<option value="${project}">${project}</option>`
-              ).join('')}
-            </select>
-          </div>
-          
-          <div class="filter-actions">
-            <button id="applyFilters" class="filter-btn">Aplicar Filtros</button>
-            <button id="clearFilters" class="filter-btn secondary">Limpar</button>
-          </div>
-        </div>
+
+          <!-- Seção de Filtros -->
+          <div class="filters-section">
+            <div class="filters-container">
+
+              <div class="filter-date">
+                  <div class="filter-group">
+                      <label for="startDate">Data Inicial:</label>
+                      <input type="date" id="startDate" class="filter-input">
+                  </div>
+                  <div class="filter-group">
+                      <label for="endDate">Data Final:</label>
+                      <input type="date" id="endDate" class="filter-input">
+                  </div>
+              </div>
+
+              <div class="filter-select">
+                <div class="filter-group">
+                  <label for="projectFilter">Projetos:</label>
+                  <select id="projectFilter" multiple class="filter-input">
+                    <option value="">Todos os projetos</option>
+                    ${availableProjects
+                      .map(
+                        (project) => `<option value="${project}">${project}</option>`
+                      )
+                      .join("")}
+                  </select>
+                </div>
+              </div>                      
+              
+              <div class="filter-actions">
+                  <button id="applyFilters" class="filter-btn">Aplicar Filtros</button>
+                  <button id="clearFilters" class="filter-btn secondary">Limpar</button>
+              </div>
+              
+              </div>
+            </div>
       </div>
       
       <!-- Área de resultados -->
@@ -360,6 +386,20 @@ export class StatsPanel {
         padding: 0px 20px;
         background-color: var(--vscode-editor-background);
         color: var(--vscode-editor-foreground);
+        padding-top: 80px; /* Espaço para o header fixo */
+      }
+      h1 {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
+        margin: 0;
+        padding: 15px 20px;
+        border-bottom: 2px solid var(--vscode-panel-border);
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .toggle-icon { 
         cursor: pointer; 
@@ -377,6 +417,9 @@ export class StatsPanel {
       }
       h1, h2 { 
         color: var(--vscode-editor-foreground); 
+        margin: 0;
+      }
+      h2 {
         margin: 0;
       }
       .project-header { 
@@ -487,22 +530,125 @@ export class StatsPanel {
    */
   private static getFiltersStyles(): string {
     return `
-      ${this.getStyles()}
+      body { 
+        font-family: Arial, sans-serif; 
+        padding: 0px 20px;
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
+        padding-top: 80px; /* Espaço para o header fixo */
+      }
+      h1 {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
+        margin: 0;
+        padding: 15px 20px;
+        border-bottom: 2px solid var(--vscode-panel-border);
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1, h2 { 
+        color: var(--vscode-editor-foreground); 
+        margin: 0;
+      }
+      h2, h3 {
+        margin: 0;
+      }
+      .toggle-icon { 
+        cursor: pointer; 
+        color: #fff; 
+        font-size: 20px; 
+        margin-left: 10px; 
+      }
+      .toggle-icon:hover { 
+        color: #ccc; 
+      }
+      i {
+        font-style: normal;
+        color: #fff;
+        cursor: pointer;
+      }
+      .project-header { 
+        background-color: var(--vscode-button-background); 
+        color: var(--vscode-button-foreground); 
+        padding: 10px 10px;
+        margin-bottom: 0;
+        margin-top: 10px;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        cursor: pointer;
+      }
+      .project-header:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+      table { 
+        border-collapse: collapse; 
+        width: 100%; 
+        margin-bottom: 0px; 
+        border: 1px solid var(--vscode-panel-border); 
+        border-radius: 5px;
+      }
+      th, td { 
+        text-align: left; 
+        padding: 8px; 
+        border-bottom: 1px solid var(--vscode-panel-border); 
+      }
+      th { 
+        background-color: var(--vscode-list-activeSelectionBackground); 
+        color: var(--vscode-list-activeSelectionForeground); 
+      }
+      tr:nth-child(even) {
+        background-color: var(--vscode-list-hoverBackground); 
+        color: var(--vscode-list-hoverForeground); 
+      }
+      .file-name { 
+        font-family: var(--vscode-editor-font-family); 
+        font-size: var(--vscode-editor-font-size);
+      }
+      .toggle-icon-up {
+        display: none;
+      }
+      .project-section { 
+        margin-bottom: 0px; 
+        padding: 0px;
+      }
+      
+      .filter-main {
+        grid-template-rows: auto 1fr;
+        display: grid;
+        grid-template-columns: 40% 60%;
+        gap: 20px;
+      }
       
       .filters-section {
         background-color: var(--vscode-editor-background);
         border: 1px solid var(--vscode-panel-border);
         border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
+        padding: 8px;
       }
-      
+
       .filters-container {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
         align-items: end;
-      }
+        }
+
+        .filter-date {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 15px;
+        }
+
+        .filter-select {
+          display: flex;
+          margin-bottom: 15px;
+        }
       
       .filter-group {
         display: flex;
@@ -538,6 +684,8 @@ export class StatsPanel {
         display: flex;
         gap: 10px;
         flex-direction: column;
+        align-items: flex-end;
+        justify-content: flex-end;
       }
       
       .filter-btn {
@@ -598,7 +746,10 @@ export class StatsPanel {
   /**
    * Retorna o JavaScript para filtros interativos
    */
-  private static getFiltersJavaScript(rawDataJson: string, projectsJson: string): string {
+  private static getFiltersJavaScript(
+    rawDataJson: string,
+    projectsJson: string
+  ): string {
     return `
       // Dados brutos e projetos disponíveis
       const rawData = ${rawDataJson};
@@ -793,7 +944,16 @@ export class StatsPanel {
         const projectsData = convertToProjectsData(filteredData);
         
         const resultsArea = document.getElementById('resultsArea');
-        
+        if (!resultsArea) {
+          console.error('Elemento resultsArea não encontrado.');
+          return;
+        }
+        const resultsSummary = document.getElementById('resultsSummary');
+        if (!resultsSummary) {
+          console.error('Elemento resultsSummary não encontrado.');
+          return;
+        }
+
         if (Object.keys(projectsData).length === 0) {
           resultsArea.innerHTML = '<div id="loadingMessage">Nenhum dado encontrado para os filtros selecionados.</div>';
           return;
@@ -813,7 +973,10 @@ export class StatsPanel {
           </div>
         \`;
         
-        resultsArea.innerHTML = summaryHtml + generateProjectsHtml(projectsData);
+        resultsSummary.innerHTML = summaryHtml;
+        
+        resultsArea.innerHTML = generateProjectsHtml(projectsData);
+
         addProjectToggleListeners();
         
         document.getElementById('lastUpdate').textContent = new Date().toLocaleString();

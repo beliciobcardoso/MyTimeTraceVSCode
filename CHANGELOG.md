@@ -14,16 +14,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Módulo de banco de dados (`database.ts`) com classe `DatabaseManager`
 - Módulo de status bar (`statusBar.ts`) com classe `StatusBarManager`
 - Módulo de estatísticas (`stats.ts`) com classe `StatsManager`
-- Módulo de rastreamento de tempo (`myTimeTrace.ts`) com classe `myTimeTrace`
+- Módulo de rastreamento de tempo (`timeTrace.ts`) com classe `timeTrace`
 - Módulo de comandos (`commands.ts`) com classe `CommandManager`
 - **Pasta UI (`src/ui/`)** com componentes de interface separados:
   - `StatsPanel` classe para gerenciar painéis de estatísticas
-  - **Filtros interativos** por data e projeto nas estatísticas
-  - Interface avançada com controles de filtragem em tempo real
-  - Seleção de tipo de visualização (simples ou com filtros)
-  - Resumo estatístico de dados filtrados
-  - Melhor organização de código de interface do usuário
-  - CSS e JavaScript separados por responsabilidade
+  - **Filtros interativos avançados** por data e projeto nas estatísticas
+  - Interface responsiva com layout em grid (40/60) para melhor usabilidade
+  - Controles de filtragem em tempo real com aplicação instantânea
+  - Resumo estatístico dinâmico de dados filtrados
+  - Header fixo para melhor navegação
+  - Projetos expansíveis/colapsáveis para organização visual
+  - Verificações robustas de elementos DOM no JavaScript
+  - CSS modular com variáveis do tema VS Code
+  - JavaScript otimizado com tratamento de erros
 - Melhor organização do código com classes especializadas
 - Tratamento de erros aprimorado com async/await
 
@@ -32,13 +35,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Refatoração completa do arquivo `extension.ts` para usar arquitetura modular
 - Conversão de funções globais para classes com responsabilidades específicas
 - Melhoria na gestão de recursos e limpeza de memória
+- **Layout das estatísticas redesenhado** com grid responsivo
+- **Interface de filtros aprimorada** com melhor UX
 - Atualização da versão seguindo padrão SemVer (0.1.0 → 0.2.0)
 
 ### Corrigido
 
+- **Bug crítico**: Elemento `resultsSummary` ausente no HTML causando erro JavaScript
+- **Verificações de segurança**: Elementos DOM são verificados antes do acesso
 - Melhor isolamento de responsabilidades evitando acoplamento
 - Gestão mais robusta de recursos e handlers de eventos
 - Correção de possíveis vazamentos de memória
+- **Layout responsivo** funcionando corretamente em diferentes tamanhos de tela
 
 ## [0.1.0] - 2025-06-18
 

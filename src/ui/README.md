@@ -1,6 +1,6 @@
 # UI Components
 
-Esta pasta contém os componentes de interface do usuário da extensão My Time Trace VSCode.
+Esta pasta contém os componentes de interface do usuário da extensão My Time Trace VSCode com design responsivo e funcionalidades avançadas.
 
 ## Estrutura
 
@@ -9,9 +9,12 @@ Contém a classe `StatsPanel` responsável por:
 - Gerar painéis webview para exibição de estatísticas
 - Formatação de dados de tempo e caminhos de arquivos
 - Geração de HTML, CSS e JavaScript para os painéis
-- Interface responsiva com temas do VS Code
-- **Filtros interativos** por data e projeto
-- Painéis avançados com controles de filtragem em tempo real
+- **Interface responsiva** com layout em grid (40/60)
+- **Header fixo** para melhor navegação
+- **Filtros interativos avançados** por data e projeto
+- **Projetos expansíveis/colapsáveis** para organização visual
+- **Verificações robustas** de elementos DOM no JavaScript
+- **CSS modular** usando variáveis do tema VS Code
 
 ### `index.ts`
 Arquivo de barrel export que centraliza as exportações da pasta UI.
@@ -26,16 +29,27 @@ Arquivo de barrel export que centraliza as exportações da pasta UI.
 
 ## Funcionalidades
 
+### Design e Layout
 - **Temas VS Code**: Usa variáveis CSS do VS Code para consistência visual
-- **Interatividade**: JavaScript para expandir/colapsar seções de projetos
+- **Layout Responsivo**: Design em grid 40/60 para melhor aproveitamento do espaço
+- **Header Fixo**: Título sempre visível durante o scroll
+- **CSS Modular**: Estilos organizados por responsabilidade
+
+### Interatividade
+- **Projetos Expansíveis**: Clique para expandir/colapsar detalhes dos projetos
+- **JavaScript Robusto**: Verificações de segurança e tratamento de erros
 - **Formatação Inteligente**: Formatação de caminhos de arquivo e tempo
-- **Responsividade**: Interface adaptável a diferentes tamanhos de tela
-- **Filtros Avançados**: 
-  - Filtro por intervalo de datas (data inicial e final)
-  - Filtro por projetos específicos (seleção múltipla)
-  - Aplicação de filtros em tempo real
-  - Resumo estatístico dos dados filtrados
-  - Botões para aplicar e limpar filtros
+- **Controles Intuitivos**: Botões e inputs com feedback visual
+
+### Filtros Avançados
+- **Filtro por Data**: Intervalo com data inicial e final
+- **Filtro por Projeto**: Seleção múltipla de projetos específicos
+- **Aplicação em Tempo Real**: Filtros aplicados instantaneamente
+- **Resumo Dinâmico**: Estatísticas atualizadas dos dados filtrados
+  - Total de entradas filtradas
+  - Tempo total dos dados selecionados
+  - Número de projetos incluídos
+- **Controles Avançados**: Botões para aplicar e limpar filtros
 
 ## Uso
 
@@ -56,7 +70,7 @@ const projectsData: ProjectsData = {
 const panel = StatsPanel.createStatsPanel(projectsData);
 ```
 
-### Painel com Filtros
+### Painel com Filtros Avançados
 ```typescript
 import { StatsPanel, TimeEntry } from '../ui';
 
@@ -83,12 +97,45 @@ import { StatsPanel, StatsFilters } from '../ui';
 const filters: StatsFilters = {
   startDate: '2025-06-01',
   endDate: '2025-06-30',
-  projects: ['meu-projeto']
+  projects: ['meu-projeto'] // Opcional: filtrar projetos específicos
 };
 
 const filteredData = StatsPanel.filterData(rawData, filters);
 const projectsData = StatsPanel.convertToProjectsData(filteredData);
 ```
+
+## Características Técnicas
+
+### Segurança e Robustez
+- **Verificações DOM**: Todos os elementos são verificados antes do acesso
+- **Tratamento de Erros**: Logs de erro em caso de elementos não encontrados
+- **Fallback Gracioso**: Interface degrada graciosamente em caso de problemas
+
+### Performance
+- **CSS Otimizado**: Uso de variáveis CSS para consistência e performance
+- **JavaScript Eficiente**: Event listeners otimizados e limpeza adequada
+- **Layout Grid**: CSS Grid para layout responsivo sem JavaScript adicional
+
+### Acessibilidade
+- **Navegação por Teclado**: Todos os controles são acessíveis via teclado
+- **Contraste Adequado**: Uso das variáveis do tema VS Code para contraste
+- **Semântica HTML**: Estrutura HTML semântica para screen readers
+
+## Arquitetura CSS
+
+### Variáveis do Tema VS Code Utilizadas
+- `--vscode-editor-background`: Cor de fundo principal
+- `--vscode-editor-foreground`: Cor do texto principal
+- `--vscode-button-background`: Cor de fundo dos botões
+- `--vscode-input-background`: Cor de fundo dos inputs
+- `--vscode-panel-border`: Cor das bordas
+- `--vscode-focusBorder`: Cor de foco dos elementos
+
+### Layout Responsivo
+- **Grid Principal**: `grid-template-columns: 40% 60%` para divisão otimizada
+- **Filtros**: Layout flexível com `auto-fit` e `minmax(200px, 1fr)`
+- **Header Fixo**: `position: fixed` com `z-index: 1000`
+- **Scroll Inteligente**: `padding-top` para compensar header fixo
 
 ## Melhorias Futuras
 
