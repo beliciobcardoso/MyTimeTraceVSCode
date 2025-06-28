@@ -51,7 +51,7 @@ As seguintes configurações já estão disponíveis:
 - ❌ **Autenticação**: Planeja-se implementar um método de autenticação (como API Key) para permitir a sincronização segura dos dados com um servidor externo em versões futuras.
 - ✅ **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
 - ✅ **Melhor tratamento de erros**: Adicionar tratamento de exceções mais robusto (implementado safeRegisterCommand)
-- ✅ **Visualização de dados**: Implementar painéis para visualizar as estatísticas de tempo por projeto
+- ✅ **Visualização de dados**: Implementar painéis organizados na pasta `ui/` para visualizar as estatísticas de tempo por projeto
 - ✅ **Status Bar interativa**: Melhorar a interação com o usuário através da barra de status
 
 ## Notas de Lançamento

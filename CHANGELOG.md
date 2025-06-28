@@ -16,6 +16,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Módulo de estatísticas (`stats.ts`) com classe `StatsManager`
 - Módulo de rastreamento de tempo (`timeTracker.ts`) com classe `TimeTracker`
 - Módulo de comandos (`commands.ts`) com classe `CommandManager`
+- **Pasta UI (`src/ui/`)** com componentes de interface separados:
+  - `StatsPanel` classe para gerenciar painéis de estatísticas
+  - Melhor organização de código de interface do usuário
+  - CSS e JavaScript separados por responsabilidade
 - Melhor organização do código com classes especializadas
 - Tratamento de erros aprimorado com async/await
 
