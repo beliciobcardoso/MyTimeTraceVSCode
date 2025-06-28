@@ -190,7 +190,8 @@ function formatTime(timeInSeconds: number): string {
 function createStatusBarItem() {
   if (!statusBarItem) {
     statusBarItem = vscode.window.createStatusBarItem(
-      vscode.StatusBarAlignment.Left
+      vscode.StatusBarAlignment.Left,
+      1000 // Prioridade alta
     );
     statusBarItem.command = "my-time-trace-vscode.showStats";
     statusBarItem.tooltip = "Clique para ver estatísticas de tempo";
@@ -213,10 +214,12 @@ function updateStatusBarItem() {
   const fileName = currentFile ? path.basename(currentFile) : "Nenhum arquivo";
   const timeFormatted = formatTime(Math.round(timeSpentOnFile / 1000));
 
-  statusBarItem.text = `$(clock) ${fileName}: ${timeFormatted}`;
+  statusBarItem.text = `$(clock) ${fileName}> ${timeFormatted}`;
 
   if (isTracking) {
-    statusBarItem.backgroundColor = undefined;
+    statusBarItem.backgroundColor = new vscode.ThemeColor(
+      "statusBarItem.activeBackground"
+    );
   } else {
     statusBarItem.backgroundColor = new vscode.ThemeColor(
       "statusBarItem.warningBackground"
@@ -395,7 +398,7 @@ async function showStats() {
               table { border-collapse: collapse; width: 100%; margin-bottom: 0px; border: 1px solid #000; border-radius: 5px;}
               th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
               th { background-color: #4682B4; color: white; }
-              tr:nth-child(even) { background-color: #f2f2f2; color: #000000; }
+              tr:nth-child(even) { background-color:#3f3f49; color: #f2f2f2; }
               .file-name { font-family: monospace; }
               .project-section { margin-bottom: 0px; padding: 0px;}
             </style>
