@@ -83,7 +83,7 @@ export class StatsPanel {
    */
   static createStatsPanel(projectsData: ProjectsData): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
-      "timeTrackerStats",
+      "myTimeTraceStats",
       "Estatísticas de Tempo",
       vscode.ViewColumn.One,
       {

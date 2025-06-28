@@ -6,7 +6,7 @@ import { getConfig } from "./config";
 /**
  * Classe responsável por rastrear o tempo gasto em arquivos
  */
-export class TimeTracker {
+export class timeTrace {
   private timerInterval: ReturnType<typeof setInterval> | undefined;
   private lastActiveTime: number = Date.now();
   private currentFile: string | undefined;
@@ -215,7 +215,7 @@ export class TimeTracker {
   }
 
   /**
-   * Limpa recursos do tracker
+   * Limpa recursos do my_time_trace
    */
   dispose(): void {
     if (this.timerInterval) {

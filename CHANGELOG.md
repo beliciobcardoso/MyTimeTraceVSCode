@@ -14,7 +14,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Módulo de banco de dados (`database.ts`) com classe `DatabaseManager`
 - Módulo de status bar (`statusBar.ts`) com classe `StatusBarManager`
 - Módulo de estatísticas (`stats.ts`) com classe `StatsManager`
-- Módulo de rastreamento de tempo (`timeTracker.ts`) com classe `TimeTracker`
+- Módulo de rastreamento de tempo (`myTimeTrace.ts`) com classe `myTimeTrace`
 - Módulo de comandos (`commands.ts`) com classe `CommandManager`
 - **Pasta UI (`src/ui/`)** com componentes de interface separados:
   - `StatsPanel` classe para gerenciar painéis de estatísticas
