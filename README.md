@@ -1,4 +1,10 @@
-# My Time Trace VSCode (Beta 0.2.0)
+# My Time Trace VSCode (Beta 0.2.1)
+
+<div align="center">
+
+![My Time Trace Logo](images/my-time-trace-logo.png)
+
+</div>
 
 Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo com filtros avançados!
 

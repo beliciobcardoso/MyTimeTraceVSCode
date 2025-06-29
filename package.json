@@ -1,10 +1,10 @@
 {
   "name": "my-time-trace-vscode",
   "displayName": "My Time Trace VSCode",
-  "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code",
-  "icon": "images/opengraph-image.png",
+  "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados",
+  "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"

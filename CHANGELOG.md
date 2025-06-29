@@ -5,6 +5,21 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-06-29
+
+### Adicionado
+
+- **Nova Identidade Visual Profissional**: Logo criada com IA representando tempo (relógio laranja) e código (chevron azul)
+- **Documentação da Identidade Visual**: Arquivo `IDENTIDADE_VISUAL.md` com conceitos, significados e aplicações da logo
+- **Apresentação Aprimorada**: Logo integrada ao README.md e package.json
+- **Descrição Melhorada**: Texto mais detalhado e atrativo no package.json
+
+### Alterado
+
+- Atualização da versão seguindo padrão SemVer (0.2.0 → 0.2.1)
+- README.md com nova logo centralizada como header
+- Documentação de publicação atualizada com nova identidade
+
 ## [0.2.0] - 2025-06-28
 
 ### Adicionado
