@@ -166,4 +166,28 @@ Para testar a extensão:
 1. Pressione F5 no VS Code para iniciar uma nova janela com a extensão carregada
 2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo
 
+## Qualidade e Confiabilidade
+
+### 🧪 Testes Automatizados
+A extensão possui uma **excelente cobertura de testes** com **15 testes automatizados** que garantem a qualidade e confiabilidade:
+
+- ✅ **15 testes passando** (100% de sucesso)
+- ✅ **~90% de cobertura** das funcionalidades críticas
+- ✅ **Testes abrangentes** incluindo:
+  - Ativação/desativação da extensão
+  - Rastreamento de tempo e detecção de idle
+  - Persistência de dados no SQLite
+  - Interface do status bar em tempo real
+  - Painel de estatísticas com filtros
+  - Tratamento de erros e edge cases
+  - Integração entre módulos
+
+### 🏗️ Arquitetura Modular
+- **Separação clara de responsabilidades** com módulos especializados
+- **Código TypeScript** com tipagem forte
+- **Tratamento robusto de erros** com async/await
+- **Cleanup automático** de recursos
+
+Para mais detalhes, consulte o [Relatório de Cobertura de Testes](COVERAGE_REPORT.md).
+
 **Aproveite o My Time Trace VSCode e monitore seu tempo de desenvolvimento de forma eficiente!**

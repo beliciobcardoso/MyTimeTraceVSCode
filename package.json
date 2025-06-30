@@ -33,7 +33,7 @@
         "icon": "$(play)"
       },
       {
-        "command": "my-time-trace-vscode.pauseTracking", 
+        "command": "my-time-trace-vscode.pauseTracking",
         "title": "My Time Trace: Pausar Rastreamento",
         "icon": "$(debug-pause)"
       },
