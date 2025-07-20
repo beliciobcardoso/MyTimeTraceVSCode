@@ -41,6 +41,26 @@
         "command": "my-time-trace-vscode.showStats",
         "title": "%my-time-trace-vscode.showStats.title%",
         "icon": "$(graph)"
+      },
+      {
+        "command": "my-time-trace-vscode.startPomodoroFocus",
+        "title": "%my-time-trace-vscode.startPomodoroFocus.title%",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "my-time-trace-vscode.pausePomodoroSession",
+        "title": "%my-time-trace-vscode.pausePomodoroSession.title%",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "my-time-trace-vscode.stopPomodoroSession",
+        "title": "%my-time-trace-vscode.stopPomodoroSession.title%",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "my-time-trace-vscode.showPomodoroConfig",
+        "title": "%my-time-trace-vscode.showPomodoroConfig.title%",
+        "icon": "$(gear)"
       }
     ],
     "configuration": {
@@ -73,6 +93,18 @@
         },
         {
           "command": "my-time-trace-vscode.showStats"
+        },
+        {
+          "command": "my-time-trace-vscode.startPomodoroFocus"
+        },
+        {
+          "command": "my-time-trace-vscode.pausePomodoroSession"
+        },
+        {
+          "command": "my-time-trace-vscode.stopPomodoroSession"
+        },
+        {
+          "command": "my-time-trace-vscode.showPomodoroConfig"
         }
       ]
     }

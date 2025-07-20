@@ -1,0 +1,81 @@
+Testes de Interface do Usuário: Embora o README.md mencione uma boa cobertura de testes, seria interessante adicionar testes específicos para a lógica da interface do usuário
+     no statsPanel.ts, especialmente as funções de filtragem e formatação.
+   * Validação de Configurações: No config.ts, você poderia adicionar uma validação mais robusta para as configurações do usuário, como garantir que o idleTimeout seja um número
+     positivo.
+
+✅ FASE 1 - Módulo Core Pomodoro (PomodoroManager) - 2-3 dias [CONCLUÍDO]
+   - ✅ Criado PomodoroManager com todas as funcionalidades essenciais
+   - ✅ Estados do Pomodoro: INACTIVE, FOCUS, FOCUS_PAUSED, SHORT_BREAK, LONG_BREAK, BREAK_EXTENDED
+   - ✅ Controle de timers para foco e pausa
+   - ✅ Sistema de detecção de atividade e inatividade (pausa automática após 5min)
+   - ✅ Auto-start configurável quando detecta atividade de codificação
+   - ✅ Extensão de tempo de foco (botão "continuar por mais X min")
+   - ✅ Integração com banco de dados existente (salva configurações e sessões)
+   - ✅ Sistema de eventos para comunicação com outros módulos
+   - ✅ Registros de atividade compatíveis com sistema existente
+   - ✅ Comandos VSCode básicos: startPomodoroFocus, pausePomodoroSession, stopPomodoroSession
+   - ✅ Integração completa com extension.ts (eventos de atividade do usuário)
+   - ✅ Localização PT-BR e EN
+   - ✅ Teste de integração básico criado
+
+FASE 2 - Integração com sistema existente - 1-2 dias
+FASE 3 - Interface de usuário (modais) - 3-4 dias
+FASE 4 - Lógica de negócio e regras - 2-3 dias
+FASE 5 - Comandos VSCode - 1-2 dias
+FASE 6 - Relatórios e analytics - 2-3 dias
+FASE 7 - Testes e qualidade - 1-2 dias// Adicione a funcionalidade de Pomodoro integrada à extensão My Time Trace com os seguintes requisitos completos:
+
+// 🚀 1. Ativação automática:
+// - O sistema Pomodoro deve ser ativado automaticamente assim que a extensão My Time Trace iniciar.
+// - Iniciar o controle de tempo de foco assim que for detectada atividade de codificação.
+// - Nas configurações do Pomodoro, deve haver uma opção para **desativar o Pomodoro** caso o desenvolvedor não deseje usar esse recurso.
+
+// 🔔 2. Alerta após tempo de foco:
+// - Após 45 minutos consecutivos de codificação ativa (sem mais de 5 minutos de inatividade), exibir um modal com:
+//   - Um som breve de atenção.
+//   - Mudança visual chamativa (ex: fundo do modal e barra de status em vermelho).
+//   - Mensagem: “Você está há 45 minutos codando. Recomendamos uma pausa de 15 minutos.”
+// - O modal deve conter:
+//   1. Botão “Relaxar agora (15 min)”
+//      - Inicia um cronômetro regressivo com fundo amarelo.
+//      - Ao final, emitir um bip contínuo até o botão “Voltar a codar” ser clicado.
+//      - Caso o desenvolvedor não volte imediatamente, continuar registrando como **descanso estendido**.
+//   2. Botão “Continuar por mais 5 min”
+//      - Adia o alerta por 5 minutos.
+//   3. Ícone ⚙️ de configurações
+//      - Abre as configurações do Pomodoro.
+
+// ⚙️ 3. Configurações do Pomodoro:
+// - Permitir ajustar:
+//   - Tempo de foco (padrão: 45 min).
+//   - Tempo de descanso (padrão: 15 min).
+//   - Tempo do botão “continuar por mais 5 min”.
+//   - **Ativar/Desativar Pomodoro automaticamente** (toggle booleano).
+// - Todas as preferências devem ser salvas no banco de dados local já utilizado pela extensão (compatível com a futura API de sincronização remota).
+// - As preferências devem acompanhar o usuário entre diferentes dispositivos.
+
+// ⏱️ 4. Regras de controle do tempo de foco:
+// - O tempo de foco **pausa automaticamente** se forem detectados **mais de 5 minutos seguidos sem codar**.
+// - Se o desenvolvedor voltar a codar **dentro de 5 minutos**, retoma o tempo de foco de onde parou.
+// - Se ele voltar **após o tempo configurado de descanso exemplo 15 minutos**, o tempo de foco é **reiniciado do zero**.
+// - Clicar no botão “Voltar a codar” ao fim do descanso também reinicia o ciclo de foco.
+
+// 📊 5. Registro de atividades compatível com sistema atual:
+// - Categorizar registros como:
+//   - `foco`
+//   - `descanso`
+//   - `descanso_estendido`
+//   - `ocioso`
+// - Todos os registros devem conter `timestamp início`, `timestamp fim`, `tipo`, e serem salvos no banco já usado pela extensão.
+
+
+// 📅 6. Relatórios e indicadores:
+// - Exibir relatórios filtráveis por período, ex: de 01/01/2025 a 01/02/2025.
+// - Indicadores esperados:
+//   - Tempo total focado.
+//   - Tempo total de descanso.
+//   - Tempo ocioso.
+//   - Quantidade de ciclos Pomodoro completos.
+// - Esses dados devem estar prontos para visualização na UI ou exportação via API.
+
+// ✅ Tudo deve estar integrado com a UI e lógica central da extensão My Time Trace, mantendo consistência com os recursos existentes e com o banco de dados já implementado.
