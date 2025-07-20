@@ -1,7 +1,7 @@
 {
   "name": "my-time-trace-vscode",
-  "displayName": "My Time Trace VSCode",
-  "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados",
+  "displayName": "%my-time-trace-vscode.displayName%",
+  "description": "%my-time-trace-vscode.description%",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
   "version": "0.2.1",
@@ -29,37 +29,37 @@
     "commands": [
       {
         "command": "my-time-trace-vscode.startTracking",
-        "title": "My Time Trace: Iniciar Rastreamento",
+        "title": "%my-time-trace-vscode.startTracking.title%",
         "icon": "$(play)"
       },
       {
         "command": "my-time-trace-vscode.pauseTracking",
-        "title": "My Time Trace: Pausar Rastreamento",
+        "title": "%my-time-trace-vscode.pauseTracking.title%",
         "icon": "$(debug-pause)"
       },
       {
         "command": "my-time-trace-vscode.showStats",
-        "title": "My Time Trace: Mostrar Estatísticas",
+        "title": "%my-time-trace-vscode.showStats.title%",
         "icon": "$(graph)"
       }
     ],
     "configuration": {
-      "title": "MyTimeTraceVSCode",
+      "title": "%my-time-trace-vscode.configuration.title%",
       "properties": {
         "myTimeTraceVSCode.idleTimeout": {
           "type": "number",
           "default": 5,
-          "description": "Tempo em minutos antes de considerar o usuário inativo"
+          "description": "%my-time-trace-vscode.configuration.properties.idleTimeout.description%"
         },
         "myTimeTraceVSCode.autoStart": {
           "type": "boolean",
           "default": true,
-          "description": "Iniciar o rastreamento automaticamente ao abrir o VS Code"
+          "description": "%my-time-trace-vscode.configuration.properties.autoStart.description%"
         },
         "myTimeTraceVSCode.showInStatusBar": {
           "type": "boolean",
           "default": true,
-          "description": "Mostrar o tempo gasto na barra de status"
+          "description": "%my-time-trace-vscode.configuration.properties.showInStatusBar.description%"
         }
       }
     },
@@ -84,7 +84,8 @@
     "package": "vsce package",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "i18n": "vscode-nls-dev-create"
   },
   "dependencies": {
     "sqlite3": "^5.1.6"
@@ -101,7 +102,9 @@
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.25.1",
     "sinon": "20.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vscode-nls": "5.2.0",
+    "vscode-nls-dev": "4.0.4"
   },
   "keywords": [
     "time trace",

@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import * as path from "path";
 import { getConfig } from "./config";
 
@@ -18,7 +19,7 @@ export class StatusBarManager {
         1000 // Prioridade alta
       );
       this.statusBarItem.command = "my-time-trace-vscode.showStats";
-      this.statusBarItem.tooltip = "Clique para ver estatísticas de tempo";
+      this.statusBarItem.tooltip = localize('statusBar.tooltip', 'Click to see time statistics');
     }
 
     const userConfig = getConfig();
@@ -38,7 +39,7 @@ export class StatusBarManager {
       return;
     }
 
-    const fileName = currentFile ? path.basename(currentFile) : "Nenhum arquivo";
+    const fileName = currentFile ? path.basename(currentFile) : localize('statusBar.noFile', 'No file');
     const timeFormatted = this.formatTime(Math.round(timeSpentOnFile / 1000));
 
     this.statusBarItem.text = `$(clock) ${fileName} > ${timeFormatted}`;

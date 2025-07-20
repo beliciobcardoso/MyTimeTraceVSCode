@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
  * Interface para dados de arquivo com tempo
@@ -113,7 +114,7 @@ export class StatsPanel {
   static createStatsPanel(projectsData: ProjectsData): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
       "myTimeTraceStats",
-      "Estatísticas de Tempo",
+      localize('statsPanel.title', 'Time Statistics'),
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -134,7 +135,7 @@ export class StatsPanel {
   ): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
       "myTimeTraceStatsFiltered",
-      "Estatísticas de Tempo com Filtros",
+      localize('statsPanel.filteredTitle', 'Time Statistics with Filters'),
       vscode.ViewColumn.One,
       {
         enableScripts: true,

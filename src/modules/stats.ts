@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import { DatabaseManager } from "./database";
 import { StatsPanel, ProjectsData, TimeEntry } from "../ui";
 
@@ -12,27 +14,27 @@ export class StatsManager {
    * Mostra as estatísticas em um painel webview
    */
   async showStats(): Promise<void> {
+    const simpleStatsItem: vscode.QuickPickItem = {
+        label: localize('stats.simpleStats', 'Simple Stats'),
+        description: localize('stats.simpleStats.description', 'Basic view without filters'),
+        detail: localize('stats.simpleStats.detail', 'Shows all stats grouped together')
+    };
+    const filteredStatsItem: vscode.QuickPickItem = {
+        label: localize('stats.filteredStats', 'Stats with Filters'),
+        description: localize('stats.filteredStats.description', 'Advanced view with date and project filters'),
+        detail: localize('stats.filteredStats.detail', 'Allows filtering data by period and specific projects')
+    };
+
     // Pergunta ao usuário qual tipo de visualização deseja
-    const choice = await vscode.window.showQuickPick([
-      {
-        label: "Estatísticas Simples",
-        description: "Visualização básica sem filtros",
-        detail: "Mostra todas as estatísticas de forma agrupada"
-      },
-      {
-        label: "Estatísticas com Filtros",
-        description: "Visualização avançada com filtros por data e projeto",
-        detail: "Permite filtrar dados por período e projetos específicos"
-      }
-    ], {
-      placeHolder: "Escolha o tipo de visualização das estatísticas"
+    const choice = await vscode.window.showQuickPick([simpleStatsItem, filteredStatsItem], {
+      placeHolder: localize('stats.chooseVisualization', 'Choose the type of statistics visualization')
     });
 
     if (!choice) {
-      return; // Usuário cancelou
+      return; // User cancelled
     }
 
-    if (choice.label === "Estatísticas Simples") {
+    if (choice === simpleStatsItem) {
       await this.showSimpleStats();
     } else {
       await this.showStatsWithFilters();
@@ -45,7 +47,7 @@ export class StatsManager {
   async showSimpleStats(): Promise<void> {
     if (!this.dbManager.isInitialized()) {
       vscode.window.showErrorMessage(
-        "Banco de dados não inicializado. Tente novamente mais tarde."
+        localize('stats.dbNotInitialized', 'Database not initialized. Please try again later.')
       );
       return;
     }
@@ -53,23 +55,23 @@ export class StatsManager {
     try {
       // Obtém a lista de projetos com seus totais
       const projectRows = await this.dbManager.query(`
-        SELECT 
-          project, 
-          SUM(duration_seconds) as total_seconds 
-        FROM time_entries 
-        WHERE is_idle = 0 
-        GROUP BY project 
+        SELECT
+          project,
+          SUM(duration_seconds) as total_seconds
+        FROM time_entries
+        WHERE is_idle = 0
+        GROUP BY project
         ORDER BY total_seconds DESC
       `);
 
       // Obtém os detalhes de cada arquivo por projeto
       const fileRows = await this.dbManager.query(`
-        SELECT 
-          project, 
+        SELECT
+          project,
           file,
           SUM(duration_seconds) as file_seconds
-        FROM time_entries 
-        WHERE is_idle = 0 
+        FROM time_entries
+        WHERE is_idle = 0
         GROUP BY project, file
         ORDER BY project, file_seconds DESC
       `);
@@ -97,7 +99,7 @@ export class StatsManager {
 
       // Cria o painel webview usando a classe StatsPanel
       const panel = StatsPanel.createStatsPanel(projectsData);
-      
+
       // Opcional: adicionar handlers para eventos do painel
       panel.onDidDispose(() => {
         // Limpeza quando o painel for fechado
@@ -105,7 +107,7 @@ export class StatsManager {
 
     } catch (error) {
       console.error("Erro ao carregar estatísticas:", error);
-      vscode.window.showErrorMessage("Erro ao carregar estatísticas de tempo.");
+      vscode.window.showErrorMessage(localize('stats.loadError', 'Error loading time statistics.'));
     }
   }
 
@@ -115,7 +117,7 @@ export class StatsManager {
   async showStatsWithFilters(): Promise<void> {
     if (!this.dbManager.isInitialized()) {
       vscode.window.showErrorMessage(
-        "Banco de dados não inicializado. Tente novamente mais tarde."
+        localize('stats.dbNotInitialized', 'Database not initialized. Please try again later.')
       );
       return;
     }
@@ -123,7 +125,7 @@ export class StatsManager {
     try {
       // Obtém todos os dados brutos para filtragem no lado cliente
       const rawData: TimeEntry[] = await this.dbManager.query(`
-        SELECT 
+        SELECT
           id,
           timestamp,
           project,
@@ -131,23 +133,23 @@ export class StatsManager {
           duration_seconds,
           is_idle,
           synced
-        FROM time_entries 
+        FROM time_entries
         ORDER BY timestamp DESC
       `);
 
       // Obtém lista de projetos únicos para o filtro
       const projectsQuery = await this.dbManager.query(`
-        SELECT DISTINCT project 
-        FROM time_entries 
-        WHERE is_idle = 0 
+        SELECT DISTINCT project
+        FROM time_entries
+        WHERE is_idle = 0
         ORDER BY project
       `);
-      
+
       const availableProjects: string[] = projectsQuery.map((row: any) => row.project);
 
       // Cria o painel webview com filtros
       const panel = StatsPanel.createStatsWithFiltersPanel(rawData, availableProjects);
-      
+
       // Adicionar handlers para eventos do painel
       panel.onDidDispose(() => {
         // Limpeza quando o painel for fechado
@@ -155,7 +157,7 @@ export class StatsManager {
 
     } catch (error) {
       console.error("Erro ao carregar estatísticas com filtros:", error);
-      vscode.window.showErrorMessage("Erro ao carregar estatísticas de tempo com filtros.");
+      vscode.window.showErrorMessage(localize('stats.loadFilteredError', 'Error loading time statistics with filters.'));
     }
   }
 }

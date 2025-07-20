@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
@@ -33,7 +34,7 @@ export class DatabaseManager {
       this.db = new sqlite3.Database(dbPath, (err: Error | null) => {
         if (err) {
           vscode.window.showErrorMessage(
-            `Erro ao conectar ao SQLite: ${err.message}`
+            localize('database.connectionError', 'Error connecting to SQLite: {0}', err.message)
           );
           console.error("Erro ao conectar ao SQLite:", err);
           return reject(err);
@@ -54,7 +55,7 @@ export class DatabaseManager {
           (tableErr: Error | null) => {
             if (tableErr) {
               vscode.window.showErrorMessage(
-                `Erro ao criar tabela: ${tableErr.message}`
+                localize('database.tableCreationError', 'Error creating table: {0}', tableErr.message)
               );
               console.error("Erro ao criar tabela:", tableErr);
               return reject(tableErr);
@@ -76,7 +77,7 @@ export class DatabaseManager {
         "Banco de dados não inicializado. Não foi possível salvar os dados."
       );
       vscode.window.showWarningMessage(
-        "Monitoramento de tempo: Banco de dados não está pronto."
+        localize('database.notReady', 'Time Tracking: Database is not ready.')
       );
       return;
     }
@@ -99,7 +100,7 @@ export class DatabaseManager {
           if (error) {
             console.error("Erro ao inserir dados no SQLite:", error);
             vscode.window.showErrorMessage(
-              `Erro ao salvar dados: ${error.message}`
+              localize('database.saveError', 'Error saving data: {0}', error.message)
             );
             reject(error);
           } else {

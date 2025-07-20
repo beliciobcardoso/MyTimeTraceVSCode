@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import { DatabaseManager } from "./modules/database";
 import { StatusBarManager } from "./modules/statusBar";
 import { timeTrace } from "./modules/timeTrace";
@@ -19,7 +20,7 @@ export async function activate(context: vscode.ExtensionContext) {
   
   // Logs de ativação
   console.log("=======================================");
-  console.log('Extensão "my-time-trace-vscode" ativada!');
+  console.log(localize('extension.activated', 'Extension "my-time-trace-vscode" activated!'));
   console.log("Versão: 0.2.0");
   console.log("Data/Hora: " + new Date().toISOString());
   console.log("=======================================");
@@ -90,7 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
   } catch (error) {
     console.error("Falha ao inicializar a extensão:", error);
     vscode.window.showErrorMessage(
-      "Monitoramento de tempo: Falha ao iniciar a extensão."
+      localize('extension.initializationFailed', 'Time Tracking: Failed to initialize the extension.')
     );
   }
 }
@@ -98,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
 // Desativação da extensão
 export function deactivate() {
   console.log("=======================================");
-  console.log('Extensão "my-time-trace-vscode" desativada!');
+  console.log(localize('extension.deactivated', 'Extension "my-time-trace-vscode" deactivated!'));
   console.log("Data/Hora: " + new Date().toISOString());
   console.log("=======================================");
 

@@ -1,4 +1,5 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import { DatabaseManager, ActivityData } from "./database";
 import { StatusBarManager } from "./statusBar";
 import { getConfig } from "./config";
@@ -115,7 +116,7 @@ export class timeTrace {
       }
     }, 1000); // Verifica a cada segundo
 
-    vscode.window.showInformationMessage("Monitoramento de tempo iniciado!");
+    vscode.window.showInformationMessage(localize('timeTrace.trackingStarted', 'Time tracking started!'));
   }
 
   /**
@@ -132,7 +133,7 @@ export class timeTrace {
     }
 
     this.statusBarManager.update(this.currentFile, this.timeSpentOnFile, this.isTracking);
-    vscode.window.showInformationMessage("Monitoramento de tempo pausado!");
+    vscode.window.showInformationMessage(localize('timeTrace.trackingPaused', 'Time tracking paused!'));
   }
 
   /**
