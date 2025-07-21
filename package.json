@@ -61,6 +61,21 @@
         "command": "my-time-trace-vscode.showPomodoroConfig",
         "title": "%my-time-trace-vscode.showPomodoroConfig.title%",
         "icon": "$(gear)"
+      },
+      {
+        "command": "my-time-trace-vscode.testModal",
+        "title": "Test Modal System (Dev)",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "my-time-trace-vscode.testFocusCompleteModal",
+        "title": "Test Focus Complete Modal (Dev)",
+        "icon": "$(clock)"
+      },
+      {
+        "command": "my-time-trace-vscode.testPomodoroIntegration",
+        "title": "Test Pomodoro Integration (Dev)",
+        "icon": "$(debug-alt)"
       }
     ],
     "configuration": {
@@ -105,6 +120,15 @@
         },
         {
           "command": "my-time-trace-vscode.showPomodoroConfig"
+        },
+        {
+          "command": "my-time-trace-vscode.testModal"
+        },
+        {
+          "command": "my-time-trace-vscode.testFocusCompleteModal"
+        },
+        {
+          "command": "my-time-trace-vscode.testPomodoroIntegration"
         }
       ]
     }

@@ -1,5 +1,6 @@
 import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+import * as vscode from 'vscode';
 import * as path from "path";
 import { getConfig } from "./config";
 
@@ -8,6 +9,8 @@ import { getConfig } from "./config";
  */
 export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;
+  private pomodoroStatusBarItem: vscode.StatusBarItem | undefined;
+  private isPomodoroActive: boolean = false;
 
   /**
    * Cria e configura o status bar item
@@ -22,11 +25,26 @@ export class StatusBarManager {
       this.statusBarItem.tooltip = localize('statusBar.tooltip', 'Click to see time statistics');
     }
 
+    // Criar status bar do Pomodoro
+    if (!this.pomodoroStatusBarItem) {
+      this.pomodoroStatusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        999 // Prioridade ligeiramente menor que o principal
+      );
+      this.pomodoroStatusBarItem.command = "my-time-trace-vscode.showPomodoroConfig";
+      this.pomodoroStatusBarItem.tooltip = "Pomodoro Timer - Click to configure";
+    }
+
     const userConfig = getConfig();
     if (userConfig.showInStatusBar) {
       this.statusBarItem.show();
+      // Pomodoro status só aparece quando ativo
+      if (this.isPomodoroActive) {
+        this.pomodoroStatusBarItem.show();
+      }
     } else {
       this.statusBarItem.hide();
+      this.pomodoroStatusBarItem.hide();
     }
   }
 
@@ -73,13 +91,59 @@ export class StatusBarManager {
   }
 
   /**
-   * Libera os recursos do status bar item
+   * Atualiza o status bar do Pomodoro
    */
+  updatePomodoro(icon: string, state: string, time: string, isActive: boolean): void {
+    if (!this.pomodoroStatusBarItem) {
+      return;
+    }
+
+    this.isPomodoroActive = isActive;
+
+    if (isActive) {
+      this.pomodoroStatusBarItem.text = `${icon} ${state} ${time}`;
+      
+      // Cores baseadas no estado
+      if (state.includes('Foco')) {
+        this.pomodoroStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+      } else if (state.includes('Pausado')) {
+        this.pomodoroStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+      } else if (state.includes('Pausa')) {
+        this.pomodoroStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
+      } else {
+        this.pomodoroStatusBarItem.backgroundColor = undefined;
+      }
+
+      const userConfig = getConfig();
+      if (userConfig.showInStatusBar) {
+        this.pomodoroStatusBarItem.show();
+      }
+    } else {
+      this.pomodoroStatusBarItem.hide();
+      this.pomodoroStatusBarItem.backgroundColor = undefined;
+    }
+  }
+
+  /**
+   * Oculta o status bar do Pomodoro
+   */
+  hidePomodoroStatus(): void {
+    this.isPomodoroActive = false;
+    if (this.pomodoroStatusBarItem) {
+      this.pomodoroStatusBarItem.hide();
+      this.pomodoroStatusBarItem.backgroundColor = undefined;
+    }
+  }
   dispose(): void {
     if (this.statusBarItem) {
       this.statusBarItem.dispose();
       this.statusBarItem = undefined;
       console.log("StatusBarItem limpo.");
+    }
+    if (this.pomodoroStatusBarItem) {
+      this.pomodoroStatusBarItem.dispose();
+      this.pomodoroStatusBarItem = undefined;
+      console.log("Pomodoro StatusBarItem limpo.");
     }
   }
 }

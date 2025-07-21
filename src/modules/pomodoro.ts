@@ -3,6 +3,7 @@ const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import * as vscode from 'vscode';
 import { DatabaseManager, PomodoroConfig, PomodoroSession } from './database';
 import { StatusBarManager } from './statusBar';
+import { timeTrace } from './timeTrace';
 
 /**
  * Estados possíveis do Pomodoro
@@ -65,7 +66,8 @@ export class PomodoroManager {
   
   constructor(
     private dbManager: DatabaseManager,
-    private statusBarManager: StatusBarManager
+    private statusBarManager: StatusBarManager,
+    private timeTraceInstance?: timeTrace
   ) {
     console.log('🍅 PomodoroManager inicializado');
   }
@@ -109,7 +111,7 @@ export class PomodoroManager {
         longBreakDuration: 30,
         sessionsUntilLongBreak: 4,
         autoStartBreaks: true,
-        autoStartFocus: false,
+        autoStartFocus: false, // Padrão desativado para não incomodar
         enableSoundAlerts: true,
         enableDesktopNotifications: true,
         enableStatusBarTimer: true,
@@ -376,9 +378,9 @@ export class PomodoroManager {
     this.lastActivityTime = now;
     this.isUserActive = true;
     
-    // Auto-start se configurado e não há sessão ativa
-    if (this.config?.autoStartFocus && this.currentState === PomodoroState.INACTIVE) {
-      console.log('🍅 Auto-iniciando sessão de foco devido à atividade detectada');
+    // Auto-start se configurado e condições forem atendidas
+    if (this.shouldAutoStartFocus()) {
+      console.log('🍅 Auto-iniciando sessão de foco - atividade de codificação detectada');
       this.startFocusSession();
     }
     
@@ -556,7 +558,7 @@ export class PomodoroManager {
   }
 
   /**
-   * Atualiza status bar
+   * Atualiza status bar com informações do Pomodoro
    */
   private updateStatusBar(): void {
     if (!this.config?.enableStatusBarTimer) {
@@ -564,7 +566,8 @@ export class PomodoroManager {
     }
 
     if (this.currentState === PomodoroState.INACTIVE) {
-      // Restaurar status bar normal
+      // Ocultar status bar do Pomodoro quando inativo
+      this.statusBarManager.hidePomodoroStatus();
       return;
     }
 
@@ -573,33 +576,88 @@ export class PomodoroManager {
     const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     
     let icon = '';
-    let backgroundColor: vscode.ThemeColor | undefined;
+    let stateText = '';
     
     switch (this.currentState) {
       case PomodoroState.FOCUS:
         icon = '🍅';
-        backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        stateText = 'Foco';
         break;
       case PomodoroState.FOCUS_PAUSED:
         icon = '⏸️';
-        backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+        stateText = 'Pausado';
         break;
       case PomodoroState.SHORT_BREAK:
-      case PomodoroState.LONG_BREAK:
         icon = '☕';
-        backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
+        stateText = 'Pausa';
+        break;
+      case PomodoroState.LONG_BREAK:
+        icon = '🏖️';
+        stateText = 'Pausa Longa';
+        break;
+      case PomodoroState.BREAK_EXTENDED:
+        icon = '⏰';
+        stateText = 'Pausa Extra';
         break;
     }
     
-    // Atualizar status bar através do StatusBarManager
-    // Implementação específica será feita na integração
-    console.log(`📊 Status: ${icon} ${timeStr}`);
+    // Integrar com statusBarManager existente
+    this.updatePomodoroStatusBar(icon, stateText, timeStr);
   }
 
   /**
-   * Obtém atividade atual (placeholder)
+   * Atualiza status bar especificamente para Pomodoro
+   */
+  private updatePomodoroStatusBar(icon: string, state: string, time: string): void {
+    this.statusBarManager.updatePomodoro(icon, state, time, true);
+  }
+
+  /**
+   * Verifica se a atividade atual é de codificação
+   */
+  private isCodingActivity(): boolean {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return false;
+    }
+    
+    const fileName = editor.document.fileName.toLowerCase();
+    const codingExtensions = [
+      '.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.cpp', '.c', '.cs',
+      '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.dart', '.vue',
+      '.html', '.css', '.scss', '.sass', '.less', '.sql', '.json',
+      '.xml', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf'
+    ];
+    
+    return codingExtensions.some(ext => fileName.endsWith(ext));
+  }
+
+  /**
+   * Verifica se deve iniciar sessão automaticamente
+   */
+  private shouldAutoStartFocus(): boolean {
+    return (
+      this.config?.autoStartFocus === true &&
+      this.currentState === PomodoroState.INACTIVE &&
+      this.isCodingActivity() &&
+      this.timeTraceInstance?.isActivelyCoding() === true
+    );
+  }
+  /**
+   * Obtém atividade atual (usando dados do timeTrace quando disponível)
    */
   private async getCurrentActivity(): Promise<string> {
+    // Tentar obter dados do timeTrace primeiro
+    if (this.timeTraceInstance) {
+      const currentProject = this.timeTraceInstance.getCurrentProject();
+      const currentFile = this.timeTraceInstance.getCurrentFile();
+      
+      if (currentProject && currentFile) {
+        return `${currentProject} - ${currentFile}`;
+      }
+    }
+    
+    // Fallback para dados diretos do VSCode
     const editor = vscode.window.activeTextEditor;
     if (editor) {
       const fileName = editor.document.fileName;
