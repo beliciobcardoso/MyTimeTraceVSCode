@@ -76,6 +76,11 @@
         "command": "my-time-trace-vscode.testPomodoroIntegration",
         "title": "Test Pomodoro Integration (Dev)",
         "icon": "$(debug-alt)"
+      },
+      {
+        "command": "my-time-trace-vscode.testPomodoroSettings",
+        "title": "Test Pomodoro Settings (Dev)",
+        "icon": "$(settings-gear)"
       }
     ],
     "configuration": {

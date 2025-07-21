@@ -9,12 +9,14 @@ export interface ModalConfig {
   id: string;
   title: string;
   content: string;
+  script?: string; // Script customizado para funcionalidades avançadas
   buttons?: ModalButton[];
   closable?: boolean;
   width?: string;
   height?: string;
   className?: string;
   onClose?: () => void;
+  onMessage?: (message: any) => void | Promise<void>; // Handler para mensagens do webview
 }
 
 /**
@@ -99,7 +101,7 @@ export class ModalManager {
 
     // Configurar handlers de mensagens
     panel.webview.onDidReceiveMessage(
-      message => this.handleModalMessage(config.id, message),
+      async message => await this.handleModalMessage(config.id, message),
       undefined,
       this.context.subscriptions
     );
@@ -190,12 +192,23 @@ export class ModalManager {
   /**
    * Manipula mensagens recebidas dos modais
    */
-  private handleModalMessage(modalId: string, message: any): void {
+  private async handleModalMessage(modalId: string, message: any): Promise<void> {
     const config = this.modalConfigs.get(modalId);
     if (!config) {
       return;
     }
 
+    // Primeiro tentar handler customizado
+    if (config.onMessage) {
+      try {
+        await config.onMessage(message);
+        return; // Se handler customizado processar, não continuar
+      } catch (error) {
+        console.error(`❌ Erro no handler customizado do modal ${modalId}:`, error);
+      }
+    }
+
+    // Fallback para handlers padrão
     switch (message.type) {
       case 'buttonClick':
         const button = config.buttons?.find(b => b.id === message.buttonId);
@@ -319,6 +332,8 @@ export class ModalManager {
               closeModal();
             }
           });
+
+          ${config.script || ''}
         </script>
       </body>
       </html>

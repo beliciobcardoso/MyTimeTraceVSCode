@@ -10,6 +10,7 @@ import { getConfig } from "./modules/config";
 import { PomodoroManager } from "./modules/pomodoro";
 import { ModalManager } from "./modules/modal";
 import { FocusCompleteModal } from "./ui/focusCompleteModal";
+import { PomodoroSettingsModal } from "./ui/pomodoroSettingsModal";
 
 // Variáveis globais para gerenciar a extensão
 let globalContext: vscode.ExtensionContext | null = null;
@@ -20,6 +21,7 @@ let statsManager: StatsManager;
 let pomodoroManager: PomodoroManager;
 let modalManager: ModalManager;
 let focusCompleteModal: FocusCompleteModal;
+let pomodoroSettingsModal: PomodoroSettingsModal;
 
 // Ativação da extensão
 export async function activate(context: vscode.ExtensionContext) {
@@ -55,6 +57,10 @@ export async function activate(context: vscode.ExtensionContext) {
     focusCompleteModal = FocusCompleteModal.getInstance();
     focusCompleteModal.initialize(pomodoroManager);
 
+    // Inicializa o Pomodoro Settings Modal
+    pomodoroSettingsModal = PomodoroSettingsModal.getInstance();
+    pomodoroSettingsModal.initialize(pomodoroManager);
+
     // Conecta eventos do Pomodoro com o Modal
     pomodoroManager.setEvents({
       onFocusComplete: async () => {
@@ -80,8 +86,8 @@ export async function activate(context: vscode.ExtensionContext) {
       () => pomodoroManager.pauseSession(),
       () => pomodoroManager.stopSession(),
       async () => {
-        // Placeholder para configurações do Pomodoro - será implementado na FASE 3
-        vscode.window.showInformationMessage('Configurações do Pomodoro em desenvolvimento...');
+        // Abrir configurações avançadas do Pomodoro
+        await pomodoroSettingsModal.showSettings();
       }
     );
 
@@ -209,10 +215,23 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     });
     
+    // Comando de teste para configurações do Pomodoro
+    const testPomodoroSettingsCommand = vscode.commands.registerCommand('my-time-trace-vscode.testPomodoroSettings', async () => {
+      try {
+        console.log('⚙️ Testando configurações do Pomodoro...');
+        await pomodoroSettingsModal.showSettings();
+        console.log('✅ Modal de configurações testado com sucesso!');
+      } catch (error) {
+        console.error('❌ Erro ao testar configurações:', error);
+        vscode.window.showErrorMessage('Erro ao testar configurações do Pomodoro');
+      }
+    });
+    
     commands.push(testModalCommand);
     commands.push(testFocusModalCommand);
     commands.push(testPomodoroIntegrationCommand);
     commands.push(testRealPomodoroCommand);
+    commands.push(testPomodoroSettingsCommand);
 
     // Registra os eventos para monitoramento
     const eventEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
