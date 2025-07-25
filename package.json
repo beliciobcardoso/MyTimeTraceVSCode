@@ -257,6 +257,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
+    "test-complete": "npm run compile && npm run test",
     "i18n": "vscode-nls-dev-create"
   },
   "dependencies": {
