@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas de Tempo com Filtros</title>
+    <style>
+        :root {
+            --vscode-panel-border: #3c3838;
+            --vscode-button-background: #3c3838;
+            --vscode-button-foreground: #c0c0c0;
+            --vscode-button-hoverBackground: #504945;
+            --vscode-button-secondaryBackground: #3c3838;
+            --vscode-button-secondaryForeground: #c0c0c0;
+            --vscode-button-secondaryHoverBackground: #504945;
+            --vscode-list-activeSelectionBackground: #3c3838;
+            --vscode-list-activeSelectionForeground: #c0c0c0;
+            --vscode-list-hoverBackground: #3c3838;
+            --vscode-list-hoverForeground: #c0c0c0;
+            --vscode-input-background: #3c3838;
+            --vscode-input-foreground: #c0c0c0;
+            --vscode-input-border: #3c3838;
+            --vscode-focusBorder: #5a5a5a;
+            --vscode-descriptionForeground: #a0a0a0;
+            --vscode-textBlockQuote-border: #5a5a5a;
+            --vscode-textBlockQuote-background: #3c3838;
+            --vscode-editor-font-family: 'Courier New', Courier, monospace;
+            --vscode-editor-font-size: 14px;
+            --vscode-editor-line-height: 20px;
+            --vscode-editor-foreground: #c0c0c0;
+            --vscode-editor-background: #2e2b2b;
+            --vscode-editor-color: #fff;
+            --vscode-editor-selectionBackground: rgba(255, 255, 0, 0.3);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 0px 20px;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+            padding-top: 80px;
+            /* Espaço para o header fixo */
+        }
+
+        h1 {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
+            margin: 0;
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--vscode-panel-border);
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: var(--vscode-editor-foreground);
+            margin: 0;
+        }
+
+        h2,
+        h3 {
+            margin: 0;
+        }
+
+        .toggle-icon {
+            cursor: pointer;
+            color: var(--vscode-editor-color);
+            font-size: 20px;
+            margin-left: 10px;
+        }
+
+        .toggle-icon:hover {
+            color: #ccc;
+        }
+
+        i {
+            font-style: normal;
+            color: var(--vscode-editor-color);
+            cursor: pointer;
+        }
+
+        .project-header {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            padding: 10px 10px;
+            margin-bottom: 0;
+            margin-top: 10px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .project-header:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 0px;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 5px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        th {
+            background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--vscode-list-hoverBackground);
+            color: var(--vscode-list-hoverForeground);
+        }
+
+        .file-name {
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+        }
+
+        .toggle-icon-up {
+            display: none;
+        }
+
+        .project-section {
+            margin-bottom: 0px;
+            padding: 0px;
+        }
+
+        .filter-main {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            grid-template-columns: 70% 30%;
+        }
+
+        .filters-section {
+            background-color: #424141;
+            border: 1px solid #d1c3c3;
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 20px;
+        }
+
+
+        .filters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--vscode-editor-foreground);
+        }
+
+        .filter-input {
+            padding: 6px 10px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 3px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: inherit;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        select.filter-input {
+            height: auto;
+            min-height: 32px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+
+        .filter-btn:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        .filter-btn.secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .filter-btn.secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        #resultsArea {
+            min-height: 200px;
+        }
+
+        #loadingMessage {
+            text-align: center;
+            padding: 40px;
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+        }
+
+        .stats-summary {
+            background-color: var(--vscode-textBlockQuote-background);
+            border-left: 4px solid var(--vscode-textBlockQuote-border);
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+
+        .stats-summary h4 {
+            margin: 0 0 8px 0;
+            color: var(--vscode-editor-foreground);
+        }
+
+        .stats-summary p {
+            margin: 4px 0;
+            color: var(--vscode-descriptionForeground);
+        }
+    </style>
+</head>
+<h1>Estatísticas de Tempo por Projeto</h1>
+
+<body>
+    <h1>Estatísticas de Tempo por Projeto</h1>
+    <div class="filter-main">
+        <!-- Seção de Filtros -->
+        <div class="filters-section">
+            <div class="filters-container">
+
+                <div class="filter-date">
+                    <div class="filter-group">
+                        <label for="startDate">Data Inicial:</label>
+                        <input type="date" id="startDate" class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="endDate">Data Final:</label>
+                        <input type="date" id="endDate" class="filter-input">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="projectFilter">Projetos:</label>
+                    <select id="projectFilter" multiple class="filter-input">
+                        <option value="">Todos os projetos</option>
+                        <option value="Projeto A">Projeto A</option>
+                        <option value="Projeto B">Projeto B</option>
+                        <option value="Projeto C">Projeto C</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button id="applyFilters" class="filter-btn">Aplicar Filtros</button>
+                <button id="clearFilters" class="filter-btn secondary">Limpar</button>
+            </div>
+        </div>
+        <div class="stats-summary">
+            <h4>Resumo dos Dados Filtrados</h4>
+            <p><strong>Total de entradas:</strong> ${totalEntries}</p>
+            <p><strong>Tempo total:</strong> ${formatTime(totalTime)}</p>
+            <p><strong>Projetos:</strong> ${totalProjects}</p>
+        </div>
+    </div>
+    <!-- Área de resultados -->
+    <div id="resultsArea">
+        <div id="loadingMessage">Carregando estatísticas...</div>
+    </div>
+    <p><em>Dados coletados até: ${new Date().toLocaleString()}</em></p>
+</body>
+<script>
+    // Dados brutos e projetos disponíveis
+    const rawData = {}
+    const availableProjects = {};
+
+    // Funções utilitárias
+    function formatTime(timeInSeconds) {
+        const hours = Math.floor(timeInSeconds / 3600);
+        const minutes = Math.floor((timeInSeconds % 3600) / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+
+        return [
+            hours > 0 ? hours + 'h' : '',
+            minutes > 0 ? minutes + 'm' : '',
+            seconds + 's'
+        ].filter(Boolean).join(' ');
+    }
+
+    function formatFilePath(filePath, projectName) {
+        let displayPath = filePath;
+        if (displayPath.includes(projectName)) {
+            displayPath = displayPath.substring(displayPath.indexOf(projectName));
+        } else if (displayPath === "IDLE" || displayPath === "unknown-file") {
+            // Mantém sem alterações
+        } else {
+            const patterns = ["/home/", "/Users/", "C:\\\\Users\\\\", "/var/", "/tmp/", "C:\\\\"];
+            for (const pattern of patterns) {
+                if (displayPath.includes(pattern)) {
+                    const parts = displayPath.split(pattern);
+                    if (parts.length > 1) {
+                        const userParts = parts[1].split("/");
+                        if (userParts.length > 1) {
+                            displayPath = userParts.slice(1).join("/");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return displayPath;
+    }
+
+    function filterData(data, filters) {
+        return data.filter(entry => {
+            // Filtro por data
+            if (filters.startDate) {
+                const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+                if (entryDate < filters.startDate) return false;
+            }
+
+            if (filters.endDate) {
+                const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+                if (entryDate > filters.endDate) return false;
+            }
+
+            // Filtro por projeto
+            if (filters.projects && filters.projects.length > 0) {
+                if (!filters.projects.includes(entry.project)) return false;
+            }
+
+            // Excluir entradas idle
+            if (entry.is_idle === 1) return false;
+
+            return true;
+        });
+    }
+
+    function convertToProjectsData(filteredData) {
+        const projectsData = {};
+        const projectFileMap = {};
+
+        filteredData.forEach(entry => {
+            if (!projectFileMap[entry.project]) {
+                projectFileMap[entry.project] = {};
+            }
+            if (!projectFileMap[entry.project][entry.file]) {
+                projectFileMap[entry.project][entry.file] = 0;
+            }
+            projectFileMap[entry.project][entry.file] += entry.duration_seconds;
+        });
+
+        Object.entries(projectFileMap).forEach(([projectName, files]) => {
+            const fileData = [];
+            let totalSeconds = 0;
+
+            Object.entries(files).forEach(([fileName, seconds]) => {
+                fileData.push({ name: fileName, seconds });
+                totalSeconds += seconds;
+            });
+
+            fileData.sort((a, b) => b.seconds - a.seconds);
+
+            projectsData[projectName] = {
+                totalSeconds,
+                files: fileData
+            };
+        });
+
+        return projectsData;
+    }
+
+    function generateProjectsHtml(projectsData) {
+        let html = '';
+
+        Object.entries(projectsData).forEach(([projectName, projectData]) => {
+            html += `
+          <div class="project-section">
+            <div class="project-header">
+              <h2>Projeto: \${projectName} - Total \${formatTime(projectData.totalSeconds)}</h2>
+              <i class="toggle-icon toggle-icon-down">▼</i>
+              <i class="toggle-icon toggle-icon-up">▲</i>
+            </div>
+            <table>
+              <tr>
+                <th>Arquivos</th>
+                <th>Tempo</th>
+              </tr>
+          `;
+
+            projectData.files.forEach((file) => {
+                const displayPath = formatFilePath(file.name, projectName);
+                html += `
+            <tr>
+              <td class="file-name">\${displayPath}</td>
+              <td>${formatTime(file.seconds)}</td>
+            </tr>
+            `;
+            });
+
+            html += `
+            </table>
+          </div>
+        `;
+        });
+
+        return html;
+    }
+
+    function addProjectToggleListeners() {
+        const projectSections = document.querySelectorAll('.project-section');
+
+        projectSections.forEach(section => {
+            const table = section.querySelector('table');
+            if (table) {
+                table.style.display = 'none';
+            }
+
+            const toggleIconUp = section.querySelector('.toggle-icon-up');
+            const toggleIconDown = section.querySelector('.toggle-icon-down');
+            if (toggleIconUp && toggleIconDown) {
+                toggleIconUp.style.display = 'none';
+                toggleIconDown.style.display = 'inline';
+            }
+        });
+
+        function toggleProjectVisibility(section) {
+            const table = section.querySelector('table');
+            const toggleIconUp = section.querySelector('.toggle-icon-up');
+            const toggleIconDown = section.querySelector('.toggle-icon-down');
+
+            if (!table || !toggleIconUp || !toggleIconDown) return;
+
+            if (table.style.display === 'none' || table.style.display === '') {
+                table.style.display = 'table';
+                toggleIconUp.style.display = 'inline';
+                toggleIconDown.style.display = 'none';
+            } else {
+                table.style.display = 'none';
+                toggleIconUp.style.display = 'none';
+                toggleIconDown.style.display = 'inline';
+            }
+        }
+
+        projectSections.forEach(section => {
+            const header = section.querySelector('.project-header');
+            if (header) {
+                header.addEventListener('click', () => {
+                    toggleProjectVisibility(section);
+                });
+            }
+        });
+    }
+
+    function updateResults() {
+        const filters = {
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value,
+            projects: Array.from(document.getElementById('projectFilter').selectedOptions).map(option => option.value).filter(v => v)
+        };
+
+        const filteredData = filterData(rawData, filters);
+        const projectsData = convertToProjectsData(filteredData);
+
+        const resultsArea = document.getElementById('resultsArea');
+
+        if (Object.keys(projectsData).length === 0) {
+            resultsArea.innerHTML = '<div id="loadingMessage">Nenhum dado encontrado para os filtros selecionados.</div>';
+            return;
+        }
+
+        // Gera resumo
+        const totalEntries = filteredData.length;
+        const totalTime = Object.values(projectsData).reduce((sum, project) => sum + project.totalSeconds, 0);
+        const totalProjects = Object.keys(projectsData).length;
+
+        const summaryHtml = `
+          <div class="stats-summary">
+            <h4>Resumo dos Dados Filtrados</h4>
+            <p><strong>Total de entradas:</strong> ${totalEntries}</p>
+            <p><strong>Tempo total:</strong> ${formatTime(totalTime)}</p>
+            <p><strong>Projetos:</strong> ${totalProjects}</p>
+          </div>
+        `;
+
+        resultsArea.innerHTML = summaryHtml + generateProjectsHtml(projectsData);
+        addProjectToggleListeners();
+
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+    }
+
+    // Event listeners
+    document.getElementById('applyFilters').addEventListener('click', updateResults);
+
+    document.getElementById('clearFilters').addEventListener('click', () => {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('projectFilter').selectedIndex = -1;
+        updateResults();
+    });
+
+    // Carregar dados iniciais
+    updateResults();
+</script>
+
+</html>

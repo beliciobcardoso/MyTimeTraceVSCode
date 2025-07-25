@@ -1,0 +1,565 @@
+/* =================================================================
+   MODAL BASE STYLES - My Time Trace VSCode Extension
+   Estilos base para todos os modais do sistema Pomodoro
+   ================================================================= */
+
+/* Reset e base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Estilos específicos para Pomodoro */
+.modal-focus {
+    border-left: 4px solid var(--vscode-charts-red);
+}
+
+.modal-break {
+    border-left: 4px solid var(--vscode-charts-orange);
+}
+
+.modal-complete {
+    border-left: 4px solid var(--vscode-charts-blue);
+}
+
+.modal-settings {
+    border-left: 4px solid var(--vscode-charts-purple);
+}
+
+/* Estilos específicos para Focus Complete Alert Modal */
+.modal-focus-alert .modal-container {
+    border: 2px solid var(--vscode-charts-red);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+    animation: focusAlertPulse 2s ease-in-out infinite;
+    max-height: 90vh;
+    overflow-y: auto;
+    will-change: transform, box-shadow, border-color;
+}
+
+@keyframes focusAlertPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        border-color: var(--vscode-charts-red);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+        border-color: rgba(255, 0, 0, 0.8);
+        transform: scale(1.01);
+    }
+}
+
+.modal-focus-alert .modal-header {
+    background: linear-gradient(90deg, var(--vscode-charts-red), var(--vscode-charts-orange));
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 4px;
+}
+
+.focus-alert-container {
+    text-align: center;
+    padding: 0px;
+    line-height: 1.6;
+}
+
+.alert-icon {
+    margin-bottom: 0px;
+}
+
+.icon-large {
+    font-size: 48px;
+    display: inline-block;
+    animation: bounce 1.5s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-15px);
+    }
+
+    60% {
+        transform: translateY(-8px);
+    }
+}
+
+.alert-message h2 {
+    color: var(--vscode-charts-red);
+    margin: 0 0 15px 0;
+    font-size: 24px;
+}
+
+.focus-duration {
+    font-size: 18px;
+    margin: 15px 0;
+    color: var(--vscode-foreground);
+}
+
+.focus-duration strong {
+    color: var(--vscode-charts-red);
+    font-size: 20px;
+}
+
+.recommendation {
+    font-size: 16px;
+    color: var(--vscode-descriptionForeground);
+    margin: 20px 0;
+    line-height: 1.5;
+}
+
+.benefits-section {
+    background: var(--vscode-editor-inactiveSelectionBackground);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+    text-align: left;
+    border: 1px solid var(--vscode-widget-border);
+}
+
+.benefits-section h3 {
+    margin: 0 0 15px 0;
+    color: var(--vscode-charts-blue);
+    font-size: 16px;
+    text-align: center;
+}
+
+.benefits-list {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--vscode-foreground);
+    list-style-type: disc;
+}
+
+.benefits-list li {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    padding-left: 5px;
+}
+
+.action-prompt {
+    margin: 25px 0 15px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--vscode-foreground);
+}
+
+/* Botões específicos do Focus Alert */
+.break-button {
+    background: linear-gradient(135deg, var(--vscode-charts-green), var(--vscode-charts-blue)) !important;
+    color: white !important;
+    font-weight: bold;
+    min-width: 180px;
+    animation: pulseGreen 2s ease-in-out infinite;
+    transform-origin: center;
+    will-change: transform, box-shadow;
+}
+
+@keyframes pulseGreen {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+    }
+}
+
+.continue-button {
+    background: linear-gradient(135deg, var(--vscode-charts-orange), var(--vscode-charts-red)) !important;
+    color: white !important;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.continue-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(255, 165, 0, 0.4);
+}
+
+.settings-button {
+    background: var(--vscode-button-secondaryBackground) !important;
+    color: var(--vscode-button-secondaryForeground) !important;
+    border: 2px solid var(--vscode-charts-purple);
+    min-width: 140px;
+    transition: all 0.3s ease;
+}
+
+.settings-button:hover {
+    background: var(--vscode-charts-purple) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(128, 0, 128, 0.3);
+}
+
+body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background: transparent;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Overlay principal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Container principal do modal */
+.modal-container {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+    min-width: 400px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideIn 0.3s ease-out;
+    overflow: hidden;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Header do modal */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--vscode-titleBar-activeBackground);
+    border-bottom: 1px solid var(--vscode-widget-border);
+    flex-shrink: 0;
+}
+
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--vscode-titleBar-activeForeground);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--vscode-titleBar-activeForeground);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+}
+
+.modal-close:active {
+    background: var(--vscode-toolbar-activeBackground);
+}
+
+/* Conteúdo do modal */
+.modal-content {
+    flex: 1;
+    padding: 2px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: var(--vscode-scrollbarSlider-background);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* Footer com botões */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--vscode-editor-background);
+    border-top: 1px solid var(--vscode-widget-border);
+    flex-shrink: 0;
+}
+
+/* Estilos dos botões */
+.modal-button {
+    padding: 8px 16px;
+    border: 1px solid var(--vscode-button-border);
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.modal-button:hover {
+    background: var(--vscode-button-hoverBackground);
+    transform: translateY(-1px);
+}
+
+.modal-button:active {
+    transform: translateY(0);
+    background: var(--vscode-button-hoverBackground);
+}
+
+.modal-button.primary {
+    background: var(--vscode-button-primaryBackground);
+    color: var(--vscode-button-primaryForeground);
+    border-color: var(--vscode-button-primaryBackground);
+    font-weight: 600;
+}
+
+.modal-button.primary:hover {
+    background: var(--vscode-button-primaryHoverBackground);
+    border-color: var(--vscode-button-primaryHoverBackground);
+}
+
+.modal-button.secondary {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border-color: var(--vscode-button-secondaryBackground);
+}
+
+.modal-button.secondary:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+    border-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.modal-button.danger {
+    background: var(--vscode-errorForeground);
+    color: var(--vscode-editor-background);
+    border-color: var(--vscode-errorForeground);
+}
+
+.modal-button.danger:hover {
+    background: var(--vscode-errorForeground);
+    opacity: 0.9;
+}
+
+.modal-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Classes utilitárias */
+.text-center {
+    text-align: center;
+}
+
+.text-large {
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+.text-medium {
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.text-small {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.margin-bottom {
+    margin-bottom: 16px;
+}
+
+.margin-top {
+    margin-top: 16px;
+}
+
+.padding-large {
+    padding: 24px;
+}
+
+.padding-small {
+    padding: 12px;
+}
+
+/* Responsividade */
+@media (max-width: 500px) {
+    .modal-container {
+        min-width: 320px;
+        margin: 10px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    .modal-header,
+    .modal-footer {
+        padding: 2px 16px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-button {
+        width: 100%;
+    }
+}
+
+/* Temas específicos (Dark/Light mode) */
+body[data-vscode-theme-kind="vscode-dark"] .modal-container {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+body[data-vscode-theme-kind="vscode-light"] .modal-container {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Estados especiais para Pomodoro */
+.modal-focus {
+    border-left: 4px solid #ff6b6b;
+}
+
+.modal-break {
+    border-left: 4px solid #feca57;
+}
+
+.modal-complete {
+    border-left: 4px solid #48cae4;
+}
+
+.modal-settings {
+    border-left: 4px solid #9b59b6;
+}
+
+/* Animações de entrada específicas */
+.modal-container.modal-alert {
+    animation: modalShake 0.5s ease-out;
+}
+
+@keyframes modalShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-3px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(3px);
+    }
+}
+
+/* Indicadores visuais */
+.modal-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+    display: block;
+    text-align: center;
+}
+
+.modal-timer {
+    font-size: 32px;
+    font-weight: bold;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    margin: 20px 0;
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--vscode-textCodeBlock-background);
+    border: 1px solid var(--vscode-widget-border);
+}
+
+.modal-progress {
+    width: 100%;
+    height: 8px;
+    background: var(--vscode-progressBar-background);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.modal-progress-bar {
+    height: 100%;
+    background: var(--vscode-progressBar-foreground);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}

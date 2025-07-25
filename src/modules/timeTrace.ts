@@ -1,4 +1,6 @@
-import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+import * as vscode from 'vscode';
 import { DatabaseManager, ActivityData } from "./database";
 import { StatusBarManager } from "./statusBar";
 import { getConfig } from "./config";
@@ -115,7 +117,7 @@ export class timeTrace {
       }
     }, 1000); // Verifica a cada segundo
 
-    vscode.window.showInformationMessage("Monitoramento de tempo iniciado!");
+    vscode.window.showInformationMessage(localize('timeTrace.trackingStarted', 'Time tracking started!'));
   }
 
   /**
@@ -132,7 +134,7 @@ export class timeTrace {
     }
 
     this.statusBarManager.update(this.currentFile, this.timeSpentOnFile, this.isTracking);
-    vscode.window.showInformationMessage("Monitoramento de tempo pausado!");
+    vscode.window.showInformationMessage(localize('timeTrace.trackingPaused', 'Time tracking paused!'));
   }
 
   /**
@@ -212,6 +214,36 @@ export class timeTrace {
    */
   isCurrentlyTracking(): boolean {
     return this.isTracking;
+  }
+
+  /**
+   * Verifica se está ativamente codificando (não apenas idle)
+   */
+  isActivelyCoding(): boolean {
+    const now = Date.now();
+    const config = getConfig();
+    const timeSinceLastActivity = now - this.lastActiveTime;
+    
+    return (
+      this.isTracking &&
+      this.currentFile !== undefined &&
+      this.currentFile !== "IDLE" &&
+      timeSinceLastActivity < config.IDLE_TIMEOUT_MS
+    );
+  }
+
+  /**
+   * Obtém arquivo atual sendo rastreado
+   */
+  getCurrentFile(): string | undefined {
+    return this.currentFile;
+  }
+
+  /**
+   * Obtém projeto atual sendo rastreado
+   */
+  getCurrentProject(): string | undefined {
+    return this.projectRoot;
   }
 
   /**

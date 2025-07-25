@@ -1,0 +1,15 @@
+{
+    "my-time-trace-vscode.displayName": "My Time Trace VSCode",
+    "my-time-trace-vscode.description": "Monitor your time spent on files and projects in VS Code with a modern interface and advanced filters",
+    "my-time-trace-vscode.startTracking.title": "My Time Trace: Start Tracking",
+    "my-time-trace-vscode.pauseTracking.title": "My Time Trace: Pause Tracking",
+    "my-time-trace-vscode.showStats.title": "My Time Trace: Show Stats",
+    "my-time-trace-vscode.startPomodoroFocus.title": "Pomodoro: Start Focus Session",
+    "my-time-trace-vscode.pausePomodoroSession.title": "Pomodoro: Pause Session",
+    "my-time-trace-vscode.stopPomodoroSession.title": "Pomodoro: Stop Session",
+    "my-time-trace-vscode.showPomodoroConfig.title": "Pomodoro: Open Settings",
+    "my-time-trace-vscode.configuration.title": "MyTimeTraceVSCode",
+    "my-time-trace-vscode.configuration.properties.idleTimeout.description": "Time in minutes before considering the user inactive",
+    "my-time-trace-vscode.configuration.properties.autoStart.description": "Start tracking automatically when opening VS Code",
+    "my-time-trace-vscode.configuration.properties.showInStatusBar.description": "Show the time spent in the status bar"
+}

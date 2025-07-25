@@ -27,10 +27,15 @@ export class CommandManager {
   static registerCommands(
     startTracking: () => void,
     pauseTracking: () => void,
-    showStats: () => void
+    showStats: () => void,
+    startPomodoroFocus?: () => Promise<void>,
+    pausePomodoroSession?: () => Promise<void>,
+    stopPomodoroSession?: () => Promise<void>,
+    showPomodoroConfig?: () => Promise<void>
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
+    // Comandos existentes
     commands.push(
       CommandManager.safeRegisterCommand("my-time-trace-vscode.startTracking", startTracking)
     );
@@ -42,6 +47,31 @@ export class CommandManager {
     commands.push(
       CommandManager.safeRegisterCommand("my-time-trace-vscode.showStats", showStats)
     );
+
+    // Comandos do Pomodoro
+    if (startPomodoroFocus) {
+      commands.push(
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.startPomodoroFocus", startPomodoroFocus)
+      );
+    }
+
+    if (pausePomodoroSession) {
+      commands.push(
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.pausePomodoroSession", pausePomodoroSession)
+      );
+    }
+
+    if (stopPomodoroSession) {
+      commands.push(
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.stopPomodoroSession", stopPomodoroSession)
+      );
+    }
+
+    if (showPomodoroConfig) {
+      commands.push(
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.showPomodoroConfig", showPomodoroConfig)
+      );
+    }
 
     return commands;
   }
