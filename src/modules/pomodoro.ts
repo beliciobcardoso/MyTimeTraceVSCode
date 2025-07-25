@@ -34,7 +34,9 @@ export enum ActivityType {
 export interface PomodoroEvents {
   onStateChange?: (state: PomodoroState) => void;
   onTimeUpdate?: (remainingSeconds: number) => void;
+  onFocusStart?: (duration: number) => void;
   onFocusComplete?: () => void;
+  onBreakStart?: (duration: number, type: 'short' | 'long') => void;
   onBreakComplete?: () => void;
   onSessionComplete?: (session: PomodoroSession) => void;
 }
@@ -298,6 +300,9 @@ export class PomodoroManager {
       // Iniciar timer de foco
       this.startFocusTimer();
       
+      // Disparar evento de início de foco
+      this.events.onFocusStart?.(this.config!.focusDuration);
+      
       // Mostrar notificação
       if (this.config!.enableDesktopNotifications) {
         vscode.window.showInformationMessage(
@@ -348,6 +353,9 @@ export class PomodoroManager {
       
       // Iniciar timer de pausa
       this.startBreakTimer();
+      
+      // Disparar evento de início de pausa
+      this.events.onBreakStart?.(duration, type);
       
       // Mostrar notificação
       if (this.config!.enableDesktopNotifications) {

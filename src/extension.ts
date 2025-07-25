@@ -74,8 +74,14 @@ export async function activate(context: vscode.ExtensionContext) {
     pomodoroSettingsModal = PomodoroSettingsModal.getInstance();
     pomodoroSettingsModal.initialize(pomodoroManager);
 
-    // Conecta eventos do Pomodoro com o Modal
+    // Conecta eventos do Pomodoro com Modals e Notificações
     pomodoroManager.setEvents({
+      onFocusStart: async (duration: number) => {
+        // Notificação de início de foco
+        if (pomodoroManager.getConfig()?.enableDesktopNotifications) {
+          await desktopNotificationManager.showFocusStartNotification(duration);
+        }
+      },
       onFocusComplete: async () => {
         // Disparar modal quando foco completa (45 minutos)
         await focusCompleteModal.showFocusCompleteAlert({
@@ -83,6 +89,23 @@ export async function activate(context: vscode.ExtensionContext) {
           canContinue: true,
           continueMinutes: 5
         });
+        
+        // Notificação de foco completo
+        if (pomodoroManager.getConfig()?.enableDesktopNotifications) {
+          await desktopNotificationManager.showFocusCompleteNotification(45);
+        }
+      },
+      onBreakStart: async (duration: number, type: 'short' | 'long') => {
+        // Notificação de início de pausa
+        if (pomodoroManager.getConfig()?.enableDesktopNotifications) {
+          await desktopNotificationManager.showBreakStartNotification(duration);
+        }
+      },
+      onBreakComplete: async () => {
+        // Notificação de fim de pausa
+        if (pomodoroManager.getConfig()?.enableDesktopNotifications) {
+          await desktopNotificationManager.showBreakCompleteNotification();
+        }
       }
     });
 
@@ -251,6 +274,58 @@ export async function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         console.error('❌ Erro ao testar configurações:', error);
         vscode.window.showErrorMessage('Erro ao testar configurações do Pomodoro');
+      }
+    });
+    
+    // Comando de teste para notificações automáticas do Pomodoro
+    const testPomodoroAutoNotificationsCommand = CommandManager.safeRegisterCommand('my-time-trace-vscode.testPomodoroAutoNotifications', async () => {
+      try {
+        console.log('🔔 Testando notificações automáticas do Pomodoro...');
+        
+        vscode.window.showInformationMessage(
+          '🧪 Iniciando teste de notificações automáticas. Você verá notificações quando eventos do Pomodoro acontecerem.',
+          'Iniciar Teste'
+        );
+        
+        // Habilitar notificações temporariamente para o teste
+        await pomodoroManager.updateConfig({
+          enableDesktopNotifications: true,
+          focusDuration: 0.1, // 6 segundos para teste rápido
+          shortBreakDuration: 0.1 // 6 segundos para teste rápido
+        });
+        
+        console.log('📋 Configuração temporária aplicada (6s para foco e pausa)');
+        
+        // Aguardar 1 segundo e iniciar sessão
+        setTimeout(async () => {
+          console.log('🎯 Iniciando sessão de foco (deve disparar notificação)...');
+          await pomodoroManager.startFocusSession();
+          
+          // Após 7 segundos, iniciar pausa
+          setTimeout(async () => {
+            console.log('☕ Iniciando pausa (deve disparar notificação)...');
+            await pomodoroManager.startBreakSession('short');
+            
+            // Após mais 7 segundos, mostrar resultado
+            setTimeout(() => {
+              console.log('✅ Teste de notificações automáticas concluído!');
+              vscode.window.showInformationMessage(
+                '✅ Teste concluído! Você deve ter visto 4 notificações: início foco, fim foco, início pausa, fim pausa.',
+                'OK'
+              );
+              
+              // Restaurar configurações padrão
+              pomodoroManager.updateConfig({
+                focusDuration: 45,
+                shortBreakDuration: 15
+              });
+            }, 8000);
+          }, 7000);
+        }, 1000);
+        
+      } catch (error) {
+        console.error('❌ Erro ao testar notificações automáticas:', error);
+        vscode.window.showErrorMessage('Erro ao testar notificações automáticas do Pomodoro');
       }
     });
     
@@ -608,6 +683,7 @@ export async function activate(context: vscode.ExtensionContext) {
     commands.push(testPomodoroIntegrationCommand);
     commands.push(testRealPomodoroCommand);
     commands.push(testPomodoroSettingsCommand);
+    commands.push(testPomodoroAutoNotificationsCommand);
     commands.push(testSoundSystemCommand);
     commands.push(testSyntheticSoundsCommand);
     commands.push(testSpecialSoundsCommand);

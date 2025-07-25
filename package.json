@@ -83,6 +83,11 @@
         "icon": "$(settings-gear)"
       },
       {
+        "command": "my-time-trace-vscode.testPomodoroAutoNotifications",
+        "title": "Test Pomodoro Auto Notifications (Dev)",
+        "icon": "$(bell)"
+      },
+      {
         "command": "my-time-trace-vscode.testSoundSystem",
         "title": "Test Sound System (Dev)",
         "icon": "$(unmute)"

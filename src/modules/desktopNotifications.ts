@@ -362,6 +362,30 @@ export class DesktopNotificationManager {
   /**
    * Métodos de conveniência para tipos específicos
    */
+  public showFocusStartNotification(duration: number, options?: Partial<NotificationConfig>): Promise<NotificationResult> {
+    return this.showNotification({
+      title: '🎯 Foco Iniciado!',
+      message: `Sessão de foco de ${duration} minutos iniciada.`,
+      type: NotificationType.INFO,
+      priority: 'normal',
+      duration: 3, // Auto-dismiss após 3 segundos
+      actions: [
+        {
+          id: 'ok',
+          title: 'OK'
+        },
+        {
+          id: 'config',
+          title: 'Configurações',
+          onClick: async () => {
+            await vscode.commands.executeCommand('my-time-trace-vscode.showPomodoroConfig');
+          }
+        }
+      ],
+      ...options
+    });
+  }
+
   public showFocusCompleteNotification(duration: number, options?: Partial<NotificationConfig>): Promise<NotificationResult> {
     return this.showNotification({
       title: '🎯 Foco Completo!',
