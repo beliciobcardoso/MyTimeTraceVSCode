@@ -1,5 +1,6 @@
 import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+import * as vscode from 'vscode';
 
 /**
  * Interface para dados de arquivo com tempo

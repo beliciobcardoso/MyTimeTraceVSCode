@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { DatabaseManager, PomodoroConfig, PomodoroSession } from './database';
 import { StatusBarManager } from './statusBar';
 import { timeTrace } from './timeTrace';
+import { VisualState } from './visualEffectsManager';
 
 /**
  * Estados possíveis do Pomodoro
@@ -134,7 +135,12 @@ export class PomodoroManager {
    * Notifica sobre mudança de estado
    */
   private notifyStateChange(newState: PomodoroState): void {
+    const oldState = this.currentState;
     this.currentState = newState;
+    
+    // Aplicar efeitos visuais baseados no estado
+    this.applyVisualEffects(newState, oldState);
+    
     this.events.onStateChange?.(newState);
     this.updateStatusBar();
   }
@@ -145,6 +151,119 @@ export class PomodoroManager {
   private notifyTimeUpdate(): void {
     this.events.onTimeUpdate?.(this.remainingTime);
     this.updateStatusBar();
+    this.updateVisualProgress();
+  }
+
+  /**
+   * Aplica efeitos visuais baseados no estado do Pomodoro
+   */
+  private applyVisualEffects(newState: PomodoroState, oldState: PomodoroState): void {
+    const visualState = this.mapPomodoroToVisualState(newState);
+    const isTransition = oldState !== newState;
+    
+    console.log(`🎨 Aplicando efeito visual: ${oldState} → ${newState} (${visualState})`);
+    
+    // Definir estado visual com animação se for transição
+    this.statusBarManager.setVisualState(visualState, {
+      animated: isTransition,
+      duration: isTransition ? 1000 : 0
+    });
+    
+    // Efeitos especiais para estados específicos
+    switch (newState) {
+      case PomodoroState.FOCUS:
+        // Pulsação sutil durante foco
+        this.statusBarManager.startPulseEffect(VisualState.FOCUS_ACTIVE, 3000);
+        this.statusBarManager.showNotificationFlash('🎯 Sessão de foco iniciada!', 'info');
+        break;
+        
+      case PomodoroState.FOCUS_PAUSED:
+        this.statusBarManager.stopPulseEffect();
+        this.statusBarManager.showNotificationFlash('⏸️ Foco pausado', 'warning');
+        break;
+        
+      case PomodoroState.SHORT_BREAK:
+      case PomodoroState.LONG_BREAK:
+        this.statusBarManager.stopPulseEffect();
+        this.statusBarManager.showNotificationFlash('☕ Hora do intervalo!', 'success');
+        break;
+        
+      case PomodoroState.INACTIVE:
+        this.statusBarManager.stopPulseEffect();
+        break;
+    }
+  }
+
+  /**
+   * Mapeia estado do Pomodoro para estado visual
+   */
+  private mapPomodoroToVisualState(pomodoroState: PomodoroState): VisualState {
+    switch (pomodoroState) {
+      case PomodoroState.FOCUS:
+        return VisualState.FOCUS_ACTIVE;
+      case PomodoroState.FOCUS_PAUSED:
+        return VisualState.PAUSED;
+      case PomodoroState.SHORT_BREAK:
+      case PomodoroState.LONG_BREAK:
+      case PomodoroState.BREAK_EXTENDED:
+        return VisualState.BREAK_ACTIVE;
+      case PomodoroState.INACTIVE:
+      default:
+        return VisualState.IDLE;
+    }
+  }
+
+  /**
+   * Atualiza progresso visual baseado no tempo restante
+   */
+  private updateVisualProgress(): void {
+    if (!this.config || this.currentState === PomodoroState.INACTIVE) {
+      return;
+    }
+
+    let totalTime: number;
+    let visualState: VisualState;
+
+    switch (this.currentState) {
+      case PomodoroState.FOCUS:
+      case PomodoroState.FOCUS_PAUSED:
+        totalTime = this.config.focusDuration * 60;
+        visualState = this.currentState === PomodoroState.FOCUS 
+          ? VisualState.FOCUS_ACTIVE 
+          : VisualState.PAUSED;
+        break;
+      case PomodoroState.SHORT_BREAK:
+        totalTime = this.config.shortBreakDuration * 60;
+        visualState = VisualState.BREAK_ACTIVE;
+        break;
+      case PomodoroState.LONG_BREAK:
+        totalTime = this.config.longBreakDuration * 60;
+        visualState = VisualState.BREAK_ACTIVE;
+        break;
+      default:
+        return;
+    }
+
+    const elapsed = totalTime - this.remainingTime;
+    const percentage = Math.round((elapsed / totalTime) * 100);
+    
+    // Mudar para estado de "ending" nos últimos 10%
+    if (percentage >= 90) {
+      if (this.currentState === PomodoroState.FOCUS) {
+        visualState = VisualState.FOCUS_ENDING;
+      } else if (this.currentState === PomodoroState.SHORT_BREAK || this.currentState === PomodoroState.LONG_BREAK) {
+        visualState = VisualState.BREAK_ENDING;
+      }
+    }
+
+    this.statusBarManager.updateVisualProgress(percentage, visualState);
+    
+    // Alertas visuais em momentos chave
+    if (percentage === 75) {
+      this.statusBarManager.showNotificationFlash('75% completo!', 'info');
+    } else if (percentage === 90) {
+      this.statusBarManager.showNotificationFlash('Quase terminando...', 'warning');
+    }
   }
 
   /**

@@ -3,6 +3,7 @@ const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import * as vscode from 'vscode';
 import * as path from "path";
 import { getConfig } from "./config";
+import { VisualEffectsManager, VisualState } from "./visualEffectsManager";
 
 /**
  * Classe responsável por gerenciar o status bar item
@@ -11,6 +12,11 @@ export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;
   private pomodoroStatusBarItem: vscode.StatusBarItem | undefined;
   private isPomodoroActive: boolean = false;
+  private visualEffects: VisualEffectsManager;
+
+  constructor() {
+    this.visualEffects = VisualEffectsManager.getInstance();
+  }
 
   /**
    * Cria e configura o status bar item
@@ -23,6 +29,9 @@ export class StatusBarManager {
       );
       this.statusBarItem.command = "my-time-trace-vscode.showStats";
       this.statusBarItem.tooltip = localize('statusBar.tooltip', 'Click to see time statistics');
+      
+      // Inicializar efeitos visuais com o status bar principal
+      this.visualEffects.initialize(this.statusBarItem);
     }
 
     // Criar status bar do Pomodoro
@@ -133,8 +142,64 @@ export class StatusBarManager {
       this.pomodoroStatusBarItem.hide();
       this.pomodoroStatusBarItem.backgroundColor = undefined;
     }
+    // Resetar estado visual
+    this.visualEffects.setState(VisualState.IDLE);
   }
+
+  /**
+   * Controles de efeitos visuais
+   */
+  
+  /**
+   * Define estado visual do sistema
+   */
+  setVisualState(state: VisualState, options?: {
+    animated?: boolean;
+    message?: string;
+    duration?: number;
+  }): void {
+    this.visualEffects.setState(state, options);
+  }
+
+  /**
+   * Exibe notificação flash
+   */
+  showNotificationFlash(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info'): void {
+    this.visualEffects.notificationFlash(message, type);
+  }
+
+  /**
+   * Inicia efeito de pulsação
+   */
+  startPulseEffect(state: VisualState, interval?: number): void {
+    this.visualEffects.startPulseEffect(state, interval);
+  }
+
+  /**
+   * Para efeito de pulsação
+   */
+  stopPulseEffect(): void {
+    this.visualEffects.stopPulseEffect();
+  }
+
+  /**
+   * Atualiza progresso visual
+   */
+  updateVisualProgress(percentage: number, state: VisualState): void {
+    this.visualEffects.updateProgress(percentage, state);
+  }
+
+  /**
+   * Obtém manager de efeitos visuais
+   */
+  getVisualEffects(): VisualEffectsManager {
+    return this.visualEffects;
+  }
+
   dispose(): void {
+    // Limpar efeitos visuais
+    this.visualEffects.dispose();
+    
     if (this.statusBarItem) {
       this.statusBarItem.dispose();
       this.statusBarItem = undefined;

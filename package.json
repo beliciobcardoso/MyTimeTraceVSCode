@@ -81,6 +81,56 @@
         "command": "my-time-trace-vscode.testPomodoroSettings",
         "title": "Test Pomodoro Settings (Dev)",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "my-time-trace-vscode.testSoundSystem",
+        "title": "Test Sound System (Dev)",
+        "icon": "$(unmute)"
+      },
+      {
+        "command": "my-time-trace-vscode.testSyntheticSounds",
+        "title": "Test Synthetic Sounds (Dev)",
+        "icon": "$(music)"
+      },
+      {
+        "command": "my-time-trace-vscode.testSpecialSounds",
+        "title": "Test Special Sounds (Dev)",
+        "icon": "$(bell-dot)"
+      },
+      {
+        "command": "my-time-trace-vscode.testWavSounds",
+        "title": "Test WAV Audio Files (Dev)",
+        "icon": "$(file-media)"
+      },
+      {
+        "command": "my-time-trace-vscode.testVisualEffects",
+        "title": "Test Visual Effects (Dev)",
+        "icon": "$(color-mode)"
+      },
+      {
+        "command": "my-time-trace-vscode.previewSound",
+        "title": "Preview Sound (Dev)",
+        "icon": "$(play)"
+      },
+      {
+        "command": "my-time-trace-vscode.testRealAudio",
+        "title": "Test Real Audio (Dev)",
+        "icon": "$(music)"
+      },
+      {
+        "command": "my-time-trace-vscode.testSystemBeeps",
+        "title": "Test System Beeps (Dev)",
+        "icon": "$(bell)"
+      },
+      {
+        "command": "my-time-trace-vscode.testDesktopNotifications",
+        "title": "Test Desktop Notifications (Dev)",
+        "icon": "$(bell-dot)"
+      },
+      {
+        "command": "my-time-trace-vscode.testPomodoroNotifications",
+        "title": "Test Pomodoro Notifications (Dev)",
+        "icon": "$(bell-slash)"
       }
     ],
     "configuration": {
@@ -100,6 +150,62 @@
           "type": "boolean",
           "default": true,
           "description": "%my-time-trace-vscode.configuration.properties.showInStatusBar.description%"
+        },
+        "myTimeTrace.notifications.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable desktop notifications"
+        },
+        "myTimeTrace.notifications.soundEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable sound with notifications"
+        },
+        "myTimeTrace.notifications.focusNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications when focus sessions complete"
+        },
+        "myTimeTrace.notifications.breakNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for break periods"
+        },
+        "myTimeTrace.notifications.doNotDisturb": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable do not disturb mode (only urgent notifications)"
+        },
+        "myTimeTrace.notifications.quietHours.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable quiet hours (suppresses non-urgent notifications)"
+        },
+        "myTimeTrace.notifications.quietHours.start": {
+          "type": "string",
+          "default": "22:00",
+          "description": "Quiet hours start time (HH:MM format)"
+        },
+        "myTimeTrace.notifications.quietHours.end": {
+          "type": "string",
+          "default": "08:00",
+          "description": "Quiet hours end time (HH:MM format)"
+        },
+        "myTimeTrace.notifications.priority.minimumLevel": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "urgent"
+          ],
+          "default": "normal",
+          "description": "Minimum priority level for showing notifications"
+        },
+        "myTimeTrace.notifications.priority.focusMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "In focus mode, only show urgent notifications"
         }
       }
     },
