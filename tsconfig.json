@@ -7,7 +7,6 @@
 			"ES2022"
 		],
 		"sourceMap": true,
-		"rootDir": "src",
 		"strict": true, /* enable all strict type-checking options */
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
@@ -21,7 +20,8 @@
 		]
 	},
 	"include": [
-		"src/**/*.ts"
+		"src/**/*.ts",
+		"test/**/*.ts"
 	],
 	"exclude": [
 		"node_modules",
