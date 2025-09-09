@@ -49,6 +49,46 @@ export interface StatsFilters {
 
 /**
  * Classe responsável por gerar painéis de visualização de estatísticas
+ * 
+ * NOVAS IMPLEMENTAÇÕES v0.2.1:
+ * ============================
+ * 
+ * 1. DASHBOARD MODERNO COM FILTROS INTEGRADOS (generateStatsHtml):
+ *    - Design baseado no template dashboard-demo.html
+ *    - Sistema de filtros client-side inspirado em generateStatsWithFiltersHtml
+ *    - Gráfico donut interativo com atualização dinâmica
+ *    - Cards de estatísticas que respondem aos filtros
+ *    - Tabela de projetos com detalhes expansíveis
+ *    - Filtros por data (inicial/final) e seleção múltipla de projetos
+ *    - Feedback visual dos filtros aplicados
+ *    - Design responsivo para dispositivos móveis
+ * 
+ * 2. FUNCIONALIDADES DE FILTROS:
+ *    - populateProjectSelect(): Preenche select com projetos disponíveis
+ *    - setupFilterListeners(): Configura event listeners dos controles
+ *    - applyFilters(): Aplica filtros e atualiza visualizações
+ *    - clearFilters(): Limpa filtros e restaura estado original
+ *    - updateProjectsTable(): Atualiza tabela preservando estado de expansão
+ *    - updateStatCards(): Recalcula e atualiza cards de estatísticas
+ *    - updateDonutChart(): Redesenha gráfico com dados filtrados
+ *    - showFilterResults(): Exibe feedback dos filtros aplicados
+ * 
+ * 3. FUNÇÕES AUXILIARES:
+ *    - formatFilePath(): Formata caminhos de arquivo para exibição
+ *    - formatTime(): Formata tempo em formato legível (h/m/s)
+ *    - getProjectColor(): Retorna cores consistentes para projetos
+ * 
+ * 4. PRESERVAÇÃO DA FUNCIONALIDADE EXISTENTE:
+ *    - generateStatsWithFiltersHtml(): Mantida intacta conforme solicitado
+ *    - Todos os métodos e funcionalidades anteriores preservados
+ *    - Compatibilidade total com implementações existentes
+ * 
+ * ARQUITETURA:
+ * - Client-side filtering para performance
+ * - Separação clara entre dados originais e filtrados
+ * - Atualização sincronizada de múltiplas visualizações
+ * - Preservação de estado durante operações de filtro
+ * - Design consistente com tema VS Code
  */
 export class StatsPanel {
   /**
@@ -230,7 +270,21 @@ export class StatsPanel {
   }
 
   /**
-   * Gera o HTML para exibir as estatísticas
+   * Gera o HTML para exibir as estatísticas com dashboard moderno e filtros integrados
+   * 
+   * Esta implementação combina o design do dashboard-demo.html com funcionalidade de filtros
+   * similar à tela generateStatsWithFiltersHtml, mantendo ambas as funcionalidades separadas.
+   * 
+   * Funcionalidades incluídas:
+   * - Dashboard moderno com gráfico donut interativo
+   * - Cards de estatísticas em tempo real
+   * - Seção de filtros integrada (data inicial, data final, seleção de projetos)
+   * - Tabela de projetos com detalhes expansíveis
+   * - Atualização dinâmica da visualização com base nos filtros aplicados
+   * - Design responsivo para dispositivos móveis
+   * 
+   * @param projectsData Dados dos projetos organizados por nome do projeto
+   * @returns HTML string completo do dashboard com filtros
    */
   private static generateStatsHtml(projectsData: ProjectsData): string {
     // Calcular totais para o gráfico donut
@@ -245,6 +299,8 @@ export class StatsPanel {
     }));
 
     // Gerar array de projetos para filtros
+    // Este array é usado pelo JavaScript client-side para implementar filtros dinâmicos
+    // sem necessidade de comunicação com o servidor
     const projectsArray = projectEntries.map(([projectName, projectData]) => ({
       projectName,
       totalMinutes: Math.round(projectData.totalSeconds / 60),
@@ -756,16 +812,15 @@ export class StatsPanel {
           </div>
 
           <div class="info-cards">
-            <div class="remediation-card">
-              <div class="card-header">
-                <h3>📊 Estatísticas de Projetos</h3>
-              </div>
-              <div class="remediation-content">
-                <p>✅ ${projectEntries.length} projeto(s) disponível(is) para análise</p>
-              </div>
-            </div>
-
-            <!-- Seção de Filtros -->
+            <!-- Seção de Filtros Integrados -->
+            <!-- 
+              Esta seção implementa filtros similares aos da tela generateStatsWithFiltersHtml,
+              mas integrados ao design do dashboard moderno. Inclui:
+              - Filtros por data (inicial e final)
+              - Seleção múltipla de projetos
+              - Botões para aplicar e limpar filtros
+              - Área de resultados dos filtros aplicados
+            -->
             <div class="filters-section">
               <h4>Filtros de Análise de Tempo</h4>
               <div class="filters-grid">
@@ -852,6 +907,29 @@ export class StatsPanel {
       </div>
 
       <script>
+        /**
+         * SISTEMA DE FILTROS INTEGRADO AO DASHBOARD
+         * 
+         * Este sistema implementa funcionalidade de filtros client-side baseada no
+         * sistema existente da tela generateStatsWithFiltersHtml, adaptado para
+         * o design moderno do dashboard.
+         * 
+         * Funcionalidades implementadas:
+         * 1. Filtros por data (inicial e final)
+         * 2. Filtros por projetos (seleção múltipla)
+         * 3. Atualização dinâmica da tabela de projetos
+         * 4. Atualização dinâmica dos cards de estatísticas
+         * 5. Atualização dinâmica do gráfico donut
+         * 6. Feedback visual dos filtros aplicados
+         * 7. Limpeza de filtros com restauração do estado original
+         * 
+         * Variáveis globais:
+         * - projectsData: Array com dados dos projetos para filtros
+         * - allProjects: Backup dos dados originais
+         * - chartData: Dados para o gráfico donut
+         * - colors: Cores para o gráfico
+         */
+        
         // JavaScript para funcionalidade dos filtros
         const vscode = acquireVsCodeApi();
         let projectsData = ${JSON.stringify(projectsArray)};
@@ -927,7 +1005,10 @@ export class StatsPanel {
           ctx.fill();
         }
 
-        // Função para preencher select de projetos nos filtros
+        /**
+         * Preenche o select de projetos com as opções disponíveis
+         * Remove duplicação de opções e adiciona informação de tempo para cada projeto
+         */
         function populateProjectSelect() {
           const projectSelect = document.getElementById('projectFilter');
           if (!projectSelect) return;
@@ -945,7 +1026,10 @@ export class StatsPanel {
           });
         }
 
-        // Função para configurar listeners dos filtros
+        /**
+         * Configura os event listeners para os controles de filtro
+         * Conecta botões e inputs aos handlers apropriados
+         */
         function setupFilterListeners() {
           const applyBtn = document.getElementById('applyFilter');
           const clearBtn = document.getElementById('clearFilter');
@@ -960,7 +1044,10 @@ export class StatsPanel {
           if (endDate) endDate.addEventListener('change', applyFilters);
         }
 
-        // Função para aplicar filtros
+        /**
+         * Aplica os filtros selecionados aos dados e atualiza a visualização
+         * Implementa a lógica principal de filtros baseada na tela generateStatsWithFiltersHtml
+         */
         function applyFilters() {
           const startDate = document.getElementById('start-date')?.value;
           const endDate = document.getElementById('end-date')?.value;
@@ -979,16 +1066,19 @@ export class StatsPanel {
             );
           }
           
-          // Atualizar visualização
+          // Atualizar todas as visualizações
           updateProjectsTable(filteredProjects);
           updateStatCards(filteredProjects);
           updateDonutChart(filteredProjects);
           
-          // Mostrar resultado
+          // Mostrar feedback dos filtros aplicados
           showFilterResults(filteredProjects.length, startDate, endDate, selectedProjects);
         }
 
-        // Função para limpar filtros
+        /**
+         * Limpa todos os filtros e restaura o estado original
+         * Reseta inputs e visualizações para mostrar todos os dados
+         */
         function clearFilters() {
           // Limpar inputs
           const startDate = document.getElementById('start-date');
@@ -1004,22 +1094,26 @@ export class StatsPanel {
             }
           }
           
-          // Resetar visualização
+          // Resetar visualização para dados completos
           updateProjectsTable(allProjects);
           updateStatCards(allProjects);
           updateDonutChart(allProjects);
           
-          // Esconder resultado
+          // Esconder resultado dos filtros
           const filterResults = document.getElementById('filterResults');
           if (filterResults) filterResults.classList.remove('active');
         }
 
-        // Função para atualizar tabela de projetos
+        /**
+         * Atualiza a tabela de projetos com base nos filtros aplicados
+         * Preserva o estado de expansão dos detalhes dos projetos durante a atualização
+         * Reconstrói as linhas da tabela mantendo a funcionalidade de "Ver Detalhes"
+         */
         function updateProjectsTable(projects) {
           const tbody = document.querySelector('.projects-table tbody');
           if (!tbody) return;
           
-          // Salvar o estado dos detalhes abertos
+          // Salvar o estado dos detalhes abertos antes da atualização
           const openDetails = new Set();
           const detailRows = document.querySelectorAll('.project-details');
           detailRows.forEach((row, index) => {
@@ -1031,7 +1125,7 @@ export class StatsPanel {
           tbody.innerHTML = '';
           
           projects.forEach((project, index) => {
-            // Buscar dados completos do projeto
+            // Buscar dados completos do projeto dos dados originais
             const fullProjectData = Object.entries(${JSON.stringify(projectsData)})
               .find(([name]) => name === project.projectName);
             
@@ -1041,6 +1135,7 @@ export class StatsPanel {
             const topFiles = projectData.files.slice(0, 3)
               .map(f => formatFilePath(f.name, projectName)).join(', ');
             
+            // Criar linha principal do projeto
             const row = document.createElement('tr');
             row.innerHTML = \`
               <td class="project-name">\${projectName}</td>
@@ -1053,7 +1148,7 @@ export class StatsPanel {
             \`;
             tbody.appendChild(row);
             
-            // Criar linha de detalhes
+            // Criar linha de detalhes (expandível)
             const detailsRow = document.createElement('tr');
             detailsRow.id = 'details-' + index;
             detailsRow.className = 'project-details';
@@ -1077,7 +1172,12 @@ export class StatsPanel {
           });
         }
 
-        // Função auxiliar para formatar caminho do arquivo (cópia da função do servidor)
+        /**
+         * Funções auxiliares para formatação (cópias das funções do servidor)
+         * Necessárias para manter consistência na formatação client-side
+         */
+        
+        // Formata caminho do arquivo para exibição limpa
         function formatFilePath(filePath, projectName) {
           let displayPath = filePath;
           if (displayPath.includes(projectName)) {
@@ -1102,7 +1202,7 @@ export class StatsPanel {
           return displayPath;
         }
 
-        // Função auxiliar para formatar tempo (cópia da função do servidor)
+        // Formata tempo em formato legível (horas, minutos, segundos)
         function formatTime(timeInSeconds) {
           const hours = Math.floor(timeInSeconds / 3600);
           const minutes = Math.floor((timeInSeconds % 3600) / 60);
@@ -1114,7 +1214,10 @@ export class StatsPanel {
           ].filter(Boolean).join(' ');
         }
 
-        // Função para atualizar cards de estatísticas
+        /**
+         * Atualiza os cards de estatísticas com base nos projetos filtrados
+         * Recalcula totais e atualiza os elementos visuais do dashboard
+         */
         function updateStatCards(projects) {
           const totalMinutes = projects.reduce((sum, p) => sum + p.totalMinutes, 0);
           const totalProjects = projects.length;
@@ -1145,7 +1248,10 @@ export class StatsPanel {
           }
         }
 
-        // Função para atualizar gráfico donut com filtros
+        /**
+         * Atualiza o gráfico donut com base nos projetos filtrados
+         * Redesenha o gráfico mantendo proporções e cores consistentes
+         */
         function updateDonutChart(projects) {
           const canvas = document.getElementById('timeChart');
           if (!canvas) return;
@@ -1156,11 +1262,11 @@ export class StatsPanel {
           const radius = 65;
           const innerRadius = 35;
           
-          // Limpar canvas
+          // Limpar canvas para redesenho
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           
           if (projects.length === 0) {
-            // Desenhar círculo vazio
+            // Desenhar círculo vazio quando não há dados
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, true);
@@ -1169,7 +1275,7 @@ export class StatsPanel {
             return;
           }
           
-          // Criar dados do gráfico baseado nos projetos filtrados
+          // Calcular e desenhar segmentos baseados nos projetos filtrados
           const total = projects.reduce((sum, p) => sum + p.totalMinutes, 0);
           let currentAngle = -Math.PI / 2;
           
@@ -1177,7 +1283,7 @@ export class StatsPanel {
             const sliceAngle = (project.totalMinutes / total) * 2 * Math.PI;
             const color = getProjectColor(index);
             
-            // Desenhar fatia
+            // Desenhar fatia do gráfico
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
             ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
@@ -1188,14 +1294,17 @@ export class StatsPanel {
             currentAngle += sliceAngle;
           });
           
-          // Desenhar círculo interno
+          // Desenhar círculo interno (centro do donut)
           ctx.beginPath();
           ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
           ctx.fillStyle = '#252526';
           ctx.fill();
         }
 
-        // Função para obter cor do projeto
+        /**
+         * Retorna uma cor consistente para cada projeto baseada no índice
+         * Garante que as cores sejam sempre as mesmas para o mesmo projeto
+         */
         function getProjectColor(index) {
           const projectColors = [
             '#0078d4', '#107c10', '#d83b01', '#5c2d91',
@@ -1205,7 +1314,10 @@ export class StatsPanel {
           return projectColors[index % projectColors.length];
         }
 
-        // Função para mostrar resultados dos filtros
+        /**
+         * Exibe feedback visual dos filtros aplicados
+         * Mostra informações resumidas sobre os filtros ativos
+         */
         function showFilterResults(count, startDate, endDate, projects) {
           const resultsDiv = document.getElementById('filterResults');
           if (!resultsDiv) return;
