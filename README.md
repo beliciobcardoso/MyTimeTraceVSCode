@@ -49,7 +49,7 @@ No momento, esta extensão está em desenvolvimento e não está disponível no 
 1. Clone o repositório
 2. Execute `npm install` para instalar as dependências
 3. Execute `npm run compile` para compilar o TypeScript
-4. Execute `F5` para testar em modo debug ou crie um VSIX com `vsce package`
+4. Execute `F5` para testar em modo debug com o arquivo `src/extension.ts` aberto ou crie um VSIX com `vsce package`
 
 ## Configurações da Extensão
 

@@ -53,51 +53,39 @@ export class StatsManager {
     }
 
     try {
-      // Obtém a lista de projetos com seus totais
-      const projectRows = await this.dbManager.query(`
-        SELECT
-          project,
-          SUM(duration_seconds) as total_seconds
-        FROM time_entries
-        WHERE is_idle = 0
-        GROUP BY project
-        ORDER BY total_seconds DESC
-      `);
-
-      // Obtém os detalhes de cada arquivo por projeto
-      const fileRows = await this.dbManager.query(`
+      // Obtém dados já filtrados (sem IDLE) e processados
+      const processedData = await this.dbManager.query(`
         SELECT
           project,
           file,
-          SUM(duration_seconds) as file_seconds
+          SUM(duration_seconds) as total_seconds
         FROM time_entries
         WHERE is_idle = 0
         GROUP BY project, file
-        ORDER BY project, file_seconds DESC
+        ORDER BY project, total_seconds DESC
       `);
 
-      // Agrupa os arquivos por projeto
+      // Converte para o formato ProjectsData
       const projectsData: ProjectsData = {};
-
-      // Inicializa os projetos com os dados totais
-      projectRows.forEach((project) => {
-        projectsData[project.project] = {
-          totalSeconds: project.total_seconds,
-          files: [],
-        };
-      });
-
-      // Adiciona os arquivos aos seus projetos correspondentes
-      fileRows.forEach((fileRow) => {
-        if (projectsData[fileRow.project]) {
-          projectsData[fileRow.project].files.push({
-            name: fileRow.file,
-            seconds: fileRow.file_seconds,
-          });
+      
+      processedData.forEach((row: any) => {
+        const projectName = row.project;
+        if (!projectsData[projectName]) {
+          projectsData[projectName] = {
+            totalSeconds: 0,
+            files: []
+          };
         }
+        
+        projectsData[projectName].files.push({
+          name: row.file,
+          seconds: row.total_seconds
+        });
+        
+        projectsData[projectName].totalSeconds += row.total_seconds;
       });
 
-      // Cria o painel webview usando a classe StatsPanel
+      // Cria o painel básico (sem filtros)
       const panel = StatsPanel.createStatsPanel(projectsData);
 
       // Opcional: adicionar handlers para eventos do painel

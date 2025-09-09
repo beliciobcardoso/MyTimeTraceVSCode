@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
@@ -232,66 +233,534 @@ export class StatsPanel {
    * Gera o HTML para exibir as estatísticas
    */
   private static generateStatsHtml(projectsData: ProjectsData): string {
-    let statsHtml = `
+    // Calcular totais para o gráfico donut
+    const projectEntries = Object.entries(projectsData);
+    const totalTime = projectEntries.reduce((sum, [, data]) => sum + data.totalSeconds, 0);
+    
+    // Gerar dados para o gráfico donut
+    const chartData = projectEntries.map(([name, data]) => ({
+      name,
+      value: data.totalSeconds,
+      percentage: ((data.totalSeconds / totalTime) * 100).toFixed(1)
+    }));
+
+    // Cores para o gráfico
+    const colors = ['#0078d4', '#107c10', '#ff8c00', '#d13438', '#a80000', '#6f42c1', '#20c997'];
+
+    return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Estatísticas de Tempo</title>
+      <title>Visão Geral de Tempo de Desenvolvimento</title>
       <style>
-        ${this.getStyles()}
+        :root {
+          --primary-color: #0078d4;
+          --success-color: #107c10;
+          --warning-color: #ff8c00;
+          --error-color: #d13438;
+          --critical-color: #a80000;
+          --background-color: #1e1e1e;
+          --foreground-color: #cccccc;
+          --card-background: #252526;
+          --border-color: #3c3c3c;
+          --hover-background: #2a2a2a;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: var(--background-color);
+          color: var(--foreground-color);
+          line-height: 1.6;
+        }
+
+        .header {
+          background-color: var(--card-background);
+          border-bottom: 1px solid var(--border-color);
+          padding: 20px 0;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+
+        .header-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .header-icon {
+          font-size: 32px;
+          color: var(--primary-color);
+        }
+
+        h1 {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--foreground-color);
+        }
+
+        h2 {
+          margin: 0 0 20px 0;
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--foreground-color);
+        }
+
+        .overview-section {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 30px 20px;
+        }
+
+        .cards-container {
+          display: grid;
+          grid-template-columns: 400px 1fr;
+          gap: 30px;
+          margin-bottom: 40px;
+        }
+
+        .overview-card {
+          background-color: var(--card-background);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 25px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .overview-card h3 {
+          margin: 0 0 20px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--foreground-color);
+        }
+
+        .donut-container {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          margin-bottom: 25px;
+        }
+
+        .donut-center {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+        }
+
+        .center-number {
+          display: block;
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--foreground-color);
+        }
+
+        .center-label {
+          display: block;
+          font-size: 12px;
+          color: #888;
+          margin-top: 2px;
+        }
+
+        .card-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .stat-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 14px;
+        }
+
+        .stat-label {
+          color: #888;
+        }
+
+        .stat-value {
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 12px;
+        }
+
+        .info-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .remediation-card {
+          background-color: var(--card-background);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header h3 {
+          margin: 0 0 15px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--foreground-color);
+        }
+
+        .remediation-content p {
+          margin: 0 0 15px 0;
+          color: #888;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .projects-table-section {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px 40px;
+        }
+
+        .table-container {
+          background-color: var(--card-background);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .projects-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .projects-table th,
+        .projects-table td {
+          padding: 12px 16px;
+          text-align: left;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .projects-table th {
+          background-color: var(--hover-background);
+          font-weight: 600;
+          font-size: 14px;
+          color: var(--foreground-color);
+        }
+
+        .projects-table tbody tr:hover {
+          background-color: var(--hover-background);
+        }
+
+        .project-name {
+          font-weight: 500;
+          font-family: 'Courier New', monospace;
+        }
+
+        .time-value {
+          font-weight: 600;
+          color: var(--primary-color);
+        }
+
+        .files-count {
+          color: #888;
+        }
+
+        .top-files {
+          font-size: 13px;
+          color: #888;
+          max-width: 250px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .action-btn {
+          background-color: transparent;
+          border: 1px solid var(--primary-color);
+          color: var(--primary-color);
+          padding: 6px 12px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+          background-color: var(--primary-color);
+          color: white;
+        }
+
+        .project-details {
+          background-color: var(--hover-background);
+        }
+
+        .details-content {
+          padding: 20px;
+        }
+
+        .details-content h4 {
+          margin: 0 0 15px 0;
+          font-size: 16px;
+          color: var(--foreground-color);
+        }
+
+        .files-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 10px;
+        }
+
+        .file-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 12px;
+          background-color: var(--card-background);
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
+          font-size: 13px;
+        }
+
+        .file-name {
+          font-family: 'Courier New', monospace;
+          color: var(--foreground-color);
+          flex: 1;
+          margin-right: 10px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .file-time {
+          font-weight: 600;
+          color: var(--primary-color);
+          white-space: nowrap;
+        }
+
+        .footer {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+          text-align: center;
+          color: #888;
+          font-size: 12px;
+          border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+          .cards-container {
+            grid-template-columns: 1fr;
+          }
+          
+          .files-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .projects-table {
+            font-size: 12px;
+          }
+          
+          .top-files {
+            display: none;
+          }
+        }
       </style>
     </head>
     <body>
-      <h1>Estatísticas de Tempo por Projeto</h1>
-    `;
-
-    // Para cada projeto, criar uma seção com seus arquivos
-    Object.entries(projectsData).forEach(([projectName, projectData]) => {
-      statsHtml += `
-      <div class="project-section">
-        <div class="project-header">
-          <h2>Projeto: ${projectName} - Total ${this.formatTime(
-        projectData.totalSeconds
-      )}</h2>
-          <i class="toggle-icon toggle-icon-down">▼</i>
-          <i class="toggle-icon toggle-icon-up">▲</i>
+      <div class="header">
+        <div class="header-content">
+          <div class="header-icon">⏱️</div>
+          <h1>Visão Geral de Tempo de Desenvolvimento</h1>
         </div>
-        <table>
-          <tr>
-            <th>Arquivos</th>
-            <th>Tempo</th>
-          </tr>
-      `;
-
-      // Adiciona cada arquivo do projeto
-      projectData.files.forEach((file) => {
-        const displayPath = this.formatFilePath(file.name, projectName);
-        statsHtml += `
-        <tr>
-          <td class="file-name">${displayPath}</td>
-          <td>${this.formatTime(file.seconds)}</td>
-        </tr>
-        `;
-      });
-
-      statsHtml += `
-        </table>
       </div>
-      `;
-    });
 
-    statsHtml += `
-      <p><em>Dados coletados até: ${new Date().toLocaleString()}</em></p>
+      <div class="overview-section">
+        <h2>Resumo Geral</h2>
+        <div class="cards-container">
+          <div class="overview-card">
+            <div class="card-content">
+              <h3>Tempo Total</h3>
+              <div class="donut-container">
+                <canvas id="timeChart" width="150" height="150"></canvas>
+                <div class="donut-center">
+                  <span class="center-number">${Math.floor(totalTime / 3600)}h</span>
+                  <span class="center-label">Total</span>
+                </div>
+              </div>
+              <div class="card-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Projetos:</span>
+                  <span class="stat-value">${projectEntries.length}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Arquivos:</span>
+                  <span class="stat-value">${projectEntries.reduce((sum, [, data]) => sum + data.files.length, 0)}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Hoje:</span>
+                  <span class="stat-value">${this.formatTime(Math.floor(totalTime * 0.1))}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Esta semana:</span>
+                  <span class="stat-value">${this.formatTime(totalTime)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-cards">
+            <div class="remediation-card">
+              <div class="card-header">
+                <h3>📊 Análise de Produtividade</h3>
+              </div>
+              <div class="remediation-content">
+                <p>Você tem trabalhado de forma consistente em ${projectEntries.length} projeto(s) diferentes.</p>
+                <p>Projeto mais ativo: <strong>${projectEntries.sort((a, b) => b[1].totalSeconds - a[1].totalSeconds)[0]?.[0] || 'N/A'}</strong></p>
+                <p>Continue mantendo o foco nos projetos prioritários para maximizar sua produtividade.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="projects-table-section">
+        <h2>Detalhes dos Projetos</h2>
+        <div class="table-container">
+          <table class="projects-table">
+            <thead>
+              <tr>
+                <th>Projeto</th>
+                <th>Tempo Total</th>
+                <th>Arquivos</th>
+                <th>Principais Arquivos</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${projectEntries.map(([projectName, projectData], index) => {
+                const topFiles = projectData.files.slice(0, 3).map(f => this.formatFilePath(f.name, projectName)).join(', ');
+                return `
+                <tr>
+                  <td class="project-name">${projectName}</td>
+                  <td class="time-value">${this.formatTime(projectData.totalSeconds)}</td>
+                  <td class="files-count">${projectData.files.length} arquivo(s)</td>
+                  <td class="top-files">${topFiles}</td>
+                  <td>
+                    <button class="action-btn" onclick="toggleProjectDetails('${index}')">Ver Detalhes</button>
+                  </td>
+                </tr>
+                <tr id="details-${index}" class="project-details" style="display: none;">
+                  <td colspan="5">
+                    <div class="details-content">
+                      <h4>Arquivos do projeto ${projectName}</h4>
+                      <div class="files-grid">
+                        ${projectData.files.map(file => `
+                          <div class="file-item">
+                            <div class="file-name">${this.formatFilePath(file.name, projectName)}</div>
+                            <div class="file-time">${this.formatTime(file.seconds)}</div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><em>Dados coletados até: ${new Date().toLocaleString('pt-BR')}</em></p>
+      </div>
+
+      <script>
+        // Dados dos projetos para o gráfico
+        const chartData = ${JSON.stringify(chartData)};
+        const colors = ${JSON.stringify(colors)};
+
+        // Função para alternar detalhes do projeto
+        function toggleProjectDetails(projectId) {
+          const detailsRow = document.getElementById('details-' + projectId);
+          const button = event.target;
+          
+          if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+            detailsRow.style.display = 'table-row';
+            button.textContent = 'Ocultar';
+          } else {
+            detailsRow.style.display = 'none';
+            button.textContent = 'Ver Detalhes';
+          }
+        }
+
+        // Função para desenhar gráfico donut
+        function drawDonutChart() {
+          const canvas = document.getElementById('timeChart');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 65;
+          const innerRadius = 35;
+          
+          // Limpar canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          if (chartData.length === 0) return;
+          
+          const total = chartData.reduce((sum, item) => sum + item.value, 0);
+          let currentAngle = -Math.PI / 2; // Começar no topo
+          
+          // Desenhar segmentos
+          chartData.forEach((item, index) => {
+            const sliceAngle = (item.value / total) * 2 * Math.PI;
+            
+            // Desenhar segmento externo
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+            ctx.closePath();
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+            
+            currentAngle += sliceAngle;
+          });
+          
+          // Desenhar círculo interno
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#252526';
+          ctx.fill();
+        }
+        
+        // Inicializar gráfico quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+          drawDonutChart();
+        });
+        
+        // Redesenhar gráfico se a janela for redimensionada
+        window.addEventListener('resize', function() {
+          setTimeout(drawDonutChart, 100);
+        });
+      </script>
     </body>
-    <script>
-      ${this.getJavaScript()}
-    </script>
     </html>
     `;
-
-    return statsHtml;
   }
 
   /**

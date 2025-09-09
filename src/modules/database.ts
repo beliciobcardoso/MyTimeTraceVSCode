@@ -1,8 +1,10 @@
+import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
+
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 export interface ActivityData {
   timestamp: string;

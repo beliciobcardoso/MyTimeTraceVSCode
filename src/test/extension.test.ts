@@ -1400,7 +1400,9 @@ suite("Extension Test Suite", function () {
       // Mock do vscode.window para criar webview
       const mockWebviewPanel = {
         webview: {
-          html: ""
+          html: "",
+          onDidReceiveMessage: sinon.stub().returns({ dispose: sinon.stub() }),
+          postMessage: sinon.stub()
         },
         onDidDispose: sinon.stub().returns({ dispose: sinon.stub() })
       };
@@ -1420,7 +1422,9 @@ suite("Extension Test Suite", function () {
         
         const callArgs = createWebviewStub.getCall(0).args;
         assert.strictEqual(callArgs[0], "myTimeTraceStats", "ViewType deveria ser correto");
-        assert.strictEqual(callArgs[1], "Estatísticas de Tempo", "Título deveria ser correto");
+        // Aceita tanto em português quanto em inglês devido aos testes
+        const expectedTitles = ["Estatísticas de Tempo", "Time Statistics"];
+        assert.ok(expectedTitles.includes(callArgs[1]), `Título deveria ser um dos esperados: ${expectedTitles.join(' ou ')}, mas foi: ${callArgs[1]}`);
         
         // Verificar se o HTML foi definido
         assert.ok(
@@ -1456,7 +1460,9 @@ suite("Extension Test Suite", function () {
         
         const callArgs = createWebviewStub2.getCall(0).args;
         assert.strictEqual(callArgs[0], "myTimeTraceStatsFiltered", "ViewType deveria ser correto para filtros");
-        assert.strictEqual(callArgs[1], "Estatísticas de Tempo com Filtros", "Título deveria ser correto para filtros");
+        // Aceita tanto em português quanto em inglês devido aos testes
+        const expectedTitlesFilters = ["Estatísticas de Tempo com Filtros", "Time Statistics with Filters"];
+        assert.ok(expectedTitlesFilters.includes(callArgs[1]), `Título deveria ser um dos esperados: ${expectedTitlesFilters.join(' ou ')}, mas foi: ${callArgs[1]}`);
         
         // Verificar se o HTML contém dados brutos e filtros
         const html = mockWebviewPanel.webview.html;
@@ -1554,7 +1560,7 @@ suite("Extension Test Suite", function () {
         
         const errorMessage = showErrorMessageStub.getCall(0).args[0];
         assert.ok(
-          errorMessage.includes("Banco de dados não inicializado"),
+          errorMessage.includes("Banco de dados não inicializado") || errorMessage.includes("Database not initialized"),
           "Mensagem de erro deveria mencionar banco não inicializado"
         );
         
@@ -1587,7 +1593,7 @@ suite("Extension Test Suite", function () {
         
         const errorMessage = showErrorMessageStub2.getCall(0).args[0];
         assert.ok(
-          errorMessage.includes("Erro ao carregar estatísticas"),
+          errorMessage.includes("Erro ao carregar estatísticas") || errorMessage.includes("Error loading time statistics"),
           "Mensagem de erro deveria mencionar falha ao carregar estatísticas"
         );
         

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Análise de Tempo com Filtros</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --success-color: #107c10;
+            --warning-color: #ff8c00;
+            --error-color: #d13438;
+            --critical-color: #a80000;
+            --background-color: #1e1e1e;
+            --foreground-color: #ffffff;
+            --card-background: #252526;
+            --border-color: #3c3c3c;
+            --hover-background: #2a2a2a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--foreground-color);
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            font-size: 32px;
+            color: var(--primary-color);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--foreground-color);
+        }
+
+        .overview-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .chart-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tpa-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--foreground-color);
+        }
+
+        .tpa-content p {
+            margin: 0 0 15px 0;
+            color: #888;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Estilos para os filtros de análise */
+        .filters-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: var(--hover-background);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .filters-section h4 {
+            margin: 0 0 16px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--foreground-color);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--foreground-color);
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-background);
+            color: var(--foreground-color);
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+        }
+
+        .filter-select {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .apply-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .apply-btn:hover {
+            background-color: #0e6e0e;
+        }
+
+        .clear-btn {
+            background-color: #3a3a3a;
+            color: var(--foreground-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .clear-btn:hover {
+            background-color: #4a4a4a;
+        }
+
+        .cta-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .cta-button:hover {
+            background-color: #106ebe;
+        }
+
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .filter-actions {
+                justify-content: stretch;
+            }
+
+            .filter-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-icon">⏱️</div>
+            <h1>Visão Geral de Tempo de Desenvolvimento</h1>
+        </div>
+    </div>
+
+    <div class="overview-section">
+        <div class="cards-container">
+            <div class="chart-card">
+                <div class="card-header">
+                    <h3>📊 Resumo Geral</h3>
+                </div>
+                <div class="chart-content">
+                    <canvas id="timeChart" width="120" height="120"></canvas>
+                    <div class="total-time">
+                        <strong>1200 segundos</strong>
+                        <span>Tempo Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tpa-card">
+                <div class="card-header">
+                    <h3>Explorar Análise de Tempo</h3>
+                </div>
+                <div class="tpa-content">
+                    <p>Confira nossa nova Análise de Tempo para obter visibilidade e insights sobre seu perfil de desenvolvimento, por exemplo, explorando arquivos mais trabalhados ou analisando padrões.</p>
+                    
+                    <!-- Seção de Filtros -->
+                    <div class="filters-section">
+                        <h4>Filtros de Análise</h4>
+                        <div class="filters-grid">
+                            <div class="filter-group">
+                                <label for="start-date">Data Inicial:</label>
+                                <input type="date" id="start-date" class="filter-input">
+                            </div>
+                            <div class="filter-group">
+                                <label for="end-date">Data Final:</label>
+                                <input type="date" id="end-date" class="filter-input">
+                            </div>
+                            <div class="filter-group">
+                                <label for="project-select">Selecionar Projetos:</label>
+                                <select id="project-select" class="filter-select" multiple>
+                                    <option value="">Todos os Projetos</option>
+                                    <option value="projeto-alpha">projeto-alpha</option>
+                                    <option value="projeto-beta">projeto-beta</option>
+                                    <option value="projeto-gamma">projeto-gamma</option>
+                                    <option value="my-app">my-app</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="filter-btn apply-btn" onclick="applyTimeFilters()">Aplicar Filtros</button>
+                            <button class="filter-btn clear-btn" onclick="clearTimeFilters()">Limpar Filtros</button>
+                        </div>
+                    </div>
+                    
+                    <button class="cta-button">Ver Mais</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function applyTimeFilters() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const selectedProjects = Array.from(document.getElementById('project-select').selectedOptions)
+                .map(option => option.value)
+                .filter(value => value !== '');
+
+            // Validação básica
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                alert('A data inicial não pode ser posterior à data final.');
+                return;
+            }
+
+            console.log('Filtros aplicados:', {
+                startDate,
+                endDate,
+                selectedProjects: selectedProjects.length > 0 ? selectedProjects : 'Todos'
+            });
+
+            // Feedback visual
+            const applyBtn = document.querySelector('.apply-btn');
+            const originalText = applyBtn.textContent;
+            applyBtn.textContent = '✓ Aplicado';
+            applyBtn.disabled = true;
+            
+            setTimeout(() => {
+                applyBtn.textContent = originalText;
+                applyBtn.disabled = false;
+            }, 2000);
+        }
+
+        function clearTimeFilters() {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('project-select').selectedIndex = -1;
+            
+            // Feedback visual
+            const clearBtn = document.querySelector('.clear-btn');
+            const originalText = clearBtn.textContent;
+            clearBtn.textContent = '✓ Limpo';
+            
+            setTimeout(() => {
+                clearBtn.textContent = originalText;
+            }, 1500);
+        }
+
+        // Desenhar gráfico simples para demo
+        function drawChart() {
+            const canvas = document.getElementById('timeChart');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 45;
+            const innerRadius = 25;
+            
+            // Limpar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dados de exemplo
+            const data = [
+                { name: 'projeto-alpha', value: 500, color: '#0078d4' },
+                { name: 'projeto-beta', value: 400, color: '#107c10' },
+                { name: 'projeto-gamma', value: 300, color: '#ff8c00' }
+            ];
+            
+            const total = data.reduce((sum, item) => sum + item.value, 0);
+            let currentAngle = -Math.PI / 2;
+            
+            // Desenhar segmentos
+            data.forEach((item) => {
+                const sliceAngle = (item.value / total) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+                ctx.closePath();
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                
+                currentAngle += sliceAngle;
+            });
+            
+            // Círculo interno
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#252526';
+            ctx.fill();
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', drawChart);
+    </script>
+</body>
+</html>

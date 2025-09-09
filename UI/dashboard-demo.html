@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visão Geral de Tempo de Desenvolvimento - Demo</title>
+  <style>
+    :root {
+      --primary-color: #0078d4;
+      --success-color: #107c10;
+      --warning-color: #ff8c00;
+      --error-color: #d13438;
+      --critical-color: #a80000;
+      --background-color: #1e1e1e;
+      --foreground-color: #cccccc;
+      --card-background: #252526;
+      --border-color: #3c3c3c;
+      --hover-background: #2a2a2a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--foreground-color);
+      line-height: 1.6;
+    }
+
+    .header {
+      background-color: var(--card-background);
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .header-icon {
+      font-size: 32px;
+      color: var(--primary-color);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--foreground-color);
+    }
+
+    h2 {
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--foreground-color);
+    }
+
+    .overview-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .cards-container {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .overview-card {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .overview-card h3 {
+      margin: 0 0 20px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--foreground-color);
+    }
+
+    .donut-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+
+    .donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .center-number {
+      display: block;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--foreground-color);
+    }
+
+    .center-label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .card-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .stat-label {
+      color: #888;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    .stat-value.critical {
+      background-color: var(--critical-color);
+      color: white;
+    }
+
+    .stat-value.high {
+      background-color: var(--error-color);
+      color: white;
+    }
+
+    .stat-value.medium {
+      background-color: var(--warning-color);
+      color: white;
+    }
+
+    .stat-value.low {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .info-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .remediation-card,
+    .tpa-card {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--foreground-color);
+    }
+
+    .remediation-content p,
+    .tpa-content p {
+      margin: 0 0 15px 0;
+      color: #888;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .cta-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+
+    .cta-button:hover {
+      background-color: #106ebe;
+    }
+
+    .projects-table-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    .table-container {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .projects-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .projects-table th,
+    .projects-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .projects-table th {
+      background-color: var(--hover-background);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--foreground-color);
+    }
+
+    .projects-table tbody tr:hover {
+      background-color: var(--hover-background);
+    }
+
+    .project-name {
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
+    .time-value {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .files-count {
+      color: #888;
+    }
+
+    .top-files {
+      font-size: 13px;
+      color: #888;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .action-btn {
+      background-color: transparent;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .project-details {
+      background-color: var(--hover-background);
+    }
+
+    .details-content {
+      padding: 20px;
+    }
+
+    .details-content h4 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: var(--foreground-color);
+    }
+
+    .files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 10px;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .file-name {
+      font-family: 'Courier New', monospace;
+      color: var(--foreground-color);
+      flex: 1;
+      margin-right: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-time {
+      font-weight: 600;
+      color: var(--primary-color);
+      white-space: nowrap;
+    }
+
+    .footer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      color: #888;
+      font-size: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Estilos para os filtros de análise */
+    .filters-section {
+      margin: 20px 0;
+      padding: 20px;
+      background-color: var(--hover-background);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .filters-section h4 {
+      margin: 0 0 16px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--foreground-color);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--foreground-color);
+    }
+
+    .filter-input,
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--card-background);
+      color: var(--foreground-color);
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+    }
+
+    .filter-select {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .apply-btn {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .apply-btn:hover:not(:disabled) {
+      background-color: #0e6e0e;
+    }
+
+    .apply-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .clear-btn {
+      background-color: #3a3a3a;
+      color: var(--foreground-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .clear-btn:hover {
+      background-color: #4a4a4a;
+    }
+
+    .filter-results {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 12px;
+      color: #888;
+      display: none;
+    }
+
+    .filter-results.active {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .filter-actions {
+        justify-content: stretch;
+      }
+
+      .filter-btn {
+        flex: 1;
+      }
+      
+      .files-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .projects-table {
+        font-size: 12px;
+      }
+      
+      .top-files {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <div class="header-icon">⏱️</div>
+      <h1>Visão Geral de Tempo de Desenvolvimento</h1>
+    </div>
+  </div>
+
+  <div class="overview-section">
+    <h2>Resumo Geral</h2>
+    <div class="cards-container">
+      <div class="overview-card">
+        <div class="card-content">
+          <h3>Tempo Total</h3>
+          <div class="donut-container">
+            <canvas id="timeChart" width="120" height="120"></canvas>
+            <div class="donut-center">
+              <span class="center-number">28.5k</span>
+              <span class="center-label">segundos</span>
+            </div>
+          </div>
+          <div class="card-stats">
+            <div class="stat-item">
+              <span class="stat-label">Crítico:</span>
+              <span class="stat-value critical">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Alto:</span>
+              <span class="stat-value high">2.8k</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Médio:</span>
+              <span class="stat-value medium">8.5k</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Baixo:</span>
+              <span class="stat-value low">17.1k</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-cards">
+        <div class="remediation-card">
+          <div class="card-header">
+            <h3>📊 Estatísticas de Projetos</h3>
+          </div>
+          <div class="remediation-content">
+            <p>✅ 5 projetos disponíveis para análise</p>
+          </div>
+        </div>
+
+            <!-- Seção de Filtros -->
+            <div class="filters-section">
+              <h4>Filtros de Análise de Tempo</h4>
+              <div class="filters-grid">
+                <div class="filter-group">
+                  <label for="start-date">Data Inicial:</label>
+                  <input type="date" id="start-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                  <label for="end-date">Data Final:</label>
+                  <input type="date" id="end-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                  <label for="project-select">Selecionar Projetos:</label>
+                  <select id="project-select" class="filter-select" multiple>
+                    <option value="">Todos os Projetos</option>
+                    <option value="MyTimeTraceVSCode">MyTimeTraceVSCode</option>
+                    <option value="ReactApp">ReactApp</option>
+                    <option value="NodeAPI">NodeAPI</option>
+                    <option value="PythonScripts">Python Scripts</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="filter-btn apply-btn" onclick="applyTimeFilters()">Aplicar Filtros</button>
+                <button class="filter-btn clear-btn" onclick="clearTimeFilters()">Limpar Filtros</button>
+              </div>
+              <div id="filter-results" class="filter-results"></div>
+            </div>
+
+  
+      </div>
+    </div>
+  </div>
+
+  <div class="projects-table-section">
+    <h2>Detalhes dos Projetos</h2>
+    <div class="table-container">
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th>Nome do Projeto</th>
+            <th>Tempo Total</th>
+            <th>Arquivos Trabalhados</th>
+            <th>Últimos Arquivos</th>
+            <th>Ação Disponível</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="project-name">MyTimeTraceVSCode</td>
+            <td class="time-value">4h 32m 15s</td>
+            <td class="files-count">12</td>
+            <td class="top-files">extension.ts, statsPanel.ts, timeTrace.ts</td>
+            <td class="action-cell">
+              <button class="action-btn" onclick="toggleProjectDetails('proj1')">Ver Detalhes</button>
+            </td>
+          </tr>
+          <tr id="details-proj1" class="project-details" style="display: none;">
+            <td colspan="5">
+              <div class="details-content">
+                <h4>Arquivos do MyTimeTraceVSCode:</h4>
+                <div class="files-grid">
+                  <div class="file-item">
+                    <span class="file-name">src/ui/statsPanel.ts</span>
+                    <span class="file-time">1h 45m 30s</span>
+                  </div>
+                  <div class="file-item">
+                    <span class="file-name">src/extension.ts</span>
+                    <span class="file-time">58m 12s</span>
+                  </div>
+                  <div class="file-item">
+                    <span class="file-name">src/modules/timeTrace.ts</span>
+                    <span class="file-time">42m 55s</span>
+                  </div>
+                  <div class="file-item">
+                    <span class="file-name">src/modules/database.ts</span>
+                    <span class="file-time">35m 18s</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="project-name">ReactApp</td>
+            <td class="time-value">3h 18m 42s</td>
+            <td class="files-count">8</td>
+            <td class="top-files">App.tsx, components/Header.tsx, utils/api.ts</td>
+            <td class="action-cell">
+              <button class="action-btn" onclick="toggleProjectDetails('proj2')">Ver Detalhes</button>
+            </td>
+          </tr>
+          <tr id="details-proj2" class="project-details" style="display: none;">
+            <td colspan="5">
+              <div class="details-content">
+                <h4>Arquivos do ReactApp:</h4>
+                <div class="files-grid">
+                  <div class="file-item">
+                    <span class="file-name">src/App.tsx</span>
+                    <span class="file-time">1h 12m 30s</span>
+                  </div>
+                  <div class="file-item">
+                    <span class="file-name">src/components/Header.tsx</span>
+                    <span class="file-time">45m 15s</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="project-name">NodeAPI</td>
+            <td class="time-value">2h 45m 22s</td>
+            <td class="files-count">15</td>
+            <td class="top-files">server.js, routes/auth.js, middleware/validation.js</td>
+            <td class="action-cell">
+              <button class="action-btn" onclick="toggleProjectDetails('proj3')">Ver Detalhes</button>
+            </td>
+          </tr>
+          <tr id="details-proj3" class="project-details" style="display: none;">
+            <td colspan="5">
+              <div class="details-content">
+                <h4>Arquivos do NodeAPI:</h4>
+                <div class="files-grid">
+                  <div class="file-item">
+                    <span class="file-name">server.js</span>
+                    <span class="file-time">55m 12s</span>
+                  </div>
+                  <div class="file-item">
+                    <span class="file-name">routes/auth.js</span>
+                    <span class="file-time">32m 45s</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><em>Dados coletados até: 9 de setembro de 2025, 14:30:45</em></p>
+  </div>
+
+  <script>
+    // Função para alternar detalhes do projeto
+    function toggleProjectDetails(projectId) {
+      const detailsRow = document.getElementById('details-' + projectId);
+      const button = event.target;
+      
+      if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+        detailsRow.style.display = 'table-row';
+        button.textContent = 'Ocultar';
+      } else {
+        detailsRow.style.display = 'none';
+        button.textContent = 'Ver Detalhes';
+      }
+    }
+
+    // Função para desenhar gráfico donut
+    function drawDonutChart() {
+      const canvas = document.getElementById('timeChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 45;
+      const innerRadius = 25;
+      
+      // Limpar canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Dados de exemplo
+      const data = [
+        { name: 'MyTimeTraceVSCode', value: 16335, color: '#0078d4' },
+        { name: 'ReactApp', value: 11922, color: '#107c10' },
+        { name: 'NodeAPI', value: 9922, color: '#ff8c00' },
+        { name: 'Python Scripts', value: 7200, color: '#d13438' },
+        { name: 'Outros', value: 3600, color: '#a80000' }
+      ];
+      
+      const total = data.reduce((sum, item) => sum + item.value, 0);
+      let currentAngle = -Math.PI / 2; // Começar no topo
+      
+      // Desenhar segmentos
+      data.forEach((item) => {
+        const sliceAngle = (item.value / total) * 2 * Math.PI;
+        
+        // Desenhar segmento externo
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        
+        currentAngle += sliceAngle;
+      });
+      
+      // Desenhar círculo interno
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = '#252526';
+      ctx.fill();
+    }
+
+    // Dados dos projetos para filtragem
+    const projectsData = {
+      'MyTimeTraceVSCode': { totalSeconds: 16335, visible: true },
+      'ReactApp': { totalSeconds: 11922, visible: true },
+      'NodeAPI': { totalSeconds: 9922, visible: true },
+      'PythonScripts': { totalSeconds: 7200, visible: true },
+      'Outros': { totalSeconds: 3600, visible: true }
+    };
+
+    // Funções para gerenciar filtros
+    function applyTimeFilters() {
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+      const selectedProjects = Array.from(document.getElementById('project-select').selectedOptions)
+        .map(option => option.value)
+        .filter(value => value !== '');
+
+      // Validação básica
+      if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        alert('A data inicial não pode ser posterior à data final.');
+        return;
+      }
+
+      // Aplicar filtros na tabela
+      filterProjectsTable(selectedProjects);
+
+      // Mostrar resultados do filtro
+      const resultsDiv = document.getElementById('filter-results');
+      const visibleProjects = Object.values(projectsData).filter(p => p.visible).length;
+      const totalTime = Object.values(projectsData)
+        .filter(p => p.visible)
+        .reduce((sum, p) => sum + p.totalSeconds, 0);
+      
+      resultsDiv.innerHTML = `
+        📊 Filtros aplicados: ${visibleProjects} projeto(s) visível(is)<br>
+        ⏰ Tempo total filtrado: ${formatTime(totalTime)}
+        ${startDate ? `<br>📅 Data inicial: ${new Date(startDate).toLocaleDateString('pt-BR')}` : ''}
+        ${endDate ? `<br>📅 Data final: ${new Date(endDate).toLocaleDateString('pt-BR')}` : ''}
+      `;
+      resultsDiv.classList.add('active');
+
+      // Feedback visual
+      const applyBtn = document.querySelector('.apply-btn');
+      const originalText = applyBtn.textContent;
+      applyBtn.textContent = '✓ Aplicado';
+      applyBtn.disabled = true;
+      
+      setTimeout(() => {
+        applyBtn.textContent = originalText;
+        applyBtn.disabled = false;
+      }, 2000);
+    }
+
+    function clearTimeFilters() {
+      document.getElementById('start-date').value = '';
+      document.getElementById('end-date').value = '';
+      document.getElementById('project-select').selectedIndex = -1;
+      
+      // Mostrar todos os projetos
+      showAllProjects();
+      
+      // Esconder resultados do filtro
+      document.getElementById('filter-results').classList.remove('active');
+      
+      // Feedback visual
+      const clearBtn = document.querySelector('.clear-btn');
+      const originalText = clearBtn.textContent;
+      clearBtn.textContent = '✓ Limpo';
+      
+      setTimeout(() => {
+        clearBtn.textContent = originalText;
+      }, 1500);
+    }
+
+    function filterProjectsTable(selectedProjects) {
+      const tableRows = document.querySelectorAll('.projects-table tbody tr:not([id^="details-"])');
+      
+      // Reset visibility
+      Object.keys(projectsData).forEach(key => {
+        projectsData[key].visible = true;
+      });
+      
+      tableRows.forEach(row => {
+        const projectNameCell = row.querySelector('.project-name');
+        if (!projectNameCell) return;
+        
+        const projectName = projectNameCell.textContent.trim();
+        let shouldShow = true;
+        
+        // Filtrar por projetos selecionados
+        if (selectedProjects.length > 0 && !selectedProjects.includes(projectName)) {
+          shouldShow = false;
+          if (projectsData[projectName]) {
+            projectsData[projectName].visible = false;
+          }
+        }
+        
+        // Aplicar visibilidade
+        if (shouldShow) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+          // Esconder a linha de detalhes correspondente
+          const detailsRow = row.nextElementSibling;
+          if (detailsRow && detailsRow.id && detailsRow.id.startsWith('details-')) {
+            detailsRow.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function showAllProjects() {
+      const allRows = document.querySelectorAll('.projects-table tbody tr');
+      
+      // Reset visibility
+      Object.keys(projectsData).forEach(key => {
+        projectsData[key].visible = true;
+      });
+      
+      allRows.forEach(row => {
+        if (row.id && row.id.startsWith('details-')) {
+          row.style.display = 'none';
+          // Resetar o botão correspondente
+          const projectId = row.id.replace('details-', '');
+          const button = document.querySelector(`[onclick="toggleProjectDetails('${projectId}')"]`);
+          if (button) {
+            button.textContent = 'Ver Detalhes';
+          }
+        } else {
+          row.style.display = '';
+        }
+      });
+    }
+
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`;
+      } else {
+        return `${secs}s`;
+      }
+    }
+
+    // Inicializar dashboard
+    function initializeDashboard() {
+      // Definir datas padrão (última semana)
+      const today = new Date();
+      const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      document.getElementById('end-date').value = today.toISOString().split('T')[0];
+      document.getElementById('start-date').value = lastWeek.toISOString().split('T')[0];
+      
+      // Desenhar gráfico
+      drawDonutChart();
+    }
+    
+    // Inicializar gráfico quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeDashboard();
+    });
+    
+    // Redesenhar gráfico se a janela for redimensionada
+    window.addEventListener('resize', function() {
+      setTimeout(drawDonutChart, 100);
+    });
+  </script>
+</body>
+</html>

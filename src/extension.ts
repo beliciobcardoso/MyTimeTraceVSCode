@@ -1,11 +1,13 @@
+import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import { DatabaseManager } from "./modules/database";
 import { StatusBarManager } from "./modules/statusBar";
 import { timeTrace } from "./modules/timeTrace";
 import { StatsManager } from "./modules/stats";
 import { CommandManager } from "./modules/commands";
 import { getConfig } from "./modules/config";
+
+const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 // Variáveis globais para gerenciar a extensão
 let globalContext: vscode.ExtensionContext | null = null;
