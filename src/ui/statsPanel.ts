@@ -244,6 +244,14 @@ export class StatsPanel {
       percentage: ((data.totalSeconds / totalTime) * 100).toFixed(1)
     }));
 
+    // Gerar array de projetos para filtros
+    const projectsArray = projectEntries.map(([projectName, projectData]) => ({
+      projectName,
+      totalMinutes: Math.round(projectData.totalSeconds / 60),
+      formattedTime: this.formatTime(projectData.totalSeconds),
+      percentage: ((projectData.totalSeconds / totalTime) * 100).toFixed(1)
+    }));
+
     // Cores para o gráfico
     const colors = ['#0078d4', '#107c10', '#ff8c00', '#d13438', '#a80000', '#6f42c1', '#20c997'];
 
@@ -560,9 +568,135 @@ export class StatsPanel {
           border-top: 1px solid var(--border-color);
         }
 
+        /* Estilos para os filtros de análise */
+        .filters-section {
+          margin: 20px 0;
+          padding: 20px;
+          background-color: var(--hover-background);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
+        }
+
+        .filters-section h4 {
+          margin: 0 0 16px 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--foreground-color);
+        }
+
+        .filters-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 2fr;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .filter-group label {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--foreground-color);
+        }
+
+        .filter-input,
+        .filter-select {
+          padding: 8px 12px;
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
+          background-color: var(--card-background);
+          color: var(--foreground-color);
+          font-size: 13px;
+          font-family: inherit;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+        }
+
+        .filter-select {
+          height: 100px;
+          resize: vertical;
+        }
+
+        .filter-actions {
+          display: flex;
+          gap: 10px;
+          justify-content: flex-start;
+        }
+
+        .filter-btn {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
+        }
+
+        .apply-btn {
+          background-color: var(--success-color);
+          color: white;
+        }
+
+        .apply-btn:hover:not(:disabled) {
+          background-color: #0e6e0e;
+        }
+
+        .apply-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .clear-btn {
+          background-color: #3a3a3a;
+          color: var(--foreground-color);
+          border: 1px solid var(--border-color);
+        }
+
+        .clear-btn:hover {
+          background-color: #4a4a4a;
+        }
+
+        .filter-results {
+          margin-top: 15px;
+          padding: 10px;
+          background-color: var(--card-background);
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
+          font-size: 12px;
+          color: #888;
+          display: none;
+        }
+
+        .filter-results.active {
+          display: block;
+        }
+
         @media (max-width: 768px) {
           .cards-container {
             grid-template-columns: 1fr;
+          }
+          
+          .filters-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .filter-actions {
+            justify-content: stretch;
+          }
+
+          .filter-btn {
+            flex: 1;
           }
           
           .files-grid {
@@ -624,13 +758,42 @@ export class StatsPanel {
           <div class="info-cards">
             <div class="remediation-card">
               <div class="card-header">
-                <h3>📊 Análise de Produtividade</h3>
+                <h3>📊 Estatísticas de Projetos</h3>
               </div>
               <div class="remediation-content">
-                <p>Você tem trabalhado de forma consistente em ${projectEntries.length} projeto(s) diferentes.</p>
-                <p>Projeto mais ativo: <strong>${projectEntries.sort((a, b) => b[1].totalSeconds - a[1].totalSeconds)[0]?.[0] || 'N/A'}</strong></p>
-                <p>Continue mantendo o foco nos projetos prioritários para maximizar sua produtividade.</p>
+                <p>✅ ${projectEntries.length} projeto(s) disponível(is) para análise</p>
               </div>
+            </div>
+
+            <!-- Seção de Filtros -->
+            <div class="filters-section">
+              <h4>Filtros de Análise de Tempo</h4>
+              <div class="filters-grid">
+                <div class="filter-group">
+                  <label for="start-date">Data Inicial:</label>
+                  <input type="date" id="start-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                  <label for="end-date">Data Final:</label>
+                  <input type="date" id="end-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                  <label for="projectFilter">Selecionar Projetos:</label>
+                  <select id="projectFilter" class="filter-select" multiple>
+                    <option value="">Todos os Projetos</option>
+                    ${projectEntries
+                      .map(
+                        ([projectName]) => `<option value="${projectName}">${projectName}</option>`
+                      )
+                      .join("")}
+                  </select>
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button id="applyFilter" class="filter-btn apply-btn">Aplicar Filtros</button>
+                <button id="clearFilter" class="filter-btn clear-btn">Limpar Filtros</button>
+              </div>
+              <div id="filterResults" class="filter-results"></div>
             </div>
           </div>
         </div>
@@ -689,9 +852,25 @@ export class StatsPanel {
       </div>
 
       <script>
+        // JavaScript para funcionalidade dos filtros
+        const vscode = acquireVsCodeApi();
+        let projectsData = ${JSON.stringify(projectsArray)};
+        let allProjects = projectsData;
+
         // Dados dos projetos para o gráfico
         const chartData = ${JSON.stringify(chartData)};
         const colors = ${JSON.stringify(colors)};
+
+        document.addEventListener('DOMContentLoaded', function() {
+          // Inicializar gráfico
+          drawDonutChart();
+          
+          // Preencher select de projetos
+          populateProjectSelect();
+          
+          // Event listeners para os filtros
+          setupFilterListeners();
+        });
 
         // Função para alternar detalhes do projeto
         function toggleProjectDetails(projectId) {
@@ -747,11 +926,305 @@ export class StatsPanel {
           ctx.fillStyle = '#252526';
           ctx.fill();
         }
-        
-        // Inicializar gráfico quando a página carregar
-        document.addEventListener('DOMContentLoaded', function() {
-          drawDonutChart();
-        });
+
+        // Função para preencher select de projetos nos filtros
+        function populateProjectSelect() {
+          const projectSelect = document.getElementById('projectFilter');
+          if (!projectSelect) return;
+          
+          // Limpar opções existentes exceto a primeira
+          while (projectSelect.children.length > 1) {
+            projectSelect.removeChild(projectSelect.lastChild);
+          }
+          
+          allProjects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.projectName;
+            option.textContent = \`\${project.projectName} (\${project.formattedTime})\`;
+            projectSelect.appendChild(option);
+          });
+        }
+
+        // Função para configurar listeners dos filtros
+        function setupFilterListeners() {
+          const applyBtn = document.getElementById('applyFilter');
+          const clearBtn = document.getElementById('clearFilter');
+          
+          if (applyBtn) applyBtn.addEventListener('click', applyFilters);
+          if (clearBtn) clearBtn.addEventListener('click', clearFilters);
+          
+          // Auto-aplicar quando mudar período
+          const startDate = document.getElementById('start-date');
+          const endDate = document.getElementById('end-date');
+          if (startDate) startDate.addEventListener('change', applyFilters);
+          if (endDate) endDate.addEventListener('change', applyFilters);
+        }
+
+        // Função para aplicar filtros
+        function applyFilters() {
+          const startDate = document.getElementById('start-date')?.value;
+          const endDate = document.getElementById('end-date')?.value;
+          const projectSelect = document.getElementById('projectFilter');
+          const selectedProjects = projectSelect ? 
+            Array.from(projectSelect.selectedOptions)
+              .map(option => option.value)
+              .filter(value => value !== '') : [];
+          
+          let filteredProjects = [...allProjects];
+          
+          // Aplicar filtros por projeto
+          if (selectedProjects.length > 0) {
+            filteredProjects = filteredProjects.filter(project => 
+              selectedProjects.includes(project.projectName)
+            );
+          }
+          
+          // Atualizar visualização
+          updateProjectsTable(filteredProjects);
+          updateStatCards(filteredProjects);
+          updateDonutChart(filteredProjects);
+          
+          // Mostrar resultado
+          showFilterResults(filteredProjects.length, startDate, endDate, selectedProjects);
+        }
+
+        // Função para limpar filtros
+        function clearFilters() {
+          // Limpar inputs
+          const startDate = document.getElementById('start-date');
+          const endDate = document.getElementById('end-date');
+          const projectSelect = document.getElementById('projectFilter');
+          
+          if (startDate) startDate.value = '';
+          if (endDate) endDate.value = '';
+          if (projectSelect) {
+            // Desmarcar todas as opções
+            for (let i = 0; i < projectSelect.options.length; i++) {
+              projectSelect.options[i].selected = false;
+            }
+          }
+          
+          // Resetar visualização
+          updateProjectsTable(allProjects);
+          updateStatCards(allProjects);
+          updateDonutChart(allProjects);
+          
+          // Esconder resultado
+          const filterResults = document.getElementById('filterResults');
+          if (filterResults) filterResults.classList.remove('active');
+        }
+
+        // Função para atualizar tabela de projetos
+        function updateProjectsTable(projects) {
+          const tbody = document.querySelector('.projects-table tbody');
+          if (!tbody) return;
+          
+          // Salvar o estado dos detalhes abertos
+          const openDetails = new Set();
+          const detailRows = document.querySelectorAll('.project-details');
+          detailRows.forEach((row, index) => {
+            if (row.style.display === 'table-row') {
+              openDetails.add(index);
+            }
+          });
+          
+          tbody.innerHTML = '';
+          
+          projects.forEach((project, index) => {
+            // Buscar dados completos do projeto
+            const fullProjectData = Object.entries(${JSON.stringify(projectsData)})
+              .find(([name]) => name === project.projectName);
+            
+            if (!fullProjectData) return;
+            
+            const [projectName, projectData] = fullProjectData;
+            const topFiles = projectData.files.slice(0, 3)
+              .map(f => formatFilePath(f.name, projectName)).join(', ');
+            
+            const row = document.createElement('tr');
+            row.innerHTML = \`
+              <td class="project-name">\${projectName}</td>
+              <td class="time-value">\${project.formattedTime}</td>
+              <td class="files-count">\${projectData.files.length} arquivo(s)</td>
+              <td class="top-files">\${topFiles}</td>
+              <td>
+                <button class="action-btn" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
+              </td>
+            \`;
+            tbody.appendChild(row);
+            
+            // Criar linha de detalhes
+            const detailsRow = document.createElement('tr');
+            detailsRow.id = 'details-' + index;
+            detailsRow.className = 'project-details';
+            detailsRow.style.display = openDetails.has(index) ? 'table-row' : 'none';
+            detailsRow.innerHTML = \`
+              <td colspan="5">
+                <div class="details-content">
+                  <h4>Arquivos do projeto \${projectName}</h4>
+                  <div class="files-grid">
+                    \${projectData.files.map(file => \`
+                      <div class="file-item">
+                        <div class="file-name">\${formatFilePath(file.name, projectName)}</div>
+                        <div class="file-time">\${formatTime(file.seconds)}</div>
+                      </div>
+                    \`).join('')}
+                  </div>
+                </div>
+              </td>
+            \`;
+            tbody.appendChild(detailsRow);
+          });
+        }
+
+        // Função auxiliar para formatar caminho do arquivo (cópia da função do servidor)
+        function formatFilePath(filePath, projectName) {
+          let displayPath = filePath;
+          if (displayPath.includes(projectName)) {
+            displayPath = displayPath.substring(displayPath.indexOf(projectName));
+          } else if (displayPath === "IDLE" || displayPath === "unknown-file") {
+            // Mantém sem alterações  
+          } else {
+            const patterns = ["/home/", "/Users/", "C:\\\\Users\\\\", "/var/", "/tmp/", "C:\\\\"];
+            for (const pattern of patterns) {
+              if (displayPath.includes(pattern)) {
+                const parts = displayPath.split(pattern);
+                if (parts.length > 1) {
+                  const userParts = parts[1].split("/");
+                  if (userParts.length > 1) {
+                    displayPath = userParts.slice(1).join("/");
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          return displayPath;
+        }
+
+        // Função auxiliar para formatar tempo (cópia da função do servidor)
+        function formatTime(timeInSeconds) {
+          const hours = Math.floor(timeInSeconds / 3600);
+          const minutes = Math.floor((timeInSeconds % 3600) / 60);
+          const seconds = Math.floor(timeInSeconds % 60);
+          return [
+            hours > 0 ? hours + 'h' : '',
+            minutes > 0 ? minutes + 'm' : '',
+            seconds + 's'
+          ].filter(Boolean).join(' ');
+        }
+
+        // Função para atualizar cards de estatísticas
+        function updateStatCards(projects) {
+          const totalMinutes = projects.reduce((sum, p) => sum + p.totalMinutes, 0);
+          const totalProjects = projects.length;
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+          
+          // Atualizar os cards de estatísticas
+          const statItems = document.querySelectorAll('.stat-item');
+          if (statItems.length >= 2) {
+            // Primeiro card: número de projetos
+            const projectsValue = statItems[0].querySelector('.stat-value');
+            if (projectsValue) projectsValue.textContent = totalProjects;
+            
+            // Segundo card: arquivos (calcular total de arquivos dos projetos filtrados)
+            const totalFiles = projects.reduce((sum, project) => {
+              const fullProjectData = Object.entries(${JSON.stringify(projectsData)})
+                .find(([name]) => name === project.projectName);
+              return sum + (fullProjectData ? fullProjectData[1].files.length : 0);
+            }, 0);
+            const filesValue = statItems[1].querySelector('.stat-value');
+            if (filesValue) filesValue.textContent = totalFiles;
+          }
+          
+          // Atualizar centro do gráfico donut
+          const centerNumber = document.querySelector('.center-number');
+          if (centerNumber) {
+            centerNumber.textContent = \`\${hours}h\`;
+          }
+        }
+
+        // Função para atualizar gráfico donut com filtros
+        function updateDonutChart(projects) {
+          const canvas = document.getElementById('timeChart');
+          if (!canvas) return;
+          
+          const ctx = canvas.getContext('2d');
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 65;
+          const innerRadius = 35;
+          
+          // Limpar canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          if (projects.length === 0) {
+            // Desenhar círculo vazio
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, true);
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fill();
+            return;
+          }
+          
+          // Criar dados do gráfico baseado nos projetos filtrados
+          const total = projects.reduce((sum, p) => sum + p.totalMinutes, 0);
+          let currentAngle = -Math.PI / 2;
+          
+          projects.forEach((project, index) => {
+            const sliceAngle = (project.totalMinutes / total) * 2 * Math.PI;
+            const color = getProjectColor(index);
+            
+            // Desenhar fatia
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            currentAngle += sliceAngle;
+          });
+          
+          // Desenhar círculo interno
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#252526';
+          ctx.fill();
+        }
+
+        // Função para obter cor do projeto
+        function getProjectColor(index) {
+          const projectColors = [
+            '#0078d4', '#107c10', '#d83b01', '#5c2d91',
+            '#e3008c', '#00bcf2', '#bad80a', '#ff8c00',
+            '#e74856', '#0099bc', '#881798', '#486860'
+          ];
+          return projectColors[index % projectColors.length];
+        }
+
+        // Função para mostrar resultados dos filtros
+        function showFilterResults(count, startDate, endDate, projects) {
+          const resultsDiv = document.getElementById('filterResults');
+          if (!resultsDiv) return;
+          
+          let message = \`Mostrando \${count} projeto(s)\`;
+          
+          if (startDate || endDate) {
+            message += \` no período\`;
+            if (startDate) message += \` de \${startDate}\`;
+            if (endDate) message += \` até \${endDate}\`;
+          }
+          
+          if (projects.length > 0) {
+            message += \` para: \${projects.join(', ')}\`;
+          }
+          
+          resultsDiv.textContent = message;
+          resultsDiv.classList.add('active');
+        }
         
         // Redesenhar gráfico se a janela for redimensionada
         window.addEventListener('resize', function() {
@@ -811,7 +1284,7 @@ export class StatsPanel {
 
               <div class="filter-select">
                 <div class="filter-group">
-                  <label for="projectFilter">Projetos:</label>
+                  <label for="projectFilter">Projetos2:</label>
                   <select id="projectFilter" multiple class="filter-input">
                     <option value="">Todos os projetos</option>
                     ${availableProjects
