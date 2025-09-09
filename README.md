@@ -4,30 +4,34 @@
 
 ![My Time Trace Logo](images/my-time-trace-logo.png)
 
+[![Status](https://img.shields.io/badge/Status-Beta-orange?style=flat-square)]()
+[![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-15%20passing-brightgreen?style=flat-square)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
+
 </div>
 
 Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo com filtros avançados!
 
-## Funcionalidades
+## ✨ Funcionalidades
 
-- **Monitoramento Automático**: Registra automaticamente o tempo gasto em cada arquivo quando você trabalha no VS Code.
-- **Rastreamento por Projeto**: Organiza os dados por projeto para melhor análise de tempo.
-- **Detecção de Inatividade**: Detecta períodos de inatividade (após 5 minutos) para registros de tempo mais precisos.
-- **Persistência Local**: Armazena todos os dados localmente em um banco de dados SQLite.
-- **Baixo Consumo de Recursos**: Opera silenciosamente em segundo plano sem impactar o desempenho.
-- **Visualização Avançada de Estatísticas**: Interface moderna e responsiva com múltiplas opções:
-  - **Estatísticas Simples**: Visualização básica agrupada por projeto
-  - **Estatísticas com Filtros**: Interface avançada com controles interativos
-  - **Layout Responsivo**: Design em grid 40/60 para melhor aproveitamento do espaço
-  - **Header Fixo**: Navegação sempre visível durante o scroll
-  - **Projetos Expansíveis**: Clique para expandir/colapsar detalhes dos projetos
-- **Filtros Interativos Avançados**: 
-  - Filtragem por intervalo de datas (data inicial e final)
-  - Seleção múltipla de projetos específicos
-  - Aplicação de filtros em tempo real
-  - Resumo dinâmico dos dados filtrados (total de entradas, tempo e projetos)
-- **Formatação Inteligente de Caminhos**: Apresenta os caminhos de arquivo de forma mais legível, removendo prefixos absolutos.
-- **Interface Robusta**: JavaScript com verificações de segurança e tratamento de erros
+### 🕐 Monitoramento Inteligente
+- **Rastreamento Automático**: Registra tempo por arquivo em tempo real
+- **Detecção de Inatividade**: Pausa automática após 5 minutos de idle
+- **Organização por Projeto**: Agrupa dados por workspace/projeto
+- **Persistência Local**: Armazena dados em SQLite seguro
+
+### 📊 Dashboard Moderno
+- **Interface Responsiva**: Layout grid 40/60 otimizado
+- **Filtros Avançados**: Por data e múltiplos projetos
+- **Visualização Hierárquica**: Projetos expansíveis com detalhes
+- **Estatísticas em Tempo Real**: Resumos dinâmicos dos dados filtrados
+
+### 🎨 Interface Integrada
+- **Status Bar Interativa**: Feedback visual constante
+- **Formatação Inteligente**: Caminhos de arquivo legíveis
+- **Tema Adaptativo**: Suporte a dark/light mode
+- **Performance Otimizada**: Baixo consumo de recursos
 
 ## Como Funciona
 
@@ -41,6 +45,16 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 ## Requisitos
 
 - Visual Studio Code 1.100.0 ou superior
+
+## 📖 Documentação
+
+Para documentação detalhada, consulte a pasta [`docs/`](./docs/):
+
+- 🎨 **[Identidade Visual](./docs/IDENTIDADE_VISUAL.md)** - Logo, cores e design system
+- 📊 **[Dashboard Moderno](./docs/DASHBOARD_MODERNO.md)** - Interface responsiva e funcionalidades
+- 🧩 **[Componentes UI](./docs/UI_COMPONENTS.md)** - Documentação dos componentes de interface
+- ✅ **[Relatório de Cobertura](./docs/COVERAGE_REPORT.md)** - Métricas de qualidade e testes (88%)
+- 🚀 **[Guia de Desenvolvimento](./docs/vsc-extension-quickstart.md)** - Setup e desenvolvimento
 
 ## Instalação
 
@@ -140,6 +154,24 @@ Contribuições são bem-vindas! Se você tem alguma sugestão ou encontrou um b
 - VS Code Extension API
 - SQLite (via sqlite3)
 
+## 🏗️ Estrutura do Projeto
+
+```
+MyTimeTraceVSCode/
+├── 📁 src/                    # Código fonte principal
+│   ├── extension.ts           # Ponto de entrada da extensão
+│   ├── modules/              # Módulos especializados
+│   │   ├── timeTrace.ts      # Engine de rastreamento
+│   │   ├── database.ts       # Gerenciamento SQLite
+│   │   ├── statusBar.ts      # Interface barra de status
+│   │   └── ...
+│   ├── ui/                   # Componentes de interface
+│   └── test/                 # Testes automatizados
+├── 📁 docs/                  # 📖 Documentação completa
+├── 📁 images/                # Assets visuais
+└── 📁 UI/                    # Demos e protótipos
+```
+
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
@@ -166,6 +198,18 @@ Para testar a extensão:
 1. Pressione F5 no VS Code para iniciar uma nova janela com a extensão carregada
 2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo
 
+Para executar os testes:
+
+```bash
+# Executar todos os testes
+npm test
+
+# Verificar cobertura de testes  
+npm run test:coverage
+```
+
+📖 **Mais informações:** Consulte a [documentação completa](./docs/) para guias detalhados de desenvolvimento, design e arquitetura.
+
 ## Qualidade e Confiabilidade
 
 ### 🧪 Testes Automatizados
@@ -188,6 +232,6 @@ A extensão possui uma **excelente cobertura de testes** com **15 testes automat
 - **Tratamento robusto de erros** com async/await
 - **Cleanup automático** de recursos
 
-Para mais detalhes, consulte o [Relatório de Cobertura de Testes](COVERAGE_REPORT.md).
+Para mais detalhes, consulte o [Relatório de Cobertura de Testes](./docs/COVERAGE_REPORT.md).
 
 **Aproveite o My Time Trace VSCode e monitore seu tempo de desenvolvimento de forma eficiente!**
