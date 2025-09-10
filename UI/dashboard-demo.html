@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -71,14 +72,14 @@
     .overview-section {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 30px 20px;
+      padding: 10px 0px;
     }
 
     .cards-container {
       display: grid;
       grid-template-columns: 400px 1fr;
-      gap: 30px;
-      margin-bottom: 40px;
+      gap: 20px;
+      margin-bottom: 10px;
     }
 
     .overview-card {
@@ -96,6 +97,7 @@
       color: var(--foreground-color);
     }
 
+    /* Estilos para o gráfico donut */
     .donut-container {
       position: relative;
       display: flex;
@@ -103,6 +105,7 @@
       margin-bottom: 25px;
     }
 
+    /* Estilos para o gráfico donut */
     .donut-center {
       position: absolute;
       top: 50%;
@@ -127,14 +130,14 @@
 
     .card-stats {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1.8fr;
       gap: 12px;
     }
 
     .stat-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       font-size: 14px;
     }
 
@@ -172,7 +175,7 @@
     .info-cards {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 10px;
     }
 
     .remediation-card,
@@ -350,7 +353,6 @@
 
     /* Estilos para os filtros de análise */
     .filters-section {
-      margin: 20px 0;
       padding: 20px;
       background-color: var(--hover-background);
       border: 1px solid var(--border-color);
@@ -402,7 +404,7 @@
     }
 
     .filter-select {
-      height: 100px;
+      height: 200px;
       resize: vertical;
     }
 
@@ -465,7 +467,7 @@
       .cards-container {
         grid-template-columns: 1fr;
       }
-      
+
       .filters-grid {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -478,21 +480,22 @@
       .filter-btn {
         flex: 1;
       }
-      
+
       .files-grid {
         grid-template-columns: 1fr;
       }
-      
+
       .projects-table {
         font-size: 12px;
       }
-      
+
       .top-files {
         display: none;
       }
     }
   </style>
 </head>
+
 <body>
   <div class="header">
     <div class="header-content">
@@ -505,81 +508,75 @@
     <h2>Resumo Geral</h2>
     <div class="cards-container">
       <div class="overview-card">
-        <div class="card-content">
-          <h3>Tempo Total</h3>
-          <div class="donut-container">
-            <canvas id="timeChart" width="120" height="120"></canvas>
-            <div class="donut-center">
-              <span class="center-number">28.5k</span>
-              <span class="center-label">segundos</span>
-            </div>
+        <h3>Tempo Total</h3>
+        <div class="donut-container">
+          <canvas id="timeChart" width="200" height="200"></canvas>
+          <div class="donut-center">
+            <span class="center-number">9999h</span>
+            <span class="center-label">Total</span>
           </div>
-          <div class="card-stats">
-            <div class="stat-item">
-              <span class="stat-label">Crítico:</span>
-              <span class="stat-value critical">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Alto:</span>
-              <span class="stat-value high">2.8k</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Médio:</span>
-              <span class="stat-value medium">8.5k</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Baixo:</span>
-              <span class="stat-value low">17.1k</span>
-            </div>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">Projetos:</span>
+            <span class="stat-value critical">12</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Hoje:</span>
+            <span class="stat-value medium">12h 16m 16s</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Arquivos:</span>
+            <span class="stat-value high">2.8k</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Esta semana:</span>
+            <span class="stat-value low">122h 42m 42s</span>
           </div>
         </div>
       </div>
 
       <div class="info-cards">
-        <div class="remediation-card">
-          <div class="card-header">
-            <h3>📊 Estatísticas de Projetos</h3>
-          </div>
-          <div class="remediation-content">
-            <p>✅ 5 projetos disponíveis para análise</p>
-          </div>
-        </div>
-
-            <!-- Seção de Filtros -->
-            <div class="filters-section">
-              <h4>Filtros de Análise de Tempo</h4>
-              <div class="filters-grid">
-                <div class="filter-group">
-                  <label for="start-date">Data Inicial:</label>
-                  <input type="date" id="start-date" class="filter-input">
-                </div>
-                <div class="filter-group">
-                  <label for="end-date">Data Final:</label>
-                  <input type="date" id="end-date" class="filter-input">
-                </div>
-                <div class="filter-group">
-                  <label for="project-select">Selecionar Projetos:</label>
-                  <select id="project-select" class="filter-select" multiple>
-                    <option value="">Todos os Projetos</option>
-                    <option value="MyTimeTraceVSCode">MyTimeTraceVSCode</option>
-                    <option value="ReactApp">ReactApp</option>
-                    <option value="NodeAPI">NodeAPI</option>
-                    <option value="PythonScripts">Python Scripts</option>
-                    <option value="Outros">Outros</option>
-                  </select>
-                </div>
-              </div>
-              <div class="filter-actions">
-                <button class="filter-btn apply-btn" onclick="applyTimeFilters()">Aplicar Filtros</button>
-                <button class="filter-btn clear-btn" onclick="clearTimeFilters()">Limpar Filtros</button>
-              </div>
-              <div id="filter-results" class="filter-results"></div>
+        <!-- Seção de Filtros Integrados -->
+        <!-- 
+              Esta seção implementa filtros similares aos da tela generateStatsWithFiltersHtml,
+              mas integrados ao design do dashboard moderno. Inclui:
+              - Filtros por data (inicial e final)
+              - Seleção múltipla de projetos
+              - Botões para aplicar e limpar filtros
+              - Área de resultados dos filtros aplicados
+            -->
+        <div class="filters-section">
+          <h4>Filtros de Análise de Tempo</h4>
+          <div class="filters-grid">
+            <div class="filter-group">
+              <label for="start-date">Data Inicial:</label>
+              <input type="date" id="start-date" class="filter-input">
+              <label for="end-date">Data Final:</label>
+              <input type="date" id="end-date" class="filter-input">
             </div>
-
-  
+            <div class="filter-group">
+              <label for="project-select">Selecionar Projetos:</label>
+              <select id="project-select" class="filter-select" multiple>
+                <option value="">Todos os Projetos</option>
+                <option value="MyTimeTraceVSCode">MyTimeTraceVSCode</option>
+                <option value="ReactApp">ReactApp</option>
+                <option value="NodeAPI">NodeAPI</option>
+                <option value="PythonScripts">Python Scripts</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button id="applyFilter" class="filter-btn apply-btn">Aplicar Filtros</button>
+            <button id="clearFilter" class="filter-btn clear-btn">Limpar Filtros</button>
+          </div>
+          <div id="filter-results" class="filter-results"></div>
+        </div>
       </div>
     </div>
   </div>
+
 
   <div class="projects-table-section">
     <h2>Detalhes dos Projetos</h2>
@@ -695,7 +692,7 @@
     function toggleProjectDetails(projectId) {
       const detailsRow = document.getElementById('details-' + projectId);
       const button = event.target;
-      
+
       if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
         detailsRow.style.display = 'table-row';
         button.textContent = 'Ocultar';
@@ -709,16 +706,16 @@
     function drawDonutChart() {
       const canvas = document.getElementById('timeChart');
       if (!canvas) return;
-      
+
       const ctx = canvas.getContext('2d');
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
-      const radius = 45;
-      const innerRadius = 25;
-      
+      const radius = 90;
+      const innerRadius = 50;
+
       // Limpar canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Dados de exemplo
       const data = [
         { name: 'MyTimeTraceVSCode', value: 16335, color: '#0078d4' },
@@ -727,14 +724,14 @@
         { name: 'Python Scripts', value: 7200, color: '#d13438' },
         { name: 'Outros', value: 3600, color: '#a80000' }
       ];
-      
+
       const total = data.reduce((sum, item) => sum + item.value, 0);
       let currentAngle = -Math.PI / 2; // Começar no topo
-      
+
       // Desenhar segmentos
       data.forEach((item) => {
         const sliceAngle = (item.value / total) * 2 * Math.PI;
-        
+
         // Desenhar segmento externo
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
@@ -742,10 +739,10 @@
         ctx.closePath();
         ctx.fillStyle = item.color;
         ctx.fill();
-        
+
         currentAngle += sliceAngle;
       });
-      
+
       // Desenhar círculo interno
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
@@ -785,7 +782,7 @@
       const totalTime = Object.values(projectsData)
         .filter(p => p.visible)
         .reduce((sum, p) => sum + p.totalSeconds, 0);
-      
+
       resultsDiv.innerHTML = `
         📊 Filtros aplicados: ${visibleProjects} projeto(s) visível(is)<br>
         ⏰ Tempo total filtrado: ${formatTime(totalTime)}
@@ -799,7 +796,7 @@
       const originalText = applyBtn.textContent;
       applyBtn.textContent = '✓ Aplicado';
       applyBtn.disabled = true;
-      
+
       setTimeout(() => {
         applyBtn.textContent = originalText;
         applyBtn.disabled = false;
@@ -810,18 +807,18 @@
       document.getElementById('start-date').value = '';
       document.getElementById('end-date').value = '';
       document.getElementById('project-select').selectedIndex = -1;
-      
+
       // Mostrar todos os projetos
       showAllProjects();
-      
+
       // Esconder resultados do filtro
       document.getElementById('filter-results').classList.remove('active');
-      
+
       // Feedback visual
       const clearBtn = document.querySelector('.clear-btn');
       const originalText = clearBtn.textContent;
       clearBtn.textContent = '✓ Limpo';
-      
+
       setTimeout(() => {
         clearBtn.textContent = originalText;
       }, 1500);
@@ -829,19 +826,19 @@
 
     function filterProjectsTable(selectedProjects) {
       const tableRows = document.querySelectorAll('.projects-table tbody tr:not([id^="details-"])');
-      
+
       // Reset visibility
       Object.keys(projectsData).forEach(key => {
         projectsData[key].visible = true;
       });
-      
+
       tableRows.forEach(row => {
         const projectNameCell = row.querySelector('.project-name');
         if (!projectNameCell) return;
-        
+
         const projectName = projectNameCell.textContent.trim();
         let shouldShow = true;
-        
+
         // Filtrar por projetos selecionados
         if (selectedProjects.length > 0 && !selectedProjects.includes(projectName)) {
           shouldShow = false;
@@ -849,7 +846,7 @@
             projectsData[projectName].visible = false;
           }
         }
-        
+
         // Aplicar visibilidade
         if (shouldShow) {
           row.style.display = '';
@@ -866,12 +863,12 @@
 
     function showAllProjects() {
       const allRows = document.querySelectorAll('.projects-table tbody tr');
-      
+
       // Reset visibility
       Object.keys(projectsData).forEach(key => {
         projectsData[key].visible = true;
       });
-      
+
       allRows.forEach(row => {
         if (row.id && row.id.startsWith('details-')) {
           row.style.display = 'none';
@@ -891,7 +888,7 @@
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = seconds % 60;
-      
+
       if (hours > 0) {
         return `${hours}h ${minutes}m ${secs}s`;
       } else if (minutes > 0) {
@@ -906,23 +903,24 @@
       // Definir datas padrão (última semana)
       const today = new Date();
       const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
+
       document.getElementById('end-date').value = today.toISOString().split('T')[0];
       document.getElementById('start-date').value = lastWeek.toISOString().split('T')[0];
-      
+
       // Desenhar gráfico
       drawDonutChart();
     }
-    
+
     // Inicializar gráfico quando a página carregar
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       initializeDashboard();
     });
-    
+
     // Redesenhar gráfico se a janela for redimensionada
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
       setTimeout(drawDonutChart, 100);
     });
   </script>
 </body>
+
 </html>

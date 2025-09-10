@@ -290,7 +290,7 @@ export class StatsPanel {
     // Calcular totais para o gráfico donut
     const projectEntries = Object.entries(projectsData);
     const totalTime = projectEntries.reduce((sum, [, data]) => sum + data.totalSeconds, 0);
-    
+
     // Gerar dados para o gráfico donut
     const chartData = projectEntries.map(([name, data]) => ({
       name,
@@ -385,14 +385,14 @@ export class StatsPanel {
         .overview-section {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 30px 20px;
+          padding: 10px 0px;
         }
 
         .cards-container {
           display: grid;
           grid-template-columns: 400px 1fr;
-          gap: 30px;
-          margin-bottom: 40px;
+          gap: 20px;
+          margin-bottom: 10px;
         }
 
         .overview-card {
@@ -441,14 +441,14 @@ export class StatsPanel {
 
         .card-stats {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1.8fr;
           gap: 12px;
         }
 
         .stat-item {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
           font-size: 14px;
         }
 
@@ -462,6 +462,26 @@ export class StatsPanel {
           border-radius: 3px;
           font-size: 12px;
         }
+
+        .stat-value.critical {
+      background-color: var(--critical-color);
+      color: white;
+    }
+
+    .stat-value.high {
+      background-color: var(--error-color);
+      color: white;
+    }
+
+    .stat-value.medium {
+      background-color: var(--warning-color);
+      color: white;
+    }
+
+    .stat-value.low {
+      background-color: var(--success-color);
+      color: white;
+    }
 
         .info-cards {
           display: flex;
@@ -626,7 +646,6 @@ export class StatsPanel {
 
         /* Estilos para os filtros de análise */
         .filters-section {
-          margin: 20px 0;
           padding: 20px;
           background-color: var(--hover-background);
           border: 1px solid var(--border-color);
@@ -678,7 +697,7 @@ export class StatsPanel {
         }
 
         .filter-select {
-          height: 100px;
+          height: 200px;
           resize: vertical;
         }
 
@@ -781,10 +800,9 @@ export class StatsPanel {
         <h2>Resumo Geral</h2>
         <div class="cards-container">
           <div class="overview-card">
-            <div class="card-content">
               <h3>Tempo Total</h3>
               <div class="donut-container">
-                <canvas id="timeChart" width="150" height="150"></canvas>
+                <canvas id="timeChart" width="200" height="200"></canvas>
                 <div class="donut-center">
                   <span class="center-number">${Math.floor(totalTime / 3600)}h</span>
                   <span class="center-label">Total</span>
@@ -793,22 +811,21 @@ export class StatsPanel {
               <div class="card-stats">
                 <div class="stat-item">
                   <span class="stat-label">Projetos:</span>
-                  <span class="stat-value">${projectEntries.length}</span>
+                  <span class="stat-value critical">${projectEntries.length}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Arquivos:</span>
-                  <span class="stat-value">${projectEntries.reduce((sum, [, data]) => sum + data.files.length, 0)}</span>
+                  <span class="stat-value high">${projectEntries.reduce((sum, [, data]) => sum + data.files.length, 0)}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Hoje:</span>
-                  <span class="stat-value">${this.formatTime(Math.floor(totalTime * 0.1))}</span>
+                  <span class="stat-value medium">${this.formatTime(Math.floor(totalTime * 0.1))}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Esta semana:</span>
-                  <span class="stat-value">${this.formatTime(totalTime)}</span>
+                  <span class="stat-value low">${this.formatTime(totalTime)}</span>
                 </div>
               </div>
-            </div>
           </div>
 
           <div class="info-cards">
@@ -827,8 +844,6 @@ export class StatsPanel {
                 <div class="filter-group">
                   <label for="start-date">Data Inicial:</label>
                   <input type="date" id="start-date" class="filter-input">
-                </div>
-                <div class="filter-group">
                   <label for="end-date">Data Final:</label>
                   <input type="date" id="end-date" class="filter-input">
                 </div>
@@ -837,10 +852,10 @@ export class StatsPanel {
                   <select id="projectFilter" class="filter-select" multiple>
                     <option value="">Todos os Projetos</option>
                     ${projectEntries
-                      .map(
-                        ([projectName]) => `<option value="${projectName}">${projectName}</option>`
-                      )
-                      .join("")}
+        .map(
+          ([projectName]) => `<option value="${projectName}">${projectName}</option>`
+        )
+        .join("")}
                   </select>
                 </div>
               </div>
@@ -869,8 +884,8 @@ export class StatsPanel {
             </thead>
             <tbody>
               ${projectEntries.map(([projectName, projectData], index) => {
-                const topFiles = projectData.files.slice(0, 3).map(f => this.formatFilePath(f.name, projectName)).join(', ');
-                return `
+          const topFiles = projectData.files.slice(0, 3).map(f => this.formatFilePath(f.name, projectName)).join(', ');
+          return `
                 <tr>
                   <td class="project-name">${projectName}</td>
                   <td class="time-value">${this.formatTime(projectData.totalSeconds)}</td>
@@ -896,7 +911,7 @@ export class StatsPanel {
                   </td>
                 </tr>
                 `;
-              }).join('')}
+        }).join('')}
             </tbody>
           </table>
         </div>
@@ -972,8 +987,8 @@ export class StatsPanel {
           const ctx = canvas.getContext('2d');
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
-          const radius = 65;
-          const innerRadius = 35;
+          const radius = 90;
+          const innerRadius = 50;
           
           // Limpar canvas
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1400,10 +1415,10 @@ export class StatsPanel {
                   <select id="projectFilter" multiple class="filter-input">
                     <option value="">Todos os projetos</option>
                     ${availableProjects
-                      .map(
-                        (project) => `<option value="${project}">${project}</option>`
-                      )
-                      .join("")}
+        .map(
+          (project) => `<option value="${project}">${project}</option>`
+        )
+        .join("")}
                   </select>
                 </div>
               </div>                      
