@@ -1,8 +1,7 @@
 # My Time Trace VSCode (Beta 0.2.1)
 
 <div align="center">
-
-![My Time Trace Logo](images/my-time-trace-logo.png)
+<img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
 
 [![Status](https://img.shields.io/badge/Status-Beta-orange?style=flat-square)]()
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
@@ -63,15 +62,33 @@ No momento, esta extensão está em desenvolvimento e não está disponível no 
 1. Clone o repositório
 2. Execute `npm install` para instalar as dependências
 3. Execute `npm run compile` para compilar o TypeScript
-4. Execute `F5` para testar em modo debug com o arquivo `src/extension.ts` aberto ou crie um VSIX com `vsce package`
+4. Instale a ferramenta `vsce` globalmente: `npm install -g vsce`
+5. Crie um VSIX com `vsce package`. Este comando irá gerar um arquivo `.vsix`.
+
+### Como Instalar o Arquivo .vsix
+
+Após gerar o pacote, você pode instalá-lo de duas maneiras:
+
+**1. Pela Interface do VS Code:**
+- Vá para a visualização de **Extensões** (clique no ícone de blocos na barra lateral).
+- Clique nos três pontos (`...`) no canto superior da visualização.
+- Selecione **Instalar do VSIX...** e escolha o arquivo `.vsix` gerado.
+
+**2. Pelo Terminal:**
+- Execute o seguinte comando no terminal, substituindo `nome-do-arquivo.vsix` pelo nome do seu arquivo:
+  ```bash
+  code --install-extension nome-do-arquivo.vsix
+  ```
+
+Depois de instalar, o VS Code solicitará que você recarregue a janela para ativar a extensão.
 
 ## Configurações da Extensão
 
 As seguintes configurações já estão disponíveis:
 
-- `myTimeTrace.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
-- `myTimeTrace.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
-- `myTimeTrace.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
+- `myTimeTraceVSCode.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
+- `myTimeTraceVSCode.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
+- `myTimeTraceVSCode.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
 
 ## Melhorias Planejadas
 

@@ -10,7 +10,7 @@ export interface UserConfig {
  * Lê as configurações do usuário
  */
 export function getConfig(): UserConfig {
-  const config = vscode.workspace.getConfiguration("mymyTimeTrace");
+  const config = vscode.workspace.getConfiguration("myTimeTraceVSCode");
   const idleTimeoutMinutes = config.get<number>("idleTimeout") || 5;
   const autoStart = config.get<boolean>("autoStart") || true;
   const showInStatusBar = config.get<boolean>("showInStatusBar") || true;

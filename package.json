@@ -88,7 +88,8 @@
     "i18n": "vscode-nls-dev-create"
   },
   "dependencies": {
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "vscode-nls": "5.2.0"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -103,7 +104,6 @@
     "eslint": "^9.25.1",
     "sinon": "20.0.0",
     "typescript": "^5.8.3",
-    "vscode-nls": "5.2.0",
     "vscode-nls-dev": "4.0.4"
   },
   "keywords": [

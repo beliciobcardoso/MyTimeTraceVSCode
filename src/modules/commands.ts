@@ -31,18 +31,30 @@ export class CommandManager {
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
+    console.log("📝 Registrando comandos da extensão...");
+
     commands.push(
-      CommandManager.safeRegisterCommand("my-time-trace-vscode.startTracking", startTracking)
+      CommandManager.safeRegisterCommand("my-time-trace-vscode.startTracking", () => {
+        console.log("🚀 Comando startTracking executado!");
+        startTracking();
+      })
     );
 
     commands.push(
-      CommandManager.safeRegisterCommand("my-time-trace-vscode.pauseTracking", pauseTracking)
+      CommandManager.safeRegisterCommand("my-time-trace-vscode.pauseTracking", () => {
+        console.log("⏸️ Comando pauseTracking executado!");
+        pauseTracking();
+      })
     );
 
     commands.push(
-      CommandManager.safeRegisterCommand("my-time-trace-vscode.showStats", showStats)
+      CommandManager.safeRegisterCommand("my-time-trace-vscode.showStats", () => {
+        console.log("📊 Comando showStats executado!");
+        showStats();
+      })
     );
 
+    console.log(`✅ ${commands.length} comandos registrados com sucesso!`);
     return commands;
   }
 }

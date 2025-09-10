@@ -67,37 +67,41 @@ export class timeTrace {
    * Inicia o rastreamento de tempo
    */
   startTracking(): void {
-    this.isTracking = true;
-    this.startTrackingFile();
-    this.statusBarManager.update(this.currentFile, this.timeSpentOnFile, this.isTracking);
+    try {
+      console.log("🟢 Iniciando rastreamento de tempo...");
+      this.isTracking = true;
+      this.startTrackingFile();
+      this.statusBarManager.update(this.currentFile, this.timeSpentOnFile, this.isTracking);
 
-    // Reinicia o timer se já estiver rodando
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-    }
-
-    const config = getConfig();
-
-    // Configura o timer para monitoramento contínuo
-    this.timerInterval = setInterval(async () => {
-      if (!this.dbManager.isInitialized()) {
-        return; // Não faz nada se o DB não estiver pronto
+      // Reinicia o timer se já estiver rodando
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
       }
 
-      const now = Date.now();
-      if (now - this.lastActiveTime > config.IDLE_TIMEOUT_MS) {
-        if (this.currentFile && this.timeSpentOnFile > 0) {
-          console.log(
-            `Usuário inativo. Última atividade no arquivo: ${this.currentFile}. Salvando...`
-          );
-          await this.resetFileTimerAndSave(); // Salva o tempo do arquivo antes de marcar como inativo
+      const config = getConfig();
+      console.log("📋 Configuração carregada:", config);
 
-          // Envia um registro de "idle"
-          await this.dbManager.saveActivityData({
-            timestamp: new Date(this.lastActiveTime + this.timeSpentOnFile).toISOString(),
-            project: this.projectRoot,
-            file: "IDLE", // Marca como um período de inatividade
-            duration: Math.round((now - (this.lastActiveTime + this.timeSpentOnFile)) / 1000),
+      // Configura o timer para monitoramento contínuo
+      this.timerInterval = setInterval(async () => {
+        if (!this.dbManager.isInitialized()) {
+          console.log("⚠️ Banco de dados não inicializado, aguardando...");
+          return; // Não faz nada se o DB não estiver pronto
+        }
+
+        const now = Date.now();
+        if (now - this.lastActiveTime > config.IDLE_TIMEOUT_MS) {
+          if (this.currentFile && this.timeSpentOnFile > 0) {
+            console.log(
+              `😴 Usuário inativo. Última atividade no arquivo: ${this.currentFile}. Salvando...`
+            );
+            await this.resetFileTimerAndSave(); // Salva o tempo do arquivo antes de marcar como inativo
+
+            // Envia um registro de "idle"
+            await this.dbManager.saveActivityData({
+              timestamp: new Date(this.lastActiveTime + this.timeSpentOnFile).toISOString(),
+              project: this.projectRoot,
+              file: "IDLE", // Marca como um período de inatividade
+              duration: Math.round((now - (this.lastActiveTime + this.timeSpentOnFile)) / 1000),
             isIdle: true,
           });
 
@@ -116,12 +120,15 @@ export class timeTrace {
         console.log("Usuário voltou da inatividade ou abriu um arquivo.");
         this.startTrackingFile(); // Reinicia o rastreamento
       }
-    }, 1000); // Verifica a cada segundo
+      }, 1000); // Verifica a cada segundo
 
-    vscode.window.showInformationMessage(localize('timeTrace.trackingStarted', 'Time tracking started!'));
-  }
-
-  /**
+      console.log("✅ Rastreamento iniciado com sucesso!");
+      vscode.window.showInformationMessage(localize('timeTrace.trackingStarted', 'Time tracking started!'));
+    } catch (error) {
+      console.error("❌ Erro ao iniciar rastreamento:", error);
+      vscode.window.showErrorMessage(`Erro ao iniciar rastreamento: ${error}`);
+    }
+  }  /**
    * Pausa o rastreamento de tempo
    */
   pauseTracking(): void {
