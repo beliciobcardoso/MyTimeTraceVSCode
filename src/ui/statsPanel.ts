@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import * as vscode from "vscode";
+import * as nls from "vscode-nls";
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
@@ -49,10 +49,10 @@ export interface StatsFilters {
 
 /**
  * Classe responsável por gerar painéis de visualização de estatísticas
- * 
+ *
  * NOVAS IMPLEMENTAÇÕES v0.2.1:
  * ============================
- * 
+ *
  * 1. DASHBOARD MODERNO COM FILTROS INTEGRADOS (generateStatsHtml):
  *    - Design baseado no template dashboard-demo.html
  *    - Sistema de filtros client-side inspirado em generateStatsWithFiltersHtml
@@ -62,7 +62,7 @@ export interface StatsFilters {
  *    - Filtros por data (inicial/final) e seleção múltipla de projetos
  *    - Feedback visual dos filtros aplicados
  *    - Design responsivo para dispositivos móveis
- * 
+ *
  * 2. FUNCIONALIDADES DE FILTROS:
  *    - populateProjectSelect(): Preenche select com projetos disponíveis
  *    - setupFilterListeners(): Configura event listeners dos controles
@@ -72,17 +72,17 @@ export interface StatsFilters {
  *    - updateStatCards(): Recalcula e atualiza cards de estatísticas
  *    - updateDonutChart(): Redesenha gráfico com dados filtrados
  *    - showFilterResults(): Exibe feedback dos filtros aplicados
- * 
+ *
  * 3. FUNÇÕES AUXILIARES:
  *    - formatFilePath(): Formata caminhos de arquivo para exibição
  *    - formatTime(): Formata tempo em formato legível (h/m/s)
  *    - getProjectColor(): Retorna cores consistentes para projetos
- * 
+ *
  * 4. PRESERVAÇÃO DA FUNCIONALIDADE EXISTENTE:
  *    - generateStatsWithFiltersHtml(): Mantida intacta conforme solicitado
  *    - Todos os métodos e funcionalidades anteriores preservados
  *    - Compatibilidade total com implementações existentes
- * 
+ *
  * ARQUITETURA:
  * - Client-side filtering para performance
  * - Separação clara entre dados originais e filtrados
@@ -155,7 +155,7 @@ export class StatsPanel {
   static createStatsPanel(projectsData: ProjectsData): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
       "myTimeTraceStats",
-      localize('statsPanel.title', 'Time Statistics'),
+      localize("statsPanel.title", "Time Statistics"),
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -176,7 +176,7 @@ export class StatsPanel {
   ): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
       "myTimeTraceStatsFiltered",
-      localize('statsPanel.filteredTitle', 'Time Statistics with Filters'),
+      localize("statsPanel.filteredTitle", "Time Statistics with Filters"),
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -271,10 +271,10 @@ export class StatsPanel {
 
   /**
    * Gera o HTML para exibir as estatísticas com dashboard moderno e filtros integrados
-   * 
+   *
    * Esta implementação combina o design do dashboard-demo.html com funcionalidade de filtros
    * similar à tela generateStatsWithFiltersHtml, mantendo ambas as funcionalidades separadas.
-   * 
+   *
    * Funcionalidades incluídas:
    * - Dashboard moderno com gráfico donut interativo
    * - Cards de estatísticas em tempo real
@@ -282,20 +282,23 @@ export class StatsPanel {
    * - Tabela de projetos com detalhes expansíveis
    * - Atualização dinâmica da visualização com base nos filtros aplicados
    * - Design responsivo para dispositivos móveis
-   * 
+   *
    * @param projectsData Dados dos projetos organizados por nome do projeto
    * @returns HTML string completo do dashboard com filtros
    */
   private static generateStatsHtml(projectsData: ProjectsData): string {
     // Calcular totais para o gráfico donut
     const projectEntries = Object.entries(projectsData);
-    const totalTime = projectEntries.reduce((sum, [, data]) => sum + data.totalSeconds, 0);
+    const totalTime = projectEntries.reduce(
+      (sum, [, data]) => sum + data.totalSeconds,
+      0
+    );
 
     // Gerar dados para o gráfico donut
     const chartData = projectEntries.map(([name, data]) => ({
       name,
       value: data.totalSeconds,
-      percentage: ((data.totalSeconds / totalTime) * 100).toFixed(1)
+      percentage: ((data.totalSeconds / totalTime) * 100).toFixed(1),
     }));
 
     // Gerar array de projetos para filtros
@@ -305,11 +308,19 @@ export class StatsPanel {
       projectName,
       totalMinutes: Math.round(projectData.totalSeconds / 60),
       formattedTime: this.formatTime(projectData.totalSeconds),
-      percentage: ((projectData.totalSeconds / totalTime) * 100).toFixed(1)
+      percentage: ((projectData.totalSeconds / totalTime) * 100).toFixed(1),
     }));
 
     // Cores para o gráfico
-    const colors = ['#0078d4', '#107c10', '#ff8c00', '#d13438', '#a80000', '#6f42c1', '#20c997'];
+    const colors = [
+      "#0078d4",
+      "#107c10",
+      "#ff8c00",
+      "#d13438",
+      "#a80000",
+      "#6f42c1",
+      "#20c997",
+    ];
 
     return `
     <!DOCTYPE html>
@@ -400,7 +411,7 @@ export class StatsPanel {
           border: 1px solid var(--border-color);
           border-radius: 8px;
           padding: 25px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(244, 235, 235, 0.5);
         }
 
         .overview-card h3 {
@@ -603,7 +614,6 @@ export class StatsPanel {
 
         .files-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
           gap: 10px;
         }
 
@@ -647,9 +657,12 @@ export class StatsPanel {
         /* Estilos para os filtros de análise */
         .filters-section {
           padding: 20px;
+          min-height: 400px;
           background-color: var(--hover-background);
           border: 1px solid var(--border-color);
           border-radius: 6px;
+          overflow-y: auto;
+          box-shadow: 0 4px 12px rgba(244, 235, 235, 0.5);
         }
 
         .filters-section h4 {
@@ -804,26 +817,37 @@ export class StatsPanel {
               <div class="donut-container">
                 <canvas id="timeChart" width="200" height="200"></canvas>
                 <div class="donut-center">
-                  <span class="center-number">${Math.floor(totalTime / 3600)}h</span>
+                  <span class="center-number">${Math.floor(
+                    totalTime / 3600
+                  )}h</span>
                   <span class="center-label">Total</span>
                 </div>
               </div>
               <div class="card-stats">
                 <div class="stat-item">
                   <span class="stat-label">Projetos:</span>
-                  <span class="stat-value critical">${projectEntries.length}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Arquivos:</span>
-                  <span class="stat-value high">${projectEntries.reduce((sum, [, data]) => sum + data.files.length, 0)}</span>
+                  <span class="stat-value critical">${
+                    projectEntries.length
+                  }</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Hoje:</span>
-                  <span class="stat-value medium">${this.formatTime(Math.floor(totalTime * 0.1))}</span>
+                  <span class="stat-value medium">${this.formatTime(
+                    Math.floor(totalTime * 0.1)
+                  )}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Arquivos:</span>
+                  <span class="stat-value high">${projectEntries.reduce(
+                    (sum, [, data]) => sum + data.files.length,
+                    0
+                  )}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Esta semana:</span>
-                  <span class="stat-value low">${this.formatTime(totalTime)}</span>
+                  <span class="stat-value low">${this.formatTime(
+                    totalTime
+                  )}</span>
                 </div>
               </div>
           </div>
@@ -852,10 +876,11 @@ export class StatsPanel {
                   <select id="projectFilter" class="filter-select" multiple>
                     <option value="">Todos os Projetos</option>
                     ${projectEntries
-        .map(
-          ([projectName]) => `<option value="${projectName}">${projectName}</option>`
-        )
-        .join("")}
+                      .map(
+                        ([projectName]) =>
+                          `<option value="${projectName}">${projectName}</option>`
+                      )
+                      .join("")}
                   </select>
                 </div>
               </div>
@@ -883,13 +908,21 @@ export class StatsPanel {
               </tr>
             </thead>
             <tbody>
-              ${projectEntries.map(([projectName, projectData], index) => {
-          const topFiles = projectData.files.slice(0, 3).map(f => this.formatFilePath(f.name, projectName)).join(', ');
-          return `
+              ${projectEntries
+                .map(([projectName, projectData], index) => {
+                  const topFiles = projectData.files
+                    .slice(0, 3)
+                    .map((f) => this.formatFilePath(f.name, projectName))
+                    .join(", ");
+                  return `
                 <tr>
                   <td class="project-name">${projectName}</td>
-                  <td class="time-value">${this.formatTime(projectData.totalSeconds)}</td>
-                  <td class="files-count">${projectData.files.length} arquivo(s)</td>
+                  <td class="time-value">${this.formatTime(
+                    projectData.totalSeconds
+                  )}</td>
+                  <td class="files-count">${
+                    projectData.files.length
+                  } arquivo(s)</td>
                   <td class="top-files">${topFiles}</td>
                   <td>
                     <button class="action-btn" onclick="toggleProjectDetails('${index}')">Ver Detalhes</button>
@@ -900,25 +933,37 @@ export class StatsPanel {
                     <div class="details-content">
                       <h4>Arquivos do projeto ${projectName}</h4>
                       <div class="files-grid">
-                        ${projectData.files.map(file => `
+                        ${projectData.files
+                          .map(
+                            (file) => `
                           <div class="file-item">
-                            <div class="file-name">${this.formatFilePath(file.name, projectName)}</div>
-                            <div class="file-time">${this.formatTime(file.seconds)}</div>
+                            <div class="file-name">${this.formatFilePath(
+                              file.name,
+                              projectName
+                            )}</div>
+                            <div class="file-time">${this.formatTime(
+                              file.seconds
+                            )}</div>
                           </div>
-                        `).join('')}
+                        `
+                          )
+                          .join("")}
                       </div>
                     </div>
                   </td>
                 </tr>
                 `;
-        }).join('')}
+                })
+                .join("")}
             </tbody>
           </table>
         </div>
       </div>
 
       <div class="footer">
-        <p><em>Dados coletados até: ${new Date().toLocaleString('pt-BR')}</em></p>
+        <p><em>Dados coletados até: ${new Date().toLocaleString(
+          "pt-BR"
+        )}</em></p>
       </div>
 
       <script>
@@ -1141,7 +1186,9 @@ export class StatsPanel {
           
           projects.forEach((project, index) => {
             // Buscar dados completos do projeto dos dados originais
-            const fullProjectData = Object.entries(${JSON.stringify(projectsData)})
+            const fullProjectData = Object.entries(${JSON.stringify(
+              projectsData
+            )})
               .find(([name]) => name === project.projectName);
             
             if (!fullProjectData) return;
@@ -1248,7 +1295,9 @@ export class StatsPanel {
             
             // Segundo card: arquivos (calcular total de arquivos dos projetos filtrados)
             const totalFiles = projects.reduce((sum, project) => {
-              const fullProjectData = Object.entries(${JSON.stringify(projectsData)})
+              const fullProjectData = Object.entries(${JSON.stringify(
+                projectsData
+              )})
                 .find(([name]) => name === project.projectName);
               return sum + (fullProjectData ? fullProjectData[1].files.length : 0);
             }, 0);
@@ -1415,10 +1464,11 @@ export class StatsPanel {
                   <select id="projectFilter" multiple class="filter-input">
                     <option value="">Todos os projetos</option>
                     ${availableProjects
-        .map(
-          (project) => `<option value="${project}">${project}</option>`
-        )
-        .join("")}
+                      .map(
+                        (project) =>
+                          `<option value="${project}">${project}</option>`
+                      )
+                      .join("")}
                   </select>
                 </div>
               </div>                      

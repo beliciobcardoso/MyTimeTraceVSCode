@@ -87,7 +87,7 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 25px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(244, 235, 235, 0.5);
     }
 
     .overview-card h3 {
@@ -310,7 +310,6 @@
 
     .files-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 10px;
     }
 
@@ -354,9 +353,12 @@
     /* Estilos para os filtros de análise */
     .filters-section {
       padding: 20px;
+      min-height: 400px;
       background-color: var(--hover-background);
       border: 1px solid var(--border-color);
       border-radius: 6px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(244, 235, 235, 0.5);
     }
 
     .filters-section h4 {
