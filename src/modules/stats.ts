@@ -8,7 +8,10 @@ import { StatsPanel, ProjectsData, TimeEntry } from "../ui";
  * Classe responsável por gerar e exibir estatísticas
  */
 export class StatsManager {
-  constructor(private dbManager: DatabaseManager) {}
+  constructor(
+    private dbManager: DatabaseManager,
+    private context: vscode.ExtensionContext
+  ) {}
 
   /**
    * Mostra as estatísticas em um painel webview
@@ -86,7 +89,7 @@ export class StatsManager {
       });
 
       // Cria o painel básico (sem filtros)
-      const panel = StatsPanel.createStatsPanel(projectsData);
+      const panel = StatsPanel.createStatsPanel(projectsData, this.context);
 
       // Opcional: adicionar handlers para eventos do painel
       panel.onDidDispose(() => {
@@ -136,7 +139,7 @@ export class StatsManager {
       const availableProjects: string[] = projectsQuery.map((row: any) => row.project);
 
       // Cria o painel webview com filtros
-      const panel = StatsPanel.createStatsWithFiltersPanel(rawData, availableProjects);
+      const panel = StatsPanel.createStatsWithFiltersPanel(rawData, availableProjects, this.context);
 
       // Adicionar handlers para eventos do painel
       panel.onDidDispose(() => {

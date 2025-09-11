@@ -79,7 +79,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm run copy-assets",
+    "copy-assets": "mkdir -p out/ui && cp src/ui/*.css out/ui/",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
     "pretest": "npm run compile && npm run lint",

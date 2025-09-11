@@ -6,3 +6,5 @@ export {
   TimeEntry,
   StatsFilters
 } from './statsPanel';
+
+export { CssLoader } from './cssLoader';

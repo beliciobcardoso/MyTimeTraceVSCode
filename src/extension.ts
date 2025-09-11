@@ -36,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Inicializa os gerenciadores
     statusBarManager = new StatusBarManager();
     myTimeTrace = new timeTrace(dbManager, statusBarManager);
-    statsManager = new StatsManager(dbManager);
+    statsManager = new StatsManager(dbManager, context);
 
     // Cria e configura o status bar
     statusBarManager.create();
