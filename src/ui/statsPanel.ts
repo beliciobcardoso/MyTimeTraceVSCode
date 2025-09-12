@@ -700,14 +700,21 @@ export class StatsPanel {
             }
           }
           
-          // Resetar visualização para dados completos
+          // Resetar visualização para dados completos originais
           updateProjectsTable(allProjects);
-          updateStatCards(allProjects);
-          updateDonutChart(allProjects);
+          
+          // Restaurar cards de estatísticas originais
+          restoreOriginalStatCards();
+          
+          // Restaurar gráfico donut original (não filtrado)
+          drawDonutChart();
           
           // Esconder resultado dos filtros
           const filterResults = document.getElementById('filterResults');
-          if (filterResults) filterResults.classList.remove('active');
+          if (filterResults) {
+            filterResults.classList.remove('active');
+            filterResults.textContent = '';
+          }
         }
 
         /**
@@ -834,12 +841,12 @@ export class StatsPanel {
           
           // Atualizar os cards de estatísticas
           const statItems = document.querySelectorAll('.stat-item');
-          if (statItems.length >= 2) {
+          if (statItems.length >= 4) {
             // Primeiro card: número de projetos
             const projectsValue = statItems[0].querySelector('.stat-value');
             if (projectsValue) projectsValue.textContent = totalProjects;
             
-            // Segundo card: arquivos (calcular total de arquivos dos projetos filtrados)
+            // Terceiro card: arquivos (calcular total de arquivos dos projetos filtrados)
             const totalFiles = projects.reduce((sum, project) => {
               const fullProjectData = Object.entries(${JSON.stringify(
                 projectsData
@@ -847,7 +854,7 @@ export class StatsPanel {
                 .find(([name]) => name === project.projectName);
               return sum + (fullProjectData ? fullProjectData[1].files.length : 0);
             }, 0);
-            const filesValue = statItems[1].querySelector('.stat-value');
+            const filesValue = statItems[2].querySelector('.stat-value');
             if (filesValue) filesValue.textContent = totalFiles;
           }
           
@@ -855,6 +862,31 @@ export class StatsPanel {
           const centerNumber = document.querySelector('.center-number');
           if (centerNumber) {
             centerNumber.textContent = \`\${hours}h\`;
+          }
+        }
+
+        /**
+         * Restaura os valores originais dos cards de estatísticas
+         * Usado ao limpar filtros para mostrar dados completos
+         */
+        function restoreOriginalStatCards() {
+          const statItems = document.querySelectorAll('.stat-item');
+          if (statItems.length >= 4) {
+            // Restaurar valores originais
+            const projectsValue = statItems[0].querySelector('.stat-value');
+            if (projectsValue) projectsValue.textContent = '${projectEntries.length}';
+            
+            const filesValue = statItems[2].querySelector('.stat-value');
+            if (filesValue) filesValue.textContent = '${projectEntries.reduce(
+              (sum, [, data]) => sum + data.files.length,
+              0
+            )}';
+          }
+          
+          // Restaurar centro do gráfico donut original
+          const centerNumber = document.querySelector('.center-number');
+          if (centerNumber) {
+            centerNumber.textContent = '${Math.floor(totalTime / 3600)}h';
           }
         }
 
