@@ -155,7 +155,8 @@ export class StatsPanel {
    */
   static createStatsPanel(
     projectsData: ProjectsData,
-    context: vscode.ExtensionContext
+    context: vscode.ExtensionContext,
+    rawData?: TimeEntry[]
   ): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
       "myTimeTraceStats",
@@ -167,7 +168,7 @@ export class StatsPanel {
       }
     );
 
-    panel.webview.html = this.generateStatsHtml(projectsData, context);
+    panel.webview.html = this.generateStatsHtml(projectsData, context, rawData);
     return panel;
   }
 
@@ -296,7 +297,8 @@ export class StatsPanel {
    */
   private static generateStatsHtml(
     projectsData: ProjectsData,
-    context: vscode.ExtensionContext
+    context: vscode.ExtensionContext,
+    rawData?: TimeEntry[]
   ): string {
     // Calcular totais para o gráfico donut
     const projectEntries = Object.entries(projectsData);
@@ -541,6 +543,9 @@ export class StatsPanel {
         let projectsData = ${JSON.stringify(projectsArray)};
         let allProjects = projectsData;
 
+        // Dados brutos para filtros por data (sem entradas IDLE por padrão)
+        const rawData = ${JSON.stringify((rawData || []).filter(entry => entry.is_idle !== 1))};
+
         // Dados dos projetos para o gráfico
         const chartData = ${JSON.stringify(chartData)};
         const colors = ${JSON.stringify(colors)};
@@ -665,7 +670,30 @@ export class StatsPanel {
           
           let filteredProjects = [...allProjects];
           
-          // Aplicar filtros por projeto
+          // Se há filtros de data, precisamos filtrar usando os dados brutos
+          if ((startDate || endDate) && rawData.length > 0) {
+            // Filtrar dados brutos por data (IDLE já foi filtrado)
+            const filteredRawData = rawData.filter(entry => {
+              // Filtro por data
+              if (startDate) {
+                const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+                if (entryDate < startDate) return false;
+              }
+              
+              if (endDate) {
+                const entryDate = new Date(entry.timestamp).toISOString().split('T')[0];
+                if (entryDate > endDate) return false;
+              }
+              
+              return true;
+            });
+            
+            // Converter dados filtrados para formato de projetos
+            const projectsFromFilteredData = convertFilteredDataToProjects(filteredRawData);
+            filteredProjects = projectsFromFilteredData;
+          }
+          
+          // Aplicar filtros por projeto (se selecionados)
           if (selectedProjects.length > 0) {
             filteredProjects = filteredProjects.filter(project => 
               selectedProjects.includes(project.projectName)
@@ -791,6 +819,38 @@ export class StatsPanel {
          * Funções auxiliares para formatação (cópias das funções do servidor)
          * Necessárias para manter consistência na formatação client-side
          */
+        
+        // Converte dados brutos filtrados para formato de projetos compatível com a UI
+        function convertFilteredDataToProjects(filteredRawData) {
+          const projectFileMap = {};
+          
+          // Agrupa por projeto e arquivo
+          filteredRawData.forEach(entry => {
+            if (!projectFileMap[entry.project]) {
+              projectFileMap[entry.project] = {};
+            }
+            if (!projectFileMap[entry.project][entry.file]) {
+              projectFileMap[entry.project][entry.file] = 0;
+            }
+            projectFileMap[entry.project][entry.file] += entry.duration_seconds;
+          });
+          
+          // Converte para o formato esperado pela UI
+          const projectsArray = [];
+          Object.entries(projectFileMap).forEach(([projectName, files]) => {
+            const totalSeconds = Object.values(files).reduce((sum, seconds) => sum + seconds, 0);
+            const totalMinutes = Math.round(totalSeconds / 60);
+            
+            projectsArray.push({
+              projectName,
+              totalMinutes,
+              formattedTime: formatTime(totalSeconds),
+              percentage: '0' // Será recalculado na exibição
+            });
+          });
+          
+          return projectsArray;
+        }
         
         // Formata caminho do arquivo para exibição limpa
         function formatFilePath(filePath, projectName) {

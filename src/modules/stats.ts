@@ -68,6 +68,20 @@ export class StatsManager {
         ORDER BY project, total_seconds DESC
       `);
 
+      // Obtém todos os dados brutos para suporte a filtros por data
+      const rawData: TimeEntry[] = await this.dbManager.query(`
+        SELECT
+          id,
+          timestamp,
+          project,
+          file,
+          duration_seconds,
+          is_idle,
+          synced
+        FROM time_entries
+        ORDER BY timestamp DESC
+      `);
+
       // Converte para o formato ProjectsData
       const projectsData: ProjectsData = {};
       
@@ -88,8 +102,8 @@ export class StatsManager {
         projectsData[projectName].totalSeconds += row.total_seconds;
       });
 
-      // Cria o painel básico (sem filtros)
-      const panel = StatsPanel.createStatsPanel(projectsData, this.context);
+      // Cria o painel básico (agora com suporte a filtros por data)
+      const panel = StatsPanel.createStatsPanel(projectsData, this.context, rawData);
 
       // Opcional: adicionar handlers para eventos do painel
       panel.onDidDispose(() => {
