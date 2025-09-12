@@ -34,12 +34,14 @@ body {
 }
 
 .header {
-  background-color: var(--card-background);
+  background-color: rgba(169, 162, 162, 0.1);
   border-bottom: 1px solid var(--border-color);
-  padding: 20px 0;
+  padding: 10px 0;
   position: sticky;
   top: 0;
   z-index: 100;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .header-content {
@@ -171,11 +173,11 @@ h2 {
   color: white;
 }
 
-.info-cards {
+/* .info-cards {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
+} */
 
 .remediation-card {
   background-color: var(--card-background);
@@ -202,7 +204,7 @@ h2 {
 .projects-table-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px 40px;
+  padding: 0 0px 40px;
 }
 
 .table-container {
@@ -451,7 +453,7 @@ h2 {
   .cards-container {
     grid-template-columns: 1fr;
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -464,15 +466,15 @@ h2 {
   .filter-btn {
     flex: 1;
   }
-  
+
   .files-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .projects-table {
     font-size: 12px;
   }
-  
+
   .top-files {
     display: none;
   }
