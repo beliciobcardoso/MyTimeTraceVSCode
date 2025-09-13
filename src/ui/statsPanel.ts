@@ -381,7 +381,22 @@ export class StatsPanel {
                 <div class="stat-item">
                   <span class="stat-label">Hoje:</span>
                   <span class="stat-value medium">${this.formatTime(
-                    Math.floor(totalTime * 0.1)
+                    (() => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const tomorrow = new Date(today);
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      return (rawData || [])
+                        .filter((entry) => {
+                          const entryDate = new Date(entry.timestamp);
+                          return (
+                            entryDate >= today &&
+                            entryDate < tomorrow &&
+                            entry.is_idle !== 1
+                          );
+                        })
+                        .reduce((sum, entry) => sum + entry.duration_seconds, 0);
+                    })()
                   )}</span>
                 </div>
                 <div class="stat-item">
