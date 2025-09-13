@@ -463,61 +463,33 @@ export class StatsPanel {
           <table class="projects-table">
             <thead>
               <tr>
-                <th>Projeto</th>
-                <th>Tempo Total</th>
-                <th>Arquivos</th>
+                <th class="sortable" data-column="project" data-sort="none">
+                  Projeto
+                  <span class="sort-indicator">
+                    <span class="sort-arrow sort-up">▲</span>
+                    <span class="sort-arrow sort-down">▼</span>
+                  </span>
+                </th>
+                <th class="sortable" data-column="time" data-sort="none">
+                  Tempo Total
+                  <span class="sort-indicator">
+                    <span class="sort-arrow sort-up">▲</span>
+                    <span class="sort-arrow sort-down">▼</span>
+                  </span>
+                </th>
+                <th class="sortable" data-column="files" data-sort="none">
+                  Arquivos
+                  <span class="sort-indicator">
+                    <span class="sort-arrow sort-up">▲</span>
+                    <span class="sort-arrow sort-down">▼</span>
+                  </span>
+                </th>
                 <th>Principais Arquivos</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              ${projectEntries
-                .map(([projectName, projectData], index) => {
-                  const topFiles = projectData.files
-                    .slice(0, 3)
-                    .map((f) => this.formatFilePath(f.name, projectName))
-                    .join(", ");
-                  return `
-                <tr>
-                  <td class="project-name">${projectName}</td>
-                  <td class="time-value">${this.formatTime(
-                    projectData.totalSeconds
-                  )}</td>
-                  <td class="files-count">${
-                    projectData.files.length
-                  } arquivo(s)</td>
-                  <td class="top-files">${topFiles}</td>
-                  <td>
-                    <button class="action-btn" onclick="toggleProjectDetails('${index}')">Ver Detalhes</button>
-                  </td>
-                </tr>
-                <tr id="details-${index}" class="project-details" style="display: none;">
-                  <td colspan="5">
-                    <div class="details-content">
-                      <h4>Arquivos do projeto ${projectName}</h4>
-                      <div class="files-grid">
-                        ${projectData.files
-                          .map(
-                            (file) => `
-                          <div class="file-item">
-                            <div class="file-name">${this.formatFilePath(
-                              file.name,
-                              projectName
-                            )}</div>
-                            <div class="file-time">${this.formatTime(
-                              file.seconds
-                            )}</div>
-                          </div>
-                        `
-                          )
-                          .join("")}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                `;
-                })
-                .join("")}
+              <!-- Tabela será preenchida dinamicamente pelo JavaScript -->
             </tbody>
           </table>
         </div>
@@ -557,6 +529,9 @@ export class StatsPanel {
         const vscode = acquireVsCodeApi();
         let projectsData = ${JSON.stringify(projectsArray)};
         let allProjects = projectsData;
+        let currentProjectsData = ${JSON.stringify(projectsData)};
+        let currentSortColumn = 'none';
+        let currentSortDirection = 'none';
 
         // Dados brutos para filtros por data (sem entradas IDLE por padrão)
         const rawData = ${JSON.stringify((rawData || []).filter(entry => entry.is_idle !== 1))};
@@ -571,6 +546,12 @@ export class StatsPanel {
           
           // Configurar tooltips do gráfico
           setupCanvasTooltip();
+          
+          // Renderizar tabela inicial
+          renderProjectsTable(allProjects);
+          
+          // Configurar ordenação da tabela
+          setupTableSorting();
           
           // Preencher select de projetos
           populateProjectSelect();
@@ -591,6 +572,143 @@ export class StatsPanel {
             detailsRow.style.display = 'none';
             button.textContent = 'Ver Detalhes';
           }
+        }
+
+        /**
+         * SISTEMA DE ORDENAÇÃO DE TABELA
+         * 
+         * Implementa ordenação por coluna com indicadores visuais
+         * Funcionalidades:
+         * 1. Ordenação por nome do projeto (alfabética)
+         * 2. Ordenação por tempo total (numérica)  
+         * 3. Ordenação por número de arquivos (numérica)
+         * 4. Indicadores visuais (setas) para direção da ordenação
+         * 5. Alternância entre ASC/DESC/NONE
+         */
+
+        function setupTableSorting() {
+          const sortableHeaders = document.querySelectorAll('.sortable');
+          
+          sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+              const column = this.getAttribute('data-column');
+              const currentSort = this.getAttribute('data-sort');
+              
+              // Determinar nova direção
+              let newSort;
+              if (currentSort === 'none') {
+                newSort = 'asc';
+              } else if (currentSort === 'asc') {
+                newSort = 'desc';
+              } else {
+                newSort = 'none';
+              }
+              
+              // Resetar todos os headers
+              sortableHeaders.forEach(h => h.setAttribute('data-sort', 'none'));
+              
+              // Configurar header atual
+              this.setAttribute('data-sort', newSort);
+              currentSortColumn = column;
+              currentSortDirection = newSort;
+              
+              // Aplicar ordenação
+              const sortedProjects = sortProjects(projectsData, column, newSort);
+              renderProjectsTable(sortedProjects);
+            });
+          });
+        }
+
+        function sortProjects(projects, column, direction) {
+          if (direction === 'none') {
+            return [...projects]; // Retorna cópia original
+          }
+          
+          return [...projects].sort((a, b) => {
+            let valueA, valueB;
+            
+            switch (column) {
+              case 'project':
+                valueA = a.projectName.toLowerCase();
+                valueB = b.projectName.toLowerCase();
+                break;
+              case 'time':
+                valueA = a.totalMinutes;
+                valueB = b.totalMinutes;
+                break;
+              case 'files':
+                // Buscar número de arquivos nos dados completos
+                const projectDataA = Object.entries(currentProjectsData)
+                  .find(([name]) => name === a.projectName);
+                const projectDataB = Object.entries(currentProjectsData)
+                  .find(([name]) => name === b.projectName);
+                valueA = projectDataA ? projectDataA[1].files.length : 0;
+                valueB = projectDataB ? projectDataB[1].files.length : 0;
+                break;
+              default:
+                return 0;
+            }
+            
+            if (direction === 'asc') {
+              return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+            } else {
+              return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+            }
+          });
+        }
+
+        function renderProjectsTable(projects) {
+          const tbody = document.querySelector('.projects-table tbody');
+          if (!tbody) return;
+          
+          tbody.innerHTML = '';
+          
+          projects.forEach((project, index) => {
+            // Buscar dados completos do projeto
+            const fullProjectData = Object.entries(currentProjectsData)
+              .find(([name]) => name === project.projectName);
+            
+            if (!fullProjectData) return;
+            
+            const [projectName, projectData] = fullProjectData;
+            const topFiles = projectData.files.slice(0, 3)
+              .map(f => formatFilePath(f.name, projectName)).join(', ');
+            
+            // Criar linha principal do projeto
+            const row = document.createElement('tr');
+            row.innerHTML = \`
+              <td class="project-name">\${projectName}</td>
+              <td class="time-value">\${project.formattedTime}</td>
+              <td class="files-count">\${projectData.files.length} arquivo(s)</td>
+              <td class="top-files">\${topFiles}</td>
+              <td>
+                <button class="action-btn" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
+              </td>
+            \`;
+            tbody.appendChild(row);
+            
+            // Criar linha de detalhes (expandível)
+            const detailsRow = document.createElement('tr');
+            detailsRow.id = 'details-' + index;
+            detailsRow.className = 'project-details';
+            detailsRow.style.display = 'none';
+            detailsRow.innerHTML = \`
+              <td colspan="5">
+                <div class="details-content">
+                  <h4>Arquivos do projeto \${projectName}</h4>
+                  <div class="files-grid">
+                    \${projectData.files.map(file => \`
+                      <div class="file-item">
+                        <div class="file-name">\${formatFilePath(file.name, projectName)}</div>
+                        <div class="file-time">\${formatTime(file.seconds)}</div>
+                      </div>
+                    \`).join('')}
+                  </div>
+                </div>
+              </td>
+            \`;
+            tbody.appendChild(detailsRow);
+          });
         }
 
         // Variáveis globais para o tooltip e segmentos do gráfico
@@ -903,68 +1021,16 @@ export class StatsPanel {
          * Reconstrói as linhas da tabela mantendo a funcionalidade de "Ver Detalhes"
          */
         function updateProjectsTable(projects) {
-          const tbody = document.querySelector('.projects-table tbody');
-          if (!tbody) return;
+          // Atualizar dados atuais para ordenação
+          projectsData = projects;
           
-          // Salvar o estado dos detalhes abertos antes da atualização
-          const openDetails = new Set();
-          const detailRows = document.querySelectorAll('.project-details');
-          detailRows.forEach((row, index) => {
-            if (row.style.display === 'table-row') {
-              openDetails.add(index);
-            }
-          });
+          // Aplicar ordenação atual se existir
+          let sortedProjects = projects;
+          if (currentSortDirection !== 'none') {
+            sortedProjects = sortProjects(projects, currentSortColumn, currentSortDirection);
+          }
           
-          tbody.innerHTML = '';
-          
-          projects.forEach((project, index) => {
-            // Buscar dados completos do projeto dos dados originais
-            const fullProjectData = Object.entries(${JSON.stringify(
-              projectsData
-            )})
-              .find(([name]) => name === project.projectName);
-            
-            if (!fullProjectData) return;
-            
-            const [projectName, projectData] = fullProjectData;
-            const topFiles = projectData.files.slice(0, 3)
-              .map(f => formatFilePath(f.name, projectName)).join(', ');
-            
-            // Criar linha principal do projeto
-            const row = document.createElement('tr');
-            row.innerHTML = \`
-              <td class="project-name">\${projectName}</td>
-              <td class="time-value">\${project.formattedTime}</td>
-              <td class="files-count">\${projectData.files.length} arquivo(s)</td>
-              <td class="top-files">\${topFiles}</td>
-              <td>
-                <button class="action-btn" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
-              </td>
-            \`;
-            tbody.appendChild(row);
-            
-            // Criar linha de detalhes (expandível)
-            const detailsRow = document.createElement('tr');
-            detailsRow.id = 'details-' + index;
-            detailsRow.className = 'project-details';
-            detailsRow.style.display = openDetails.has(index) ? 'table-row' : 'none';
-            detailsRow.innerHTML = \`
-              <td colspan="5">
-                <div class="details-content">
-                  <h4>Arquivos do projeto \${projectName}</h4>
-                  <div class="files-grid">
-                    \${projectData.files.map(file => \`
-                      <div class="file-item">
-                        <div class="file-name">\${formatFilePath(file.name, projectName)}</div>
-                        <div class="file-time">\${formatTime(file.seconds)}</div>
-                      </div>
-                    \`).join('')}
-                  </div>
-                </div>
-              </td>
-            \`;
-            tbody.appendChild(detailsRow);
-          });
+          renderProjectsTable(sortedProjects);
         }
 
         /**

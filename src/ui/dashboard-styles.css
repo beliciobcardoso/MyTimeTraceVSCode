@@ -479,3 +479,59 @@ h2 {
     display: none;
   }
 }
+
+/* Estilos para ordenação de tabela */
+.sortable {
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: var(--hover-background) !important;
+}
+
+.sort-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  position: relative;
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
+}
+
+.sort-arrow {
+  position: absolute;
+  font-size: 10px;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.sort-up {
+  top: -2px;
+  left: 0;
+}
+
+.sort-down {
+  top: 4px;
+  left: 0;
+}
+
+/* Estados de ordenação */
+.sortable[data-sort="asc"] .sort-up {
+  opacity: 1;
+  color: var(--primary-color);
+}
+
+.sortable[data-sort="desc"] .sort-down {
+  opacity: 1;
+  color: var(--primary-color);
+}
+
+.sortable[data-sort="none"]:hover .sort-arrow {
+  opacity: 0.6;
+}
