@@ -569,6 +569,9 @@ export class StatsPanel {
           // Inicializar gráfico
           drawDonutChart();
           
+          // Configurar tooltips do gráfico
+          setupCanvasTooltip();
+          
           // Preencher select de projetos
           populateProjectSelect();
           
@@ -587,6 +590,90 @@ export class StatsPanel {
           } else {
             detailsRow.style.display = 'none';
             button.textContent = 'Ver Detalhes';
+          }
+        }
+
+        // Variáveis globais para o tooltip e segmentos do gráfico
+        let chartSegments = [];
+        let tooltip = null;
+
+        // Função para criar o elemento tooltip
+        function createTooltip() {
+          if (tooltip) return tooltip;
+          
+          tooltip = document.createElement('div');
+          tooltip.style.cssText = \`
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+          \`;
+          document.body.appendChild(tooltip);
+          return tooltip;
+        }
+
+        // Função para mostrar tooltip
+        function showTooltip(x, y, projectName, formattedTime, percentage) {
+          const tooltipEl = createTooltip();
+          
+          // Criar HTML estruturado para o tooltip
+          tooltipEl.innerHTML = \`
+            <div style="font-weight: bold; margin-bottom: 2px;">\${projectName}</div>
+            <div style="font-size: 11px;">\${formattedTime} (\${percentage}%)</div>
+          \`;
+          
+          tooltipEl.style.left = x + 10 + 'px';
+          tooltipEl.style.top = y - 35 + 'px';
+          tooltipEl.style.opacity = '1';
+        }
+
+        // Função para esconder tooltip
+        function hideTooltip() {
+          if (tooltip) {
+            tooltip.style.opacity = '0';
+          }
+        }
+
+        // Função para verificar se um ponto está dentro de um segmento
+        function isPointInSegment(x, y, segment) {
+          const dx = x - segment.centerX;
+          const dy = y - segment.centerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Verificar se está dentro do anel donut
+          if (distance < segment.innerRadius || distance > segment.radius) {
+            return false;
+          }
+          
+          // Calcular ângulo do ponto
+          let angle = Math.atan2(dy, dx);
+          // Normalizar para [0, 2π]
+          if (angle < 0) angle += 2 * Math.PI;
+          // Ajustar para começar do topo (-π/2)
+          angle = (angle + Math.PI / 2) % (2 * Math.PI);
+          
+          // Verificar se está dentro do ângulo do segmento
+          let startAngle = segment.startAngle;
+          let endAngle = segment.endAngle;
+          
+          // Normalizar ângulos para [0, 2π]
+          if (startAngle < 0) startAngle += 2 * Math.PI;
+          if (endAngle < 0) endAngle += 2 * Math.PI;
+          
+          if (startAngle <= endAngle) {
+            return angle >= startAngle && angle <= endAngle;
+          } else {
+            // Caso onde o segmento cruza o 0
+            return angle >= startAngle || angle <= endAngle;
           }
         }
 
@@ -609,9 +696,25 @@ export class StatsPanel {
           const total = chartData.reduce((sum, item) => sum + item.value, 0);
           let currentAngle = -Math.PI / 2; // Começar no topo
           
-          // Desenhar segmentos
+          // Limpar array de segmentos
+          chartSegments = [];
+          
+          // Desenhar segmentos e salvar informações para detecção de hover
           chartData.forEach((item, index) => {
             const sliceAngle = (item.value / total) * 2 * Math.PI;
+            
+            // Salvar informações do segmento para detecção de hover
+            chartSegments.push({
+              centerX,
+              centerY,
+              radius,
+              innerRadius,
+              startAngle: currentAngle,
+              endAngle: currentAngle + sliceAngle,
+              projectName: item.name,
+              formattedTime: formatTime(item.value),
+              percentage: item.percentage
+            });
             
             // Desenhar segmento externo
             ctx.beginPath();
@@ -629,6 +732,42 @@ export class StatsPanel {
           ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
           ctx.fillStyle = '#252526';
           ctx.fill();
+        }
+
+        // Função para configurar eventos de mouse no canvas
+        function setupCanvasTooltip() {
+          const canvas = document.getElementById('timeChart');
+          if (!canvas) return;
+          
+          canvas.addEventListener('mousemove', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Verificar se o mouse está sobre algum segmento
+            const hoveredSegment = chartSegments.find(segment => 
+              isPointInSegment(x, y, segment)
+            );
+            
+            if (hoveredSegment) {
+              showTooltip(
+                e.clientX, 
+                e.clientY, 
+                hoveredSegment.projectName,
+                hoveredSegment.formattedTime,
+                hoveredSegment.percentage
+              );
+              canvas.style.cursor = 'pointer';
+            } else {
+              hideTooltip();
+              canvas.style.cursor = 'default';
+            }
+          });
+          
+          canvas.addEventListener('mouseleave', function() {
+            hideTooltip();
+            canvas.style.cursor = 'default';
+          });
         }
 
         /**
@@ -749,10 +888,8 @@ export class StatsPanel {
           // Restaurar cards de estatísticas originais
           restoreOriginalStatCards();
           
-          // Restaurar gráfico donut original (não filtrado)
-          drawDonutChart();
-          
-          // Esconder resultado dos filtros
+        // Restaurar gráfico donut original (não filtrado)
+        drawDonutChart();          // Esconder resultado dos filtros
           const filterResults = document.getElementById('filterResults');
           if (filterResults) {
             filterResults.classList.remove('active');
@@ -976,8 +1113,8 @@ export class StatsPanel {
           const ctx = canvas.getContext('2d');
           const centerX = canvas.width / 2;
           const centerY = canvas.height / 2;
-          const radius = 65;
-          const innerRadius = 35;
+          const radius = 90;
+          const innerRadius = 50;
           
           // Limpar canvas para redesenho
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -989,6 +1126,9 @@ export class StatsPanel {
             ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, true);
             ctx.fillStyle = '#3a3a3a';
             ctx.fill();
+            
+            // Limpar array de segmentos
+            chartSegments = [];
             return;
           }
           
@@ -996,9 +1136,25 @@ export class StatsPanel {
           const total = projects.reduce((sum, p) => sum + p.totalMinutes, 0);
           let currentAngle = -Math.PI / 2;
           
+          // Limpar array de segmentos
+          chartSegments = [];
+          
           projects.forEach((project, index) => {
             const sliceAngle = (project.totalMinutes / total) * 2 * Math.PI;
             const color = getProjectColor(index);
+            
+            // Salvar informações do segmento para detecção de hover (versão filtrada)
+            chartSegments.push({
+              centerX,
+              centerY,
+              radius,
+              innerRadius,
+              startAngle: currentAngle,
+              endAngle: currentAngle + sliceAngle,
+              projectName: project.projectName,
+              formattedTime: project.formattedTime,
+              percentage: ((project.totalMinutes / total) * 100).toFixed(1)
+            });
             
             // Desenhar fatia do gráfico
             ctx.beginPath();
