@@ -83,6 +83,7 @@
     "copy-assets": "mkdir -p out/ui && cp src/ui/*.css out/ui/",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
+    "build": "npm run compile && npm run package",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
