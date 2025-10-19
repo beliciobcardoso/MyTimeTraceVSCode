@@ -261,7 +261,7 @@ h2 {
   white-space: nowrap;
 }
 
-.action-btn {
+.action-btn-view-details {
   background-color: transparent;
   border: 1px solid var(--primary-color);
   color: var(--primary-color);
@@ -272,7 +272,7 @@ h2 {
   transition: all 0.2s;
 }
 
-.action-btn:hover {
+.action-btn-view-details:hover {
   background-color: var(--primary-color);
   color: white;
 }
@@ -534,4 +534,55 @@ h2 {
 
 .sortable[data-sort="none"]:hover .sort-arrow {
   opacity: 0.6;
+}
+
+/* Estilos para célula de ações */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--card-background);
+  color: var(--foreground-color);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  background-color: var(--hover-background);
+  border-color: var(--primary-color);
+}
+
+.delete-btn {
+  background-color: #d13438;
+  color: white;
+  border-color: #d13438;
+}
+
+.delete-btn:hover {
+  background-color: #a80000;
+  border-color: #a80000;
+}
+
+/* Responsividade para ações */
+@media (max-width: 768px) {
+  .actions-cell {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .action-btn {
+    width: 100%;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
 }

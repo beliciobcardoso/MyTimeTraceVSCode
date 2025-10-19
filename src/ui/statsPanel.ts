@@ -409,7 +409,32 @@ export class StatsPanel {
                 <div class="stat-item">
                   <span class="stat-label">Esta semana:</span>
                   <span class="stat-value low">${this.formatTime(
-                    totalTime
+                    (() => {
+                      const today = new Date();
+                      const dayOfWeek = today.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
+                      
+                      // Calcula o início da semana (segunda-feira)
+                      const startOfWeek = new Date(today);
+                      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Se domingo, volta 6 dias
+                      startOfWeek.setDate(today.getDate() - daysToMonday);
+                      startOfWeek.setHours(0, 0, 0, 0);
+                      
+                      // Calcula o fim da semana (domingo 23:59:59)
+                      const endOfWeek = new Date(startOfWeek);
+                      endOfWeek.setDate(startOfWeek.getDate() + 6); // Segunda + 6 dias = domingo
+                      endOfWeek.setHours(23, 59, 59, 999);
+                      
+                      return (rawData || [])
+                        .filter((entry) => {
+                          const entryDate = new Date(entry.timestamp);
+                          return (
+                            entryDate >= startOfWeek &&
+                            entryDate <= endOfWeek &&
+                            entry.is_idle !== 1
+                          );
+                        })
+                        .reduce((sum, entry) => sum + entry.duration_seconds, 0);
+                    })()
                   )}</span>
                 </div>
               </div>
@@ -574,6 +599,19 @@ export class StatsPanel {
           }
         }
 
+        // Função para excluir projeto
+        function deleteProject(projectId) {
+          const button = event.target;
+          button.textContent = 'Excluindo...';
+
+          // Simular chamada para API de exclusão
+          setTimeout(() => {
+            projectsData = projectsData.filter(p => p.id !== projectId);
+            renderProjectsTable(projectsData);
+            button.textContent = 'Excluir';
+          }, 1000);
+        }
+
         /**
          * SISTEMA DE ORDENAÇÃO DE TABELA
          * 
@@ -681,13 +719,14 @@ export class StatsPanel {
               <td class="time-value">\${project.formattedTime}</td>
               <td class="files-count">\${projectData.files.length} arquivo(s)</td>
               <td class="top-files">\${topFiles}</td>
-              <td>
-                <button class="action-btn" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
+              <td class="actions-cell">
+                <button class="action-btn-view-details" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
+                <button class="action-btn delete-btn" onclick="deleteProject('\${project.id}')">Excluir</button>
               </td>
             \`;
             tbody.appendChild(row);
             
-            // Criar linha de detalhes (expandível)
+            // Criar linha de detalhes (expansível)
             const detailsRow = document.createElement('tr');
             detailsRow.id = 'details-' + index;
             detailsRow.className = 'project-details';
