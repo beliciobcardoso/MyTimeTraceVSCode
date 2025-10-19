@@ -45,7 +45,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const commands = CommandManager.registerCommands(
       () => myTimeTrace.startTracking(),
       () => myTimeTrace.pauseTracking(),
-      () => statsManager.showStats()
+      () => statsManager.showStats(),
+      () => statsManager.showDeletionHistory()
     );
 
     // Registra os eventos para monitoramento

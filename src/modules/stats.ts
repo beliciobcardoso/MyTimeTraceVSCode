@@ -291,4 +291,84 @@ export class StatsManager {
 
     return { projectsData, rawData };
   }
+
+  /**
+   * Mostra histórico de exclusões em um painel informativo
+   */
+  async showDeletionHistory(): Promise<void> {
+    try {
+      console.log('📝 Carregando histórico de exclusões...');
+      
+      // Buscar histórico completo
+      const history = await this.dbManager.getDeletionHistory(true);
+      
+      if (history.length === 0) {
+        vscode.window.showInformationMessage(
+          localize('stats.deletionHistory.empty', 'Nenhum projeto foi deletado ainda.')
+        );
+        return;
+      }
+
+      // Calcular estatísticas
+      const stats = {
+        total: history.length,
+        softDeletes: history.filter((h: any) => h.deletion_type === 'soft').length,
+        hardDeletes: history.filter((h: any) => h.deletion_type === 'hard').length,
+        restored: history.filter((h: any) => h.status === 'restored').length,
+        pending: history.filter((h: any) => h.status === 'deleted').length,
+        permanent: history.filter((h: any) => h.status === 'permanent').length,
+        totalRecords: history.reduce((sum: number, h: any) => sum + h.records_count, 0)
+      };
+
+      // Mostrar em formato estruturado
+      const message = `
+📝 Histórico de Exclusões
+─────────────────────────────────────
+Total de operações: ${stats.total}
+  ├─ Soft deletes: ${stats.softDeletes}
+  └─ Hard deletes: ${stats.hardDeletes}
+
+Status atual:
+  ├─ Restaurados: ${stats.restored}
+  ├─ Pendentes: ${stats.pending}
+  └─ Permanentes: ${stats.permanent}
+
+Total de registros afetados: ${stats.totalRecords}
+
+Últimas ${Math.min(5, history.length)} operações:
+${history.slice(0, 5).map((h: any, i: number) => `
+${i + 1}. ${h.project_name} (${h.status})
+   Deletado: ${new Date(h.deleted_at).toLocaleString('pt-BR')}
+   Registros: ${h.records_count}
+   Tipo: ${h.deletion_type === 'soft' ? 'Reversível' : 'Permanente'}
+   ${h.restored_at ? `Restaurado: ${new Date(h.restored_at).toLocaleString('pt-BR')}` : ''}
+`).join('')}
+
+💡 Dica: Use o console do VS Code Developer Tools para consultar o histórico completo:
+   await dbManager.getDeletionHistory()
+      `.trim();
+
+      // Mostrar informação com opções
+      const action = await vscode.window.showInformationMessage(
+        message,
+        'Ver Detalhes no Console',
+        'Fechar'
+      );
+
+      if (action === 'Ver Detalhes no Console') {
+        console.log('📝 Histórico Completo de Exclusões:');
+        console.table(history);
+        vscode.window.showInformationMessage(
+          'Histórico exibido no console do Developer Tools (Help → Toggle Developer Tools)'
+        );
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao carregar histórico:', error);
+      vscode.window.showErrorMessage(
+        localize('stats.deletionHistory.error', 'Erro ao carregar histórico de exclusões: {0}', 
+          error instanceof Error ? error.message : String(error))
+      );
+    }
+  }
 }

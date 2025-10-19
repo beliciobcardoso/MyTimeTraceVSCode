@@ -79,7 +79,26 @@ export class DatabaseManager {
                 } else {
                   console.log('✅ Coluna deleted_at adicionada com sucesso (migração aplicada)');
                 }
-                resolve();
+                
+                // Criar tabela de histórico de exclusões
+                this.db!.run(
+                  `CREATE TABLE IF NOT EXISTS deletion_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_name TEXT NOT NULL,
+                    deleted_at TEXT NOT NULL,
+                    records_count INTEGER NOT NULL,
+                    deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
+                    restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
+                  )`,
+                  (historyErr: Error | null) => {
+                    if (historyErr) {
+                      console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                    } else {
+                      console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                    }
+                    resolve();
+                  }
+                );
               }
             );
           }
@@ -171,15 +190,24 @@ export class DatabaseManager {
       
       console.log(`🗑️ Executando SOFT DELETE para projeto: ${projectName}`);
       
+      const self = this; // Captura contexto para usar dentro do callback
+      
       this.db.run(sql, [projectName], function(err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao deletar projeto ${projectName}:`, err);
           reject(err);
         } else {
-          // this.changes retorna o número de linhas afetadas
+          // this.changes retorna o número de linhas afetadas (contexto do SQLite)
           const deletedCount = this.changes;
           console.log(`✅ ${deletedCount} registro(s) marcado(s) como deletado(s) do projeto ${projectName}`);
-          resolve(deletedCount);
+          
+          // Registrar no histórico de exclusões
+          self.logDeletion(projectName, deletedCount, 'soft')
+            .then(() => resolve(deletedCount))
+            .catch((historyErr: Error) => {
+              console.warn('⚠️ Erro ao registrar histórico, mas exclusão foi bem-sucedida:', historyErr);
+              resolve(deletedCount); // Exclusão funcionou, apenas o log falhou
+            });
         }
       });
     });
@@ -203,6 +231,8 @@ export class DatabaseManager {
       
       console.log(`💥 Executando HARD DELETE para projeto: ${projectName}`);
       
+      const self = this;
+      
       this.db.run(sql, [projectName], function(err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao deletar permanentemente projeto ${projectName}:`, err);
@@ -210,7 +240,14 @@ export class DatabaseManager {
         } else {
           const deletedCount = this.changes;
           console.log(`✅ ${deletedCount} registro(s) deletado(s) PERMANENTEMENTE do projeto ${projectName}`);
-          resolve(deletedCount);
+          
+          // Registrar no histórico de exclusões
+          self.logDeletion(projectName, deletedCount, 'hard')
+            .then(() => resolve(deletedCount))
+            .catch((historyErr: Error) => {
+              console.warn('⚠️ Erro ao registrar histórico, mas exclusão foi bem-sucedida:', historyErr);
+              resolve(deletedCount);
+            });
         }
       });
     });
@@ -232,6 +269,8 @@ export class DatabaseManager {
       
       console.log(`♻️ Restaurando projeto: ${projectName}`);
       
+      const self = this;
+      
       this.db.run(sql, [projectName], function(err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao restaurar projeto ${projectName}:`, err);
@@ -239,7 +278,14 @@ export class DatabaseManager {
         } else {
           const restoredCount = this.changes;
           console.log(`✅ ${restoredCount} registro(s) restaurado(s) do projeto ${projectName}`);
-          resolve(restoredCount);
+          
+          // Registrar restauração no histórico
+          self.logRestoration(projectName)
+            .then(() => resolve(restoredCount))
+            .catch((historyErr: Error) => {
+              console.warn('⚠️ Erro ao registrar restauração, mas operação foi bem-sucedida:', historyErr);
+              resolve(restoredCount);
+            });
         }
       });
     });
@@ -268,6 +314,113 @@ export class DatabaseManager {
       
       this.db.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  /**
+   * Registra uma exclusão no histórico
+   * @param projectName Nome do projeto deletado
+   * @param recordsCount Quantidade de registros afetados
+   * @param deletionType Tipo de exclusão ('soft' ou 'hard')
+   */
+  private async logDeletion(projectName: string, recordsCount: number, deletionType: 'soft' | 'hard'): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      const sql = `
+        INSERT INTO deletion_history (project_name, deleted_at, records_count, deletion_type)
+        VALUES (?, datetime('now'), ?, ?)
+      `;
+      
+      this.db.run(sql, [projectName, recordsCount, deletionType], (err: Error | null) => {
+        if (err) {
+          console.error('❌ Erro ao registrar histórico de exclusão:', err);
+          reject(err);
+        } else {
+          console.log(`📝 Histórico registrado: ${projectName} (${deletionType})`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Registra uma restauração no histórico
+   * @param projectName Nome do projeto restaurado
+   */
+  private async logRestoration(projectName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      const sql = `
+        UPDATE deletion_history 
+        SET restored_at = datetime('now')
+        WHERE project_name = ? 
+          AND restored_at IS NULL
+        ORDER BY deleted_at DESC
+        LIMIT 1
+      `;
+      
+      this.db.run(sql, [projectName], (err: Error | null) => {
+        if (err) {
+          console.error('❌ Erro ao registrar restauração:', err);
+          reject(err);
+        } else {
+          console.log(`📝 Restauração registrada: ${projectName}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Obtém histórico completo de exclusões
+   * @param includeRestored Incluir projetos que foram restaurados
+   * @returns Array com histórico de exclusões
+   */
+  async getDeletionHistory(includeRestored: boolean = true): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      let sql = `
+        SELECT 
+          id,
+          project_name,
+          deleted_at,
+          records_count,
+          deletion_type,
+          restored_at,
+          CASE 
+            WHEN restored_at IS NOT NULL THEN 'restored'
+            WHEN deletion_type = 'hard' THEN 'permanent'
+            ELSE 'deleted'
+          END as status
+        FROM deletion_history
+      `;
+      
+      if (!includeRestored) {
+        sql += ` WHERE restored_at IS NULL`;
+      }
+      
+      sql += ` ORDER BY deleted_at DESC`;
+      
+      this.db.all(sql, [], (err: Error | null, rows: any[]) => {
+        if (err) {
+          console.error('❌ Erro ao buscar histórico de exclusões:', err);
           reject(err);
         } else {
           resolve(rows);

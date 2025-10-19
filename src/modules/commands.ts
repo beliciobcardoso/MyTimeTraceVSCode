@@ -27,7 +27,8 @@ export class CommandManager {
   static registerCommands(
     startTracking: () => void,
     pauseTracking: () => void,
-    showStats: () => void
+    showStats: () => void,
+    showDeletionHistory?: () => void
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
@@ -53,6 +54,16 @@ export class CommandManager {
         showStats();
       })
     );
+
+    // Comando para mostrar histórico de exclusões
+    if (showDeletionHistory) {
+      commands.push(
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.showDeletionHistory", () => {
+          console.log("📝 Comando showDeletionHistory executado!");
+          showDeletionHistory();
+        })
+      );
+    }
 
     console.log(`✅ ${commands.length} comandos registrados com sucesso!`);
     return commands;

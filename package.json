@@ -41,6 +41,11 @@
         "command": "my-time-trace-vscode.showStats",
         "title": "%my-time-trace-vscode.showStats.title%",
         "icon": "$(graph)"
+      },
+      {
+        "command": "my-time-trace-vscode.showDeletionHistory",
+        "title": "%my-time-trace-vscode.showDeletionHistory.title%",
+        "icon": "$(history)"
       }
     ],
     "configuration": {
@@ -73,6 +78,9 @@
         },
         {
           "command": "my-time-trace-vscode.showStats"
+        },
+        {
+          "command": "my-time-trace-vscode.showDeletionHistory"
         }
       ]
     }
