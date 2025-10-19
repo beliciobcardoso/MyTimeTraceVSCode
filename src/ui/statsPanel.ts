@@ -395,7 +395,10 @@ export class StatsPanel {
                             entry.is_idle !== 1
                           );
                         })
-                        .reduce((sum, entry) => sum + entry.duration_seconds, 0);
+                        .reduce(
+                          (sum, entry) => sum + entry.duration_seconds,
+                          0
+                        );
                     })()
                   )}</span>
                 </div>
@@ -412,18 +415,18 @@ export class StatsPanel {
                     (() => {
                       const today = new Date();
                       const dayOfWeek = today.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
-                      
+
                       // Calcula o início da semana (segunda-feira)
                       const startOfWeek = new Date(today);
                       const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Se domingo, volta 6 dias
                       startOfWeek.setDate(today.getDate() - daysToMonday);
                       startOfWeek.setHours(0, 0, 0, 0);
-                      
+
                       // Calcula o fim da semana (domingo 23:59:59)
                       const endOfWeek = new Date(startOfWeek);
                       endOfWeek.setDate(startOfWeek.getDate() + 6); // Segunda + 6 dias = domingo
                       endOfWeek.setHours(23, 59, 59, 999);
-                      
+
                       return (rawData || [])
                         .filter((entry) => {
                           const entryDate = new Date(entry.timestamp);
@@ -433,7 +436,10 @@ export class StatsPanel {
                             entry.is_idle !== 1
                           );
                         })
-                        .reduce((sum, entry) => sum + entry.duration_seconds, 0);
+                        .reduce(
+                          (sum, entry) => sum + entry.duration_seconds,
+                          0
+                        );
                     })()
                   )}</span>
                 </div>
@@ -526,6 +532,32 @@ export class StatsPanel {
         )}</em></p>
       </div>
 
+      <!-- Modal de Confirmação de Exclusão -->
+      <div id="deleteModal" class="modal-overlay">
+        <div class="modal-container">
+          <div class="modal-header">
+            <h3>⚠️ Confirmar Exclusão</h3>
+          </div>
+          <div class="modal-body">
+            <p class="modal-warning">
+              Tem certeza que deseja excluir os históricos do projeto <strong id="projectToDelete"></strong>?
+            </p>
+            <p class="modal-info">
+              ⚠️ Esta ação não poderá ser desfeita!<br>
+              Todos os registros de tempo deste projeto serão permanentemente removidos.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button id="cancelDelete" class="modal-btn modal-btn-cancel">
+              Cancelar
+            </button>
+            <button id="confirmDelete" class="modal-btn modal-btn-delete">
+              🗑️ Sim, Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+
       <script>
         /**
          * SISTEMA DE FILTROS INTEGRADO AO DASHBOARD
@@ -559,7 +591,9 @@ export class StatsPanel {
         let currentSortDirection = 'none';
 
         // Dados brutos para filtros por data (sem entradas IDLE por padrão)
-        const rawData = ${JSON.stringify((rawData || []).filter(entry => entry.is_idle !== 1))};
+        const rawData = ${JSON.stringify(
+          (rawData || []).filter((entry) => entry.is_idle !== 1)
+        )};
 
         // Dados dos projetos para o gráfico
         const chartData = ${JSON.stringify(chartData)};
@@ -600,16 +634,126 @@ export class StatsPanel {
         }
 
         // Função para excluir projeto
-        function deleteProject(projectId) {
+        function deleteProject(projectName) {
+
           const button = event.target;
-          button.textContent = 'Excluindo...';
+          
+          // Abre o modal de confirmação
+          openDeleteModal(projectName, button);
+        }
+
+        /**
+         * Abre o modal de confirmação de exclusão
+         */
+        function openDeleteModal(projectName, buttonElement) {
+          const modal = document.getElementById('deleteModal');
+          const projectNameSpan = document.getElementById('projectToDelete');
+          const confirmBtn = document.getElementById('confirmDelete');
+          const cancelBtn = document.getElementById('cancelDelete');
+          
+          if (!modal || !projectNameSpan || !confirmBtn || !cancelBtn) {
+            console.error('Elementos do modal não encontrados!');
+            return;
+          }
+          
+          // Configura o nome do projeto no modal
+          projectNameSpan.textContent = projectName;
+          
+          // Mostra o modal
+          modal.style.display = 'flex';
+          
+          // Remove listeners antigos para evitar duplicação
+          const newConfirmBtn = confirmBtn.cloneNode(true);
+          const newCancelBtn = cancelBtn.cloneNode(true);
+          confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+          cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+          
+          // Handler de confirmação
+          newConfirmBtn.addEventListener('click', function() {
+            closeDeleteModal();
+            executeProjectDeletion(projectName, buttonElement);
+          });
+          
+          // Handler de cancelamento
+          newCancelBtn.addEventListener('click', function() {
+            closeDeleteModal();
+          });
+          
+          // Fechar ao clicar fora do modal
+          modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+              closeDeleteModal();
+            }
+          });
+          
+          // Fechar com ESC
+          document.addEventListener('keydown', function escHandler(e) {
+            if (e.key === 'Escape') {
+              closeDeleteModal();
+              document.removeEventListener('keydown', escHandler);
+            }
+          });
+        }
+
+        /**
+         * Fecha o modal de confirmação
+         */
+        function closeDeleteModal() {
+          const modal = document.getElementById('deleteModal');
+          if (modal) {
+            modal.style.display = 'none';
+          }
+        }
+
+        /**
+         * Executa a exclusão do projeto (SIMULAÇÃO por enquanto)
+         */
+        function executeProjectDeletion(projectName, buttonElement) {
+          const originalText = buttonElement.textContent;
+          buttonElement.textContent = 'Excluindo...';
+          buttonElement.disabled = true;
+          
 
           // Simular chamada para API de exclusão
           setTimeout(() => {
-            projectsData = projectsData.filter(p => p.id !== projectId);
+            console.log('✅ Projeto selecionado para exclusão:', projectName);
+            projectsData = projectsData.filter(p => p.projectName !== projectName);
+            console.log('📊 Dados atualizados:', projectsData);
             renderProjectsTable(projectsData);
-            button.textContent = 'Excluir';
+            buttonElement.textContent = 'Excluir';
+            buttonElement.disabled = false;
+            
+            // Feedback visual de sucesso
+            showDeleteSuccessMessage(projectName);
           }, 1000);
+        }
+
+        /**
+         * Mostra mensagem de sucesso após exclusão
+         */
+        function showDeleteSuccessMessage(projectName) {
+          // Cria elemento de notificação
+          const notification = document.createElement('div');
+          notification.className = 'delete-notification success';
+          notification.innerHTML = \`
+            <span class="notification-icon">✅</span>
+            <span class="notification-text">Projeto "\${projectName}" excluído com sucesso!</span>
+          \`;
+          
+          document.body.appendChild(notification);
+          
+          // Anima entrada
+          setTimeout(() => {
+            notification.classList.add('show');
+          }, 10);
+          
+          // Remove após 3 segundos
+          setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+              notification.remove();
+            }, 300);
+          }, 3000);
         }
 
         /**
@@ -721,7 +865,7 @@ export class StatsPanel {
               <td class="top-files">\${topFiles}</td>
               <td class="actions-cell">
                 <button class="action-btn-view-details" onclick="toggleProjectDetails('\${index}')">Ver Detalhes</button>
-                <button class="action-btn delete-btn" onclick="deleteProject('\${project.id}')">Excluir</button>
+                <button class="action-btn delete-btn" onclick="deleteProject('\${projectName}')">Excluir</button>
               </td>
             \`;
             tbody.appendChild(row);
@@ -1191,7 +1335,9 @@ export class StatsPanel {
           if (statItems.length >= 4) {
             // Restaurar valores originais
             const projectsValue = statItems[0].querySelector('.stat-value');
-            if (projectsValue) projectsValue.textContent = '${projectEntries.length}';
+            if (projectsValue) projectsValue.textContent = '${
+              projectEntries.length
+            }';
             
             const filesValue = statItems[2].querySelector('.stat-value');
             if (filesValue) filesValue.textContent = '${projectEntries.reduce(
