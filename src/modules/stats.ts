@@ -63,7 +63,7 @@ export class StatsManager {
           file,
           SUM(duration_seconds) as total_seconds
         FROM time_entries
-        WHERE is_idle = 0
+        WHERE is_idle = 0 AND deleted_at IS NULL
         GROUP BY project, file
         ORDER BY project, total_seconds DESC
       `);
@@ -79,6 +79,7 @@ export class StatsManager {
           is_idle,
           synced
         FROM time_entries
+        WHERE deleted_at IS NULL
         ORDER BY timestamp DESC
       `);
 
@@ -104,6 +105,17 @@ export class StatsManager {
 
       // Cria o painel básico (agora com suporte a filtros por data)
       const panel = StatsPanel.createStatsPanel(projectsData, this.context, rawData);
+
+      // Sistema de mensagens para comunicação webview ↔ backend
+      panel.webview.onDidReceiveMessage(
+        async (message) => {
+          if (message.command === 'deleteProject') {
+            await this.handleDeleteProject(message.projectName, panel);
+          }
+        },
+        undefined,
+        this.context.subscriptions
+      );
 
       // Opcional: adicionar handlers para eventos do painel
       panel.onDidDispose(() => {
@@ -139,6 +151,7 @@ export class StatsManager {
           is_idle,
           synced
         FROM time_entries
+        WHERE deleted_at IS NULL
         ORDER BY timestamp DESC
       `);
 
@@ -146,7 +159,7 @@ export class StatsManager {
       const projectsQuery = await this.dbManager.query(`
         SELECT DISTINCT project
         FROM time_entries
-        WHERE is_idle = 0
+        WHERE is_idle = 0 AND deleted_at IS NULL
         ORDER BY project
       `);
 
@@ -164,5 +177,118 @@ export class StatsManager {
       console.error("Erro ao carregar estatísticas com filtros:", error);
       vscode.window.showErrorMessage(localize('stats.loadFilteredError', 'Error loading time statistics with filters.'));
     }
+  }
+
+  /**
+   * Processa solicitação de exclusão de projeto vinda do webview
+   */
+  private async handleDeleteProject(
+    projectName: string,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    try {
+      // Validação básica
+      if (!projectName || projectName.trim() === '') {
+        throw new Error('Nome do projeto inválido');
+      }
+
+      console.log(`🗑️ Iniciando exclusão do projeto: ${projectName}`);
+
+      // Executa exclusão no banco de dados
+      const deletedRows = await this.dbManager.deleteProjectHistory(projectName);
+
+      console.log(`✅ ${deletedRows} registro(s) deletado(s) do projeto ${projectName}`);
+
+      // Recarrega dados atualizados do banco
+      const updatedData = await this.loadStatsData();
+
+      // Regenera HTML completo com dados atualizados
+      panel.webview.html = StatsPanel.generateStatsHtml(
+        updatedData.projectsData,
+        this.context,
+        updatedData.rawData
+      );
+
+      // Notificação de sucesso no VS Code
+      vscode.window.showInformationMessage(
+        localize(
+          'stats.deleteSuccess',
+          'Projeto "{0}" excluído com sucesso! {1} registro(s) removido(s).',
+          projectName,
+          deletedRows
+        )
+      );
+
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir projeto:', error);
+
+      // Notificação de erro no VS Code
+      vscode.window.showErrorMessage(
+        localize(
+          'stats.deleteError',
+          'Erro ao excluir projeto "{0}": {1}',
+          projectName,
+          error.message
+        )
+      );
+    }
+  }
+
+  /**
+   * Carrega os dados de estatísticas do banco de dados
+   * Helper method para reutilizar lógica de carregamento
+   */
+  private async loadStatsData(): Promise<{
+    projectsData: ProjectsData;
+    rawData: TimeEntry[];
+  }> {
+    // Obtém dados processados (agregados)
+    const processedData = await this.dbManager.query(`
+      SELECT
+        project,
+        file,
+        SUM(duration_seconds) as total_seconds
+      FROM time_entries
+      WHERE is_idle = 0 AND deleted_at IS NULL
+      GROUP BY project, file
+      ORDER BY project, total_seconds DESC
+    `);
+
+    // Obtém dados brutos para filtros por data
+    const rawData: TimeEntry[] = await this.dbManager.query(`
+      SELECT
+        id,
+        timestamp,
+        project,
+        file,
+        duration_seconds,
+        is_idle,
+        synced
+      FROM time_entries
+      WHERE deleted_at IS NULL
+      ORDER BY timestamp DESC
+    `);
+
+    // Converte para formato ProjectsData
+    const projectsData: ProjectsData = {};
+
+    processedData.forEach((row: any) => {
+      const projectName = row.project;
+      if (!projectsData[projectName]) {
+        projectsData[projectName] = {
+          totalSeconds: 0,
+          files: []
+        };
+      }
+
+      projectsData[projectName].files.push({
+        name: row.file,
+        seconds: row.total_seconds
+      });
+
+      projectsData[projectName].totalSeconds += row.total_seconds;
+    });
+
+    return { projectsData, rawData };
   }
 }

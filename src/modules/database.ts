@@ -52,7 +52,8 @@ export class DatabaseManager {
               file TEXT,
               duration_seconds INTEGER NOT NULL,
               is_idle INTEGER DEFAULT 0,
-              synced INTEGER DEFAULT 0 -- 0 para não sincronizado, 1 para sincronizado
+              synced INTEGER DEFAULT 0, -- 0 para não sincronizado, 1 para sincronizado
+              deleted_at TEXT DEFAULT NULL -- Soft delete: NULL = ativo, data = deletado
           )`,
           (tableErr: Error | null) => {
             if (tableErr) {
@@ -63,7 +64,24 @@ export class DatabaseManager {
               return reject(tableErr);
             }
             console.log('Tabela "time_entries" verificada/criada com sucesso.');
-            resolve();
+            
+            // Migração: Adicionar coluna deleted_at se não existir
+            this.db!.run(
+              `ALTER TABLE time_entries ADD COLUMN deleted_at TEXT DEFAULT NULL`,
+              (alterErr: Error | null) => {
+                if (alterErr) {
+                  // Coluna já existe, isso é esperado
+                  if (alterErr.message.includes('duplicate column name')) {
+                    console.log('✅ Coluna deleted_at já existe (migração já aplicada)');
+                  } else {
+                    console.warn('⚠️ Aviso ao adicionar coluna deleted_at:', alterErr.message);
+                  }
+                } else {
+                  console.log('✅ Coluna deleted_at adicionada com sucesso (migração aplicada)');
+                }
+                resolve();
+              }
+            );
           }
         );
       });
@@ -126,6 +144,129 @@ export class DatabaseManager {
       }
 
       this.db.all(sql, params, (err: Error | null, rows: any[]) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  /**
+   * Deleta todos os registros de tempo de um projeto específico (SOFT DELETE)
+   * Marca como deletado em vez de remover permanentemente
+   * @param projectName Nome do projeto a ser deletado
+   * @returns Número de registros marcados como deletados
+   */
+  async deleteProjectHistory(projectName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      // SOFT DELETE: Marca como deletado com timestamp
+      const sql = `UPDATE time_entries SET deleted_at = datetime('now') WHERE project = ? AND deleted_at IS NULL`;
+      
+      console.log(`🗑️ Executando SOFT DELETE para projeto: ${projectName}`);
+      
+      this.db.run(sql, [projectName], function(err: Error | null) {
+        if (err) {
+          console.error(`❌ Erro ao deletar projeto ${projectName}:`, err);
+          reject(err);
+        } else {
+          // this.changes retorna o número de linhas afetadas
+          const deletedCount = this.changes;
+          console.log(`✅ ${deletedCount} registro(s) marcado(s) como deletado(s) do projeto ${projectName}`);
+          resolve(deletedCount);
+        }
+      });
+    });
+  }
+
+  /**
+   * Deleta PERMANENTEMENTE os registros de um projeto
+   * Usar apenas para limpeza definitiva
+   * @param projectName Nome do projeto
+   * @returns Número de registros deletados permanentemente
+   */
+  async hardDeleteProjectHistory(projectName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      // HARD DELETE: Remove permanentemente do banco
+      const sql = `DELETE FROM time_entries WHERE project = ?`;
+      
+      console.log(`💥 Executando HARD DELETE para projeto: ${projectName}`);
+      
+      this.db.run(sql, [projectName], function(err: Error | null) {
+        if (err) {
+          console.error(`❌ Erro ao deletar permanentemente projeto ${projectName}:`, err);
+          reject(err);
+        } else {
+          const deletedCount = this.changes;
+          console.log(`✅ ${deletedCount} registro(s) deletado(s) PERMANENTEMENTE do projeto ${projectName}`);
+          resolve(deletedCount);
+        }
+      });
+    });
+  }
+
+  /**
+   * Restaura um projeto que foi deletado (soft delete)
+   * @param projectName Nome do projeto a restaurar
+   * @returns Número de registros restaurados
+   */
+  async restoreProjectHistory(projectName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      const sql = `UPDATE time_entries SET deleted_at = NULL WHERE project = ? AND deleted_at IS NOT NULL`;
+      
+      console.log(`♻️ Restaurando projeto: ${projectName}`);
+      
+      this.db.run(sql, [projectName], function(err: Error | null) {
+        if (err) {
+          console.error(`❌ Erro ao restaurar projeto ${projectName}:`, err);
+          reject(err);
+        } else {
+          const restoredCount = this.changes;
+          console.log(`✅ ${restoredCount} registro(s) restaurado(s) do projeto ${projectName}`);
+          resolve(restoredCount);
+        }
+      });
+    });
+  }
+
+  /**
+   * Lista projetos deletados (soft delete)
+   * @returns Array de nomes de projetos deletados
+   */
+  async getDeletedProjects(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error("Banco de dados não inicializado"));
+        return;
+      }
+      
+      const sql = `
+        SELECT DISTINCT project, 
+               MAX(deleted_at) as deleted_at,
+               COUNT(*) as records_count
+        FROM time_entries 
+        WHERE deleted_at IS NOT NULL
+        GROUP BY project
+        ORDER BY deleted_at DESC
+      `;
+      
+      this.db.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
           reject(err);
         } else {

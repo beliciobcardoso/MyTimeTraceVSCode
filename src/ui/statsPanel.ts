@@ -295,7 +295,7 @@ export class StatsPanel {
    * @param context Contexto da extensão para carregar arquivos CSS
    * @returns HTML string completo do dashboard com filtros
    */
-  private static generateStatsHtml(
+  public static generateStatsHtml(
     projectsData: ProjectsData,
     context: vscode.ExtensionContext,
     rawData?: TimeEntry[]
@@ -706,54 +706,23 @@ export class StatsPanel {
         }
 
         /**
-         * Executa a exclusão do projeto (SIMULAÇÃO por enquanto)
+         * Executa a exclusão do projeto (REAL - envia ao backend)
          */
         function executeProjectDeletion(projectName, buttonElement) {
           const originalText = buttonElement.textContent;
-          buttonElement.textContent = 'Excluindo...';
+          buttonElement.textContent = '🗑️ Excluindo...';
           buttonElement.disabled = true;
           
-
-          // Simular chamada para API de exclusão
-          setTimeout(() => {
-            console.log('✅ Projeto selecionado para exclusão:', projectName);
-            projectsData = projectsData.filter(p => p.projectName !== projectName);
-            console.log('📊 Dados atualizados:', projectsData);
-            renderProjectsTable(projectsData);
-            buttonElement.textContent = 'Excluir';
-            buttonElement.disabled = false;
-            
-            // Feedback visual de sucesso
-            showDeleteSuccessMessage(projectName);
-          }, 1000);
-        }
-
-        /**
-         * Mostra mensagem de sucesso após exclusão
-         */
-        function showDeleteSuccessMessage(projectName) {
-          // Cria elemento de notificação
-          const notification = document.createElement('div');
-          notification.className = 'delete-notification success';
-          notification.innerHTML = \`
-            <span class="notification-icon">✅</span>
-            <span class="notification-text">Projeto "\${projectName}" excluído com sucesso!</span>
-          \`;
+          console.log('📤 Enviando solicitação de exclusão ao backend:', projectName);
           
-          document.body.appendChild(notification);
+          // Envia mensagem ao backend TypeScript
+          vscode.postMessage({
+            command: 'deleteProject',
+            projectName: projectName
+          });
           
-          // Anima entrada
-          setTimeout(() => {
-            notification.classList.add('show');
-          }, 10);
-          
-          // Remove após 3 segundos
-          setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-              notification.remove();
-            }, 300);
-          }, 3000);
+          // O backend irá deletar do banco e recarregar o HTML automaticamente
+          // Não precisamos fazer nada aqui - o painel será atualizado pelo backend
         }
 
         /**
