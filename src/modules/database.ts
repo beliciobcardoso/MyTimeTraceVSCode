@@ -131,7 +131,7 @@ export class DatabaseManager {
     return new Promise((resolve, reject) => {
       stmt.run(
         timestamp,
-        project || "unknown-project",
+        project || "Arquivos Diversos",
         file || "unknown-file",
         duration,
         isIdle ? 1 : 0,

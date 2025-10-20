@@ -47,7 +47,7 @@ export class timeTrace {
       const editor = vscode.window.activeTextEditor;
       const newFile = editor.document.fileName;
       const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
-      const newProjectRoot = workspaceFolder ? workspaceFolder.name : "unknown-project";
+      const newProjectRoot = workspaceFolder ? workspaceFolder.name : "Arquivos Diversos";
 
       if (this.currentFile !== newFile || this.projectRoot !== newProjectRoot) {
         this.resetFileTimerAndSave(); // Salva o tempo do arquivo anterior
@@ -157,7 +157,7 @@ export class timeTrace {
     if (editor) {
       const newFile = editor.document.fileName;
       const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
-      const newProjectRoot = workspaceFolder ? workspaceFolder.name : "unknown-project";
+      const newProjectRoot = workspaceFolder ? workspaceFolder.name : "Arquivos Diversos";
 
       if (this.currentFile !== newFile || this.projectRoot !== newProjectRoot) {
         this.resetFileTimerAndSave();

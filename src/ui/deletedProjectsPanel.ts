@@ -102,6 +102,13 @@ export class DeletedProjectsPanel {
       background: var(--vscode-button-secondaryHoverBackground);
     }
 
+    .btn:disabled,
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .stats-summary {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -474,7 +481,7 @@ export class DeletedProjectsPanel {
       <button class="btn btn-secondary" onclick="refreshData(); return false;">
         🔄 Atualizar
       </button>
-      <button class="btn btn-secondary" onclick="cleanupExpired(); return false;">
+      <button class="btn btn-secondary" onclick="cleanupExpired(); return false;" ${expired.length === 0 ? 'disabled' : ''}>
         🧹 Limpar Expirados
       </button>
     </div>
