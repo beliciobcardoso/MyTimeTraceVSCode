@@ -847,7 +847,9 @@ export class StatsPanel {
             detailsRow.innerHTML = \`
               <td colspan="5">
                 <div class="details-content">
+
                   <h4>Arquivos do projeto \${projectName}</h4>
+
                   <div class="files-grid">
                     \${projectData.files.map(file => \`
                       <div class="file-item">
@@ -856,6 +858,7 @@ export class StatsPanel {
                       </div>
                     \`).join('')}
                   </div>
+
                 </div>
               </td>
             \`;
@@ -1526,224 +1529,6 @@ export class StatsPanel {
       ${this.getFiltersJavaScript(rawDataJson, projectsJson)}
     </script>
     </html>
-    `;
-  }
-
-  /**
-   * Retorna os estilos CSS específicos para filtros
-   */
-  private static getFiltersStyles(): string {
-    return `
-      body { 
-        font-family: Arial, sans-serif; 
-        padding: 0px 20px;
-        background-color: var(--vscode-editor-background);
-        color: var(--vscode-editor-foreground);
-        padding-top: 80px; /* Espaço para o header fixo */
-      }
-      h1 {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: var(--vscode-editor-background);
-        color: var(--vscode-editor-foreground);
-        margin: 0;
-        padding: 15px 20px;
-        border-bottom: 2px solid var(--vscode-panel-border);
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      h1, h2 { 
-        color: var(--vscode-editor-foreground); 
-        margin: 0;
-      }
-      h2, h3 {
-        margin: 0;
-      }
-      .toggle-icon { 
-        cursor: pointer; 
-        color: #fff; 
-        font-size: 20px; 
-        margin-left: 10px; 
-      }
-      .toggle-icon:hover { 
-        color: #ccc; 
-      }
-      i {
-        font-style: normal;
-        color: #fff;
-        cursor: pointer;
-      }
-      .project-header { 
-        background-color: var(--vscode-button-background); 
-        color: var(--vscode-button-foreground); 
-        padding: 10px 10px;
-        margin-bottom: 0;
-        margin-top: 10px;
-        border-top-left-radius: 5px;
-        border-top-right-radius: 5px;
-        display: flex;
-        justify-content: space-between;
-        cursor: pointer;
-      }
-      .project-header:hover {
-        background-color: var(--vscode-button-hoverBackground);
-      }
-      table { 
-        border-collapse: collapse; 
-        width: 100%; 
-        margin-bottom: 0px; 
-        border: 1px solid var(--vscode-panel-border); 
-        border-radius: 5px;
-      }
-      th, td { 
-        text-align: left; 
-        padding: 8px; 
-        border-bottom: 1px solid var(--vscode-panel-border); 
-      }
-      th { 
-        background-color: var(--vscode-list-activeSelectionBackground); 
-        color: var(--vscode-list-activeSelectionForeground); 
-      }
-      tr:nth-child(even) {
-        background-color: var(--vscode-list-hoverBackground); 
-        color: var(--vscode-list-hoverForeground); 
-      }
-      .file-name { 
-        font-family: var(--vscode-editor-font-family); 
-        font-size: var(--vscode-editor-font-size);
-      }
-      .toggle-icon-up {
-        display: none;
-      }
-      .project-section { 
-        margin-bottom: 0px; 
-        padding: 0px;
-      }
-      
-      .filter-main {
-        grid-template-rows: auto 1fr;
-        display: grid;
-        grid-template-columns: 40% 60%;
-        gap: 20px;
-      }
-      
-      .filters-section {
-        background-color: var(--vscode-editor-background);
-        border: 1px solid var(--vscode-panel-border);
-        border-radius: 5px;
-        padding: 8px;
-      }
-
-      .filters-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        align-items: end;
-        }
-
-        .filter-date {
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 15px;
-        }
-
-        .filter-select {
-          display: flex;
-          margin-bottom: 15px;
-        }
-      
-      .filter-group {
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .filter-group label {
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: var(--vscode-editor-foreground);
-      }
-      
-      .filter-input {
-        padding: 6px 10px;
-        border: 1px solid var(--vscode-input-border);
-        border-radius: 3px;
-        background-color: var(--vscode-input-background);
-        color: var(--vscode-input-foreground);
-        font-family: inherit;
-      }
-      
-      .filter-input:focus {
-        outline: none;
-        border-color: var(--vscode-focusBorder);
-      }
-      
-      select.filter-input {
-        height: auto;
-        min-height: 32px;
-      }
-      
-      .filter-actions {
-        display: flex;
-        gap: 10px;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: flex-end;
-      }
-      
-      .filter-btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 3px;
-        background-color: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-        cursor: pointer;
-        font-family: inherit;
-        font-weight: bold;
-      }
-      
-      .filter-btn:hover {
-        background-color: var(--vscode-button-hoverBackground);
-      }
-      
-      .filter-btn.secondary {
-        background-color: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-      }
-      
-      .filter-btn.secondary:hover {
-        background-color: var(--vscode-button-secondaryHoverBackground);
-      }
-      
-      #resultsArea {
-        min-height: 200px;
-      }
-      
-      #loadingMessage {
-        text-align: center;
-        padding: 40px;
-        color: var(--vscode-descriptionForeground);
-        font-style: italic;
-      }
-      
-      .stats-summary {
-        background-color: var(--vscode-textBlockQuote-background);
-        border-left: 4px solid var(--vscode-textBlockQuote-border);
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        border-radius: 3px;
-      }
-      
-      .stats-summary h4 {
-        margin: 0 0 8px 0;
-        color: var(--vscode-editor-foreground);
-      }
-      
-      .stats-summary p {
-        margin: 4px 0;
-        color: var(--vscode-descriptionForeground);
-      }
     `;
   }
 

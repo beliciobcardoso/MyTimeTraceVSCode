@@ -299,28 +299,33 @@ h2 {
 .file-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
   padding: 8px 12px;
   background-color: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 13px;
+  min-height: 36px;
 }
 
 .file-name {
   font-family: 'Courier New', monospace;
   color: var(--foreground-color);
   flex: 1;
-  margin-right: 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
 }
 
 .file-time {
   font-weight: 600;
   color: var(--primary-color);
   white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding-top: 2px;
 }
 
 .footer {
