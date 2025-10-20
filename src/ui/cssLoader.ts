@@ -58,15 +58,6 @@ export class CssLoader {
   }
 
   /**
-   * Carrega estilos dos filtros
-   * @param extensionPath Caminho base da extensão
-   * @returns CSS dos filtros como string
-   */
-  static loadFiltersStyles(extensionPath: string): string {
-    return this.loadCssFile('filters-styles.css', extensionPath);
-  }
-
-  /**
    * Formata CSS para inclusão em HTML
    * @param cssContent Conteúdo CSS
    * @returns CSS formatado dentro de tags <style>

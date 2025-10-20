@@ -1456,104 +1456,33 @@ suite("Extension Test Suite", function () {
         createWebviewStub.restore();
       }
       
-      // === Teste 2: showStatsWithFilters() ===
-      console.log("Testando showStatsWithFilters()...");
+      // === Teste 2: showStats() chamando showSimpleStats() ===
+      console.log("Testando showStats() diretamente...");
       
       const createWebviewStub2 = sinon.stub(vscode.window, 'createWebviewPanel')
         .returns(mockWebviewPanel as any);
       
       try {
-        // Chamar showStatsWithFilters
-        await statsManager.showStatsWithFilters();
+        // Chamar showStats (agora chama showSimpleStats diretamente)
+        await statsManager.showStats();
         
         // Verificar se o webview foi criado
         assert.ok(
           createWebviewStub2.calledOnce,
-          "createWebviewPanel deveria ter sido chamado para showStatsWithFilters"
+          "createWebviewPanel deveria ter sido chamado"
         );
         
         const callArgs = createWebviewStub2.getCall(0).args;
-        assert.strictEqual(callArgs[0], "myTimeTraceStatsFiltered", "ViewType deveria ser correto para filtros");
-        // Aceita tanto em português quanto em inglês devido aos testes
-        const expectedTitlesFilters = ["Estatísticas de Tempo com Filtros", "Time Statistics with Filters"];
-        assert.ok(expectedTitlesFilters.includes(callArgs[1]), `Título deveria ser um dos esperados: ${expectedTitlesFilters.join(' ou ')}, mas foi: ${callArgs[1]}`);
-        
-        // Verificar se o HTML contém dados brutos e filtros
-        const html = mockWebviewPanel.webview.html;
-        assert.ok(html.length > 0, "HTML com filtros deveria ter sido gerado");
+        assert.strictEqual(callArgs[0], "myTimeTraceStats", "ViewType deveria ser correto");
         
       } finally {
         createWebviewStub2.restore();
       }
       
-      // === Teste 3: showStats() com escolha do usuário ===
-      console.log("Testando showStats() com escolha do usuário...");
+      // === Teste removido: showStats() com cancelamento do usuário ===
+      // (não é mais necessário pois não há mais QuickPick)
       
-      // Mock do showQuickPick para simular escolha do usuário
-      const mockQuickPickChoice = {
-        label: "Estatísticas Simples",
-        description: "Visualização básica sem filtros",
-        detail: "Mostra todas as estatísticas de forma agrupada"
-      };
-      
-      const showQuickPickStub = sinon.stub(vscode.window, 'showQuickPick')
-        .resolves(mockQuickPickChoice as any);
-      
-      const createWebviewStub3 = sinon.stub(vscode.window, 'createWebviewPanel')
-        .returns(mockWebviewPanel as any);
-      
-      try {
-        // Chamar showStats
-        await statsManager.showStats();
-        
-        // Verificar se o QuickPick foi mostrado
-        assert.ok(
-          showQuickPickStub.calledOnce,
-          "showQuickPick deveria ter sido chamado"
-        );
-        
-        // Verificar se o webview foi criado (porque escolhemos "Estatísticas Simples")
-        assert.ok(
-          createWebviewStub3.calledOnce,
-          "createWebviewPanel deveria ter sido chamado após escolha do usuário"
-        );
-        
-      } finally {
-        showQuickPickStub.restore();
-        createWebviewStub3.restore();
-      }
-      
-      // === Teste 4: showStats() com cancelamento do usuário ===
-      console.log("Testando showStats() com cancelamento...");
-      
-      const showQuickPickStub2 = sinon.stub(vscode.window, 'showQuickPick')
-        .resolves(undefined); // Simula cancelamento
-      
-      const createWebviewStub4 = sinon.stub(vscode.window, 'createWebviewPanel')
-        .returns(mockWebviewPanel as any);
-      
-      try {
-        // Chamar showStats
-        await statsManager.showStats();
-        
-        // Verificar se o QuickPick foi mostrado
-        assert.ok(
-          showQuickPickStub2.calledOnce,
-          "showQuickPick deveria ter sido chamado"
-        );
-        
-        // Verificar se o webview NÃO foi criado (porque o usuário cancelou)
-        assert.ok(
-          !createWebviewStub4.called,
-          "createWebviewPanel NÃO deveria ter sido chamado após cancelamento"
-        );
-        
-      } finally {
-        showQuickPickStub2.restore();
-        createWebviewStub4.restore();
-      }
-      
-      // === Teste 5: Tratamento de erro quando banco não está inicializado ===
+      // === Teste 3: Tratamento de erro quando banco não está inicializado ===
       console.log("Testando erro quando banco não está inicializado...");
       
       // Criar um DatabaseManager não inicializado
@@ -1633,7 +1562,7 @@ suite("Extension Test Suite", function () {
       }
     }
     
-    console.log("Teste do StatsManager concluído - Testados showStats(), showSimpleStats(), showStatsWithFilters(), tratamento de erros e cancelamento de usuário");
+    console.log("Teste do StatsManager concluído - Testados showStats(), showSimpleStats() e tratamento de erros");
   });
 
   test("Restauração de projeto deve registrar na deletion_history", async function() {
