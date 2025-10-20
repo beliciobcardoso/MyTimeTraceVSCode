@@ -4,7 +4,7 @@
   "description": "%my-time-trace-vscode.description%",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"

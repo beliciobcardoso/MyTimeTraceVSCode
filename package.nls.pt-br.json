@@ -1,6 +1,6 @@
 {
     "my-time-trace-vscode.displayName": "My Time Trace VSCode",
-    "my-time-trace-vscode.description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados",
+    "my-time-trace-vscode.description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com dashboard moderno, gráficos interativos, 50 cores distintas e filtros avançados por data e projeto",
     "my-time-trace-vscode.startTracking.title": "My Time Trace: Iniciar Rastreamento",
     "my-time-trace-vscode.pauseTracking.title": "My Time Trace: Pausar Rastreamento",
     "my-time-trace-vscode.showStats.title": "My Time Trace: Mostrar Estatísticas",
@@ -43,7 +43,7 @@
     "dashboard.projectStats": "Estatísticas de Projetos",
     "dashboard.projectsAvailable": "{0} projetos disponíveis para análise",
     "dashboard.exploreAnalysis": "Explorar Análise de Tempo",
-    "dashboard.exploreAnalysisDesc": "Confira nossa nova Análise de Tempo para obter visibilidade e insights sobre seu perfil de desenvolvimento, por exemplo, explorando arquivos mais trabalhados ou analisando padrões.",
+    "dashboard.exploreAnalysisDesc": "Confira nossa Análise de Tempo unificada com filtros interativos, gráficos donut com 50 cores, tabelas expansíveis e cards de estatísticas em tempo real.",
     "dashboard.viewMore": "Ver Mais",
     "dashboard.projectDetails": "Detalhes dos Projetos",
     "dashboard.projectName": "Nome do Projeto",
@@ -62,5 +62,10 @@
     "dashboard.allProjects": "Todos os Projetos",
     "dashboard.applyFilters": "Aplicar Filtros",
     "dashboard.clearFilters": "Limpar Filtros",
+    "dashboard.donutChart": "Gráfico donut interativo com 50 cores distintas",
+    "dashboard.statisticsCards": "Cards de estatísticas em tempo real com atualizações dinâmicas",
+    "dashboard.projectTable": "Tabela de projetos expansível com capacidade de ordenação",
+    "dashboard.deleteProject": "Excluir Projeto",
+    "dashboard.confirmDelete": "Tem certeza que deseja excluir este projeto?",
     "cleanup.automatic": "My Time Trace: {0} projeto(s) expirado(s) limpo(s) automaticamente"
 }

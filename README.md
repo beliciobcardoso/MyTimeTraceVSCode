@@ -1,16 +1,16 @@
-# My Time Trace VSCode (Beta 0.2.1)
+# My Time Trace VSCode (Beta 0.3.0)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
 
 [![Status](https://img.shields.io/badge/Status-Beta-orange?style=flat-square)]()
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
-[![Tests](https://img.shields.io/badge/Tests-15%20passing-brightgreen?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
 
 </div>
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento. Agora com visualização detalhada de estatísticas por projeto e arquivo com filtros avançados!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e visualizações interativas!
 
 ## ✨ Funcionalidades
 
@@ -19,18 +19,22 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Pausa automática após 5 minutos de idle
 - **Organização por Projeto**: Agrupa dados por workspace/projeto
 - **Persistência Local**: Armazena dados em SQLite seguro
+- **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
 
-### 📊 Dashboard Moderno
+### 📊 Dashboard Moderno Unificado
 - **Interface Responsiva**: Layout grid 40/60 otimizado
-- **Filtros Avançados**: Por data e múltiplos projetos
-- **Visualização Hierárquica**: Projetos expansíveis com detalhes
-- **Estatísticas em Tempo Real**: Resumos dinâmicos dos dados filtrados
+- **Filtros Integrados**: Por data (inicial/final) e múltiplos projetos
+- **Gráfico Donut Interativo**: Visualização com tooltips e atualização dinâmica
+- **Tabela Expansível**: Projetos com detalhes expansíveis e ordenação por coluna
+- **Cards de Estatísticas**: Total, Hoje, Arquivos, Esta Semana em tempo real
+- **Paleta de 50 Cores**: Distinção visual clara entre projetos
 
 ### 🎨 Interface Integrada
 - **Status Bar Interativa**: Feedback visual constante
 - **Formatação Inteligente**: Caminhos de arquivo legíveis
 - **Tema Adaptativo**: Suporte a dark/light mode
-- **Performance Otimizada**: Baixo consumo de recursos
+- **Performance Otimizada**: Redução de ~600 linhas de código unnecessary
+- **Cores Consistentes**: Mesma cor para cada projeto independente de filtros
 
 ## Como Funciona
 
@@ -39,7 +43,8 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 3. Detecta quando você muda de arquivos ou projetos
 4. Registra períodos de inatividade para melhorar a precisão dos dados
 5. Armazena todos os dados localmente para acesso posterior
-6. Oferece visualização avançada com filtros interativos para análise detalhada
+6. Oferece visualização unificada com filtros interativos para análise detalhada
+7. Permite exclusão segura de projetos com histórico completo de restauração
 
 ## Requisitos
 

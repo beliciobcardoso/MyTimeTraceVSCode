@@ -1,6 +1,6 @@
 {
     "my-time-trace-vscode.displayName": "My Time Trace VSCode",
-    "my-time-trace-vscode.description": "Monitor your time spent on files and projects in VS Code with a modern interface and advanced filters",
+    "my-time-trace-vscode.description": "Monitor your time spent on files and projects in VS Code with a modern interface, interactive dashboard, advanced filters and 50 distinct colors for clear project differentiation",
     "my-time-trace-vscode.startTracking.title": "My Time Trace: Start Tracking",
     "my-time-trace-vscode.pauseTracking.title": "My Time Trace: Pause Tracking",
     "my-time-trace-vscode.showStats.title": "My Time Trace: Show Stats",
@@ -43,7 +43,7 @@
     "dashboard.projectStats": "Project Statistics",
     "dashboard.projectsAvailable": "{0} projects available for analysis",
     "dashboard.exploreAnalysis": "Explore Time Analysis",
-    "dashboard.exploreAnalysisDesc": "Check out our new Time Analysis to get visibility and insights into your development profile, for example by exploring most worked files or analyzing patterns.",
+    "dashboard.exploreAnalysisDesc": "Check out our new Time Analysis to get visibility and insights into your development profile, including interactive filters, color-coded projects, and detailed project breakdown.",
     "dashboard.viewMore": "View More",
     "dashboard.projectDetails": "Project Details",
     "dashboard.projectName": "Project Name",
@@ -62,5 +62,8 @@
     "dashboard.allProjects": "All Projects",
     "dashboard.applyFilters": "Apply Filters",
     "dashboard.clearFilters": "Clear Filters",
+    "dashboard.donutChart": "Interactive donut chart with 50 distinct colors",
+    "dashboard.statisticsCards": "Real-time statistics cards with dynamic updates",
+    "dashboard.projectTable": "Expandable projects table with sorting capabilities",
     "cleanup.automatic": "My Time Trace: {0} expired project(s) automatically cleaned up"
 }

@@ -5,6 +5,52 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-10-20
+
+### Adicionado
+
+- **Dashboard Moderno Unificado**: Consolidação de dois dashboards em um único, com design responsivo e integração de filtros
+- **Paleta de Cores Expandida**: 50 cores distintas para suportar múltiplos projetos sem conflitos visuais
+- **Filtros Integrados**: Filtros por data (inicial/final) e seleção múltipla de projetos no dashboard principal
+- **Gráfico Donut Interativo**: Visualização dinâmica com tooltips, atualização em tempo real com filtros
+- **Tabela Expansível de Projetos**: Visualização detalhada de projetos com ordenação por coluna (nome, tempo, arquivos)
+- **Sistema de Cores Consistente**: Função `getProjectColor()` garante cores constantes independente de filtros
+- **Cards de Estatísticas**: Resumo em tempo real (Total, Hoje, Arquivos, Esta Semana) atualizados dinamicamente
+- **Sistema de Exclusão com Histórico**: Soft delete, hard delete, cleanup automático (>30 dias) e restauração
+
+### Alterado
+
+- Removido dashboard legacy com filtros separados (`generateStatsWithFiltersHtml`)
+- Simplificado o método `showStats()` para chamar `showSimpleStats()` diretamente
+- Removida duração de menu QuickPick (interface simplificada)
+- Atualizado sistema de testes para refletir nova arquitetura unificada
+- CSS refatorizado com melhor separação de responsabilidades
+- Melhorado layout responsivo do painel de estatísticas
+
+### Removido
+
+- Método `generateStatsWithFiltersHtml()` (~84 linhas)
+- Método `getFiltersJavaScript()` (~250 linhas)
+- Método `createStatsWithFiltersPanel()` (~21 linhas)
+- Método `showStatsWithFilters()` (~48 linhas)
+- Menu de escolha de dashboard (QuickPick)
+- Arquivo `filters-styles.css` (não mais necessário)
+- Método `loadFiltersStyles()` de CssLoader
+
+### Corrigido
+
+- Problemas de layout com nomes de arquivo longos (text wrapping)
+- Duplicação de cores entre array principal e função `getProjectColor()`
+- Sincronização automática de paleta de cores em todas as visualizações
+- Removed dead code `getFiltersStyles()` (~200 linhas)
+
+### Técnico
+
+- Cobertura de testes: 88% (21 testes passando, 100% sucesso)
+- Arquitetura simplificada: 1 dashboard unificado em vez de 2
+- Performance: Redução de ~600 linhas de código desnecessário
+- Compatibilidade: VS Code v1.100.0+, Node 20.x+
+
 ## [0.2.1] - 2025-06-29
 
 ### Adicionado
