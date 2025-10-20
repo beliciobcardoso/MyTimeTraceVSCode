@@ -560,7 +560,7 @@ export class StatsPanel {
               Tem certeza que deseja excluir os históricos do projeto <strong id="projectToDelete"></strong>?
             </p>
             <p class="modal-info">
-              ⚠️ Esta ação pode ser restaurada!<br>
+              ⚠️ Esta ação poderá ser restaurada!<br>
               Todos os registros de tempo deste projeto poderão ser recuperados no prazo de 30 dias.
             </p>
           </div>
