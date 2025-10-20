@@ -293,82 +293,201 @@ export class StatsManager {
   }
 
   /**
-   * Mostra histórico de exclusões em um painel informativo
+   * Mostra painel visual de projetos deletados com opção de restauração
    */
-  async showDeletionHistory(): Promise<void> {
+  async showDeletedProjects(): Promise<void> {
+    if (!this.dbManager.isInitialized()) {
+      vscode.window.showErrorMessage(
+        localize('stats.dbNotInitialized', 'Database not initialized')
+      );
+      return;
+    }
+
     try {
-      console.log('📝 Carregando histórico de exclusões...');
-      
-      // Buscar histórico completo
-      const history = await this.dbManager.getDeletionHistory(true);
-      
-      if (history.length === 0) {
-        vscode.window.showInformationMessage(
-          localize('stats.deletionHistory.empty', 'Nenhum projeto foi deletado ainda.')
-        );
-        return;
-      }
+      console.log('🗑️ Carregando painel de projetos deletados...');
 
-      // Calcular estatísticas
-      const stats = {
-        total: history.length,
-        softDeletes: history.filter((h: any) => h.deletion_type === 'soft').length,
-        hardDeletes: history.filter((h: any) => h.deletion_type === 'hard').length,
-        restored: history.filter((h: any) => h.status === 'restored').length,
-        pending: history.filter((h: any) => h.status === 'deleted').length,
-        permanent: history.filter((h: any) => h.status === 'permanent').length,
-        totalRecords: history.reduce((sum: number, h: any) => sum + h.records_count, 0)
-      };
+      // Buscar projetos deletados
+      const deletedProjects = await this.dbManager.getDeletedProjectsWithDays();
 
-      // Mostrar em formato estruturado
-      const message = `
-📝 Histórico de Exclusões
-─────────────────────────────────────
-Total de operações: ${stats.total}
-  ├─ Soft deletes: ${stats.softDeletes}
-  └─ Hard deletes: ${stats.hardDeletes}
-
-Status atual:
-  ├─ Restaurados: ${stats.restored}
-  ├─ Pendentes: ${stats.pending}
-  └─ Permanentes: ${stats.permanent}
-
-Total de registros afetados: ${stats.totalRecords}
-
-Últimas ${Math.min(5, history.length)} operações:
-${history.slice(0, 5).map((h: any, i: number) => `
-${i + 1}. ${h.project_name} (${h.status})
-   Deletado: ${new Date(h.deleted_at).toLocaleString('pt-BR')}
-   Registros: ${h.records_count}
-   Tipo: ${h.deletion_type === 'soft' ? 'Reversível' : 'Permanente'}
-   ${h.restored_at ? `Restaurado: ${new Date(h.restored_at).toLocaleString('pt-BR')}` : ''}
-`).join('')}
-
-💡 Dica: Use o console do VS Code Developer Tools para consultar o histórico completo:
-   await dbManager.getDeletionHistory()
-      `.trim();
-
-      // Mostrar informação com opções
-      const action = await vscode.window.showInformationMessage(
-        message,
-        'Ver Detalhes no Console',
-        'Fechar'
+      // Criar painel webview
+      const panel = vscode.window.createWebviewPanel(
+        'myTimeTraceDeletedProjects',
+        'Projetos Deletados - MyTimeTrace',
+        vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+          localResourceRoots: [
+            vscode.Uri.file(this.context.extensionPath)
+          ]
+        }
       );
 
-      if (action === 'Ver Detalhes no Console') {
-        console.log('📝 Histórico Completo de Exclusões:');
-        console.table(history);
-        vscode.window.showInformationMessage(
-          'Histórico exibido no console do Developer Tools (Help → Toggle Developer Tools)'
-        );
-      }
+      // Importar DeletedProjectsPanel
+      const { DeletedProjectsPanel } = await import('../ui/deletedProjectsPanel.js');
+
+      // Gerar URI para CSS
+      const stylePath = vscode.Uri.file(
+        this.context.asAbsolutePath('src/ui/dashboard-styles.css')
+      );
+      const styleUri = panel.webview.asWebviewUri(stylePath);
+
+      // Gerar HTML
+      panel.webview.html = DeletedProjectsPanel.generateDeletedProjectsHtml(
+        deletedProjects,
+        styleUri
+      );
+
+      // Listener para mensagens do webview
+      panel.webview.onDidReceiveMessage(
+        async (message) => {
+          try {
+            switch (message.command) {
+              case 'restoreProject':
+                await this.handleRestoreProject(message.projectName, panel);
+                break;
+              
+              case 'hardDeleteProject':
+                await this.handleHardDeleteProject(message.projectName, panel);
+                break;
+              
+              case 'cleanupExpiredProjects':
+                await this.handleCleanupExpired(panel);
+                break;
+              
+              case 'refreshDeletedProjects':
+                await this.refreshDeletedProjectsPanel(panel);
+                break;
+            }
+          } catch (error) {
+            console.error('❌ Erro ao processar comando:', error);
+            vscode.window.showErrorMessage(
+              `Erro: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        },
+        undefined,
+        this.context.subscriptions
+      );
+
+      console.log(`✅ Painel de projetos deletados aberto (${deletedProjects.length} projetos)`);
 
     } catch (error) {
-      console.error('❌ Erro ao carregar histórico:', error);
+      console.error('❌ Erro ao mostrar projetos deletados:', error);
       vscode.window.showErrorMessage(
-        localize('stats.deletionHistory.error', 'Erro ao carregar histórico de exclusões: {0}', 
+        localize('stats.deletedProjects.error', 'Erro ao carregar projetos deletados: {0}',
           error instanceof Error ? error.message : String(error))
       );
+    }
+  }
+
+  /**
+   * Manipula restauração de projeto
+   */
+  private async handleRestoreProject(
+    projectName: string,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    try {
+      console.log(`♻️ Solicitação de restauração: ${projectName}`);
+
+      const restoredCount = await this.dbManager.restoreProjectHistory(projectName);
+
+      vscode.window.showInformationMessage(
+        `✅ Projeto "${projectName}" restaurado com sucesso! ${restoredCount} registro(s) recuperado(s).`
+      );
+
+      // Atualizar painel
+      await this.refreshDeletedProjectsPanel(panel);
+
+    } catch (error) {
+      console.error('❌ Erro ao restaurar projeto:', error);
+      vscode.window.showErrorMessage(
+        `Erro ao restaurar projeto: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Manipula exclusão permanente de projeto
+   */
+  private async handleHardDeleteProject(
+    projectName: string,
+    panel: vscode.WebviewPanel
+  ): Promise<void> {
+    try {
+      console.log(`💥 Solicitação de hard delete: ${projectName}`);
+
+      const deletedCount = await this.dbManager.hardDeleteProjectHistory(projectName);
+
+      vscode.window.showWarningMessage(
+        `💥 Projeto "${projectName}" removido PERMANENTEMENTE! ${deletedCount} registro(s) deletado(s) para sempre.`
+      );
+
+      // Atualizar painel
+      await this.refreshDeletedProjectsPanel(panel);
+
+    } catch (error) {
+      console.error('❌ Erro ao deletar permanentemente:', error);
+      vscode.window.showErrorMessage(
+        `Erro ao deletar permanentemente: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Manipula limpeza de projetos expirados
+   */
+  private async handleCleanupExpired(panel: vscode.WebviewPanel): Promise<void> {
+    try {
+      console.log('🧹 Solicitação de limpeza de expirados...');
+
+      const deletedCount = await this.dbManager.cleanupExpiredProjects();
+
+      if (deletedCount > 0) {
+        vscode.window.showInformationMessage(
+          `🧹 ${deletedCount} projeto(s) expirado(s) removido(s) permanentemente.`
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          '✅ Nenhum projeto expirado para limpar.'
+        );
+      }
+
+      // Atualizar painel
+      await this.refreshDeletedProjectsPanel(panel);
+
+    } catch (error) {
+      console.error('❌ Erro ao limpar expirados:', error);
+      vscode.window.showErrorMessage(
+        `Erro ao limpar projetos expirados: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Atualiza painel de projetos deletados
+   */
+  private async refreshDeletedProjectsPanel(panel: vscode.WebviewPanel): Promise<void> {
+    try {
+      const deletedProjects = await this.dbManager.getDeletedProjectsWithDays();
+
+      const { DeletedProjectsPanel } = await import('../ui/deletedProjectsPanel.js');
+
+      const stylePath = vscode.Uri.file(
+        this.context.asAbsolutePath('src/ui/dashboard-styles.css')
+      );
+      const styleUri = panel.webview.asWebviewUri(stylePath);
+
+      panel.webview.html = DeletedProjectsPanel.generateDeletedProjectsHtml(
+        deletedProjects,
+        styleUri
+      );
+
+      console.log(`✅ Painel atualizado (${deletedProjects.length} projetos)`);
+    } catch (error) {
+      console.error('❌ Erro ao atualizar painel:', error);
+      throw error;
     }
   }
 }

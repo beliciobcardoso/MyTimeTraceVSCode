@@ -109,6 +109,16 @@ src/
 - **StatusBar Integration:** Feedback visual constante
 - **Theme Adaptation:** Dark/Light mode automático
 
+### ⚠️ REGRA CRÍTICA: Modais e Confirmações
+**NUNCA use `confirm()`, `alert()` ou `prompt()` em webviews!**
+
+- ❌ **PROIBIDO:** `confirm()`, `alert()`, `prompt()` - Bloqueados por sandbox do VS Code
+- ✅ **CORRETO - Frontend:** Crie modais customizados em HTML/CSS/JS dentro do webview
+- 📋 **Fluxo:** Frontend envia `postMessage` → Backend confirma com modal nativo → Executa ação
+
+**Motivo:** VS Code webviews são sandboxed e bloqueiam `confirm()`/`alert()` por segurança.
+Erro típico: `"Ignored call to 'confirm()'. The document is sandboxed"`
+
 ## Sistema de Qualidade
 
 ### Cobertura de Testes

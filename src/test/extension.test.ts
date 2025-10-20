@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { activate, deactivate } from "../extension";
 import { Database } from "sqlite3";
+import { DatabaseManager } from "../modules/database";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -14,7 +15,7 @@ suite("Extension Test Suite", function () {
 
   let testContext: vscode.ExtensionContext;
   let db: Database | undefined;
-  let getExtensionStub: sinon.SinonStub;
+  let getExtensionStub: sinon.SinonStub;``;
 
   // Definindo uma interface mais completa para o mock da extensão
   interface MockVscodeExtension {
@@ -520,7 +521,7 @@ suite("Extension Test Suite", function () {
     
     const timeTracker = new (timeTrace as any)(mockDatabaseManager, statusBarManager);
     
-    // Crear um documento de teste para simular um arquivo ativo
+    // Criar um documento de teste para simular um arquivo ativo
     const doc = await vscode.workspace.openTextDocument({
       content: "// Arquivo de teste para atualização em tempo real",
       language: "typescript",
@@ -1633,5 +1634,927 @@ suite("Extension Test Suite", function () {
     }
     
     console.log("Teste do StatsManager concluído - Testados showStats(), showSimpleStats(), showStatsWithFilters(), tratamento de erros e cancelamento de usuário");
+  });
+
+  test("Restauração de projeto deve registrar na deletion_history", async function() {
+    this.timeout(10000);
+    
+    const testDbDir = path.join(__dirname, "testDbRestoration");
+    
+    try {
+      // Criar diretório de teste
+      if (!fs.existsSync(testDbDir)) {
+        fs.mkdirSync(testDbDir, { recursive: true });
+      }
+      
+      // Inicializar DatabaseManager
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // === PASSO 1: Inserir dados de teste ===
+      console.log("📝 Inserindo dados de teste...");
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'test-restore-project',
+        file: 'index.ts',
+        duration: 3600
+      });
+      
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T11:00:00',
+        project: 'test-restore-project',
+        file: 'auth.ts',
+        duration: 1800
+      });
+      
+      // === PASSO 2: Soft delete do projeto ===
+      console.log("🗑️ Deletando projeto (soft delete)...");
+      const deletedCount = await dbManager.deleteProjectHistory('test-restore-project');
+      console.log(`✅ ${deletedCount} registros deletados`);
+      
+      assert.strictEqual(deletedCount, 2, "Deveria ter deletado 2 registros");
+      
+      // === PASSO 3: Verificar registro na deletion_history ===
+      console.log("🔍 Verificando deletion_history após soft delete...");
+      const historyAfterDelete = await dbManager.getDeletionHistory(true);
+      console.log(`📊 Histórico após delete:`, historyAfterDelete);
+      
+      const deleteEntry = historyAfterDelete.find((h: any) => h.project_name === 'test-restore-project');
+      assert.ok(deleteEntry, "Deveria existir entrada no histórico após soft delete");
+      assert.strictEqual(deleteEntry.deletion_type, 'soft', "Tipo de exclusão deveria ser 'soft'");
+      assert.strictEqual(deleteEntry.restored_at, null, "restored_at deveria ser NULL antes da restauração");
+      
+      // === PASSO 4: Restaurar projeto ===
+      console.log("♻️ Restaurando projeto...");
+      const restoredCount = await dbManager.restoreProjectHistory('test-restore-project');
+      console.log(`✅ ${restoredCount} registros restaurados`);
+      
+      assert.strictEqual(restoredCount, 2, "Deveria ter restaurado 2 registros");
+      
+      // === PASSO 5: Verificar atualização na deletion_history ===
+      console.log("🔍 Verificando deletion_history após restauração...");
+      const historyAfterRestore = await dbManager.getDeletionHistory(true);
+      console.log(`📊 Histórico após restauração:`, historyAfterRestore);
+      
+      const restoreEntry = historyAfterRestore.find((h: any) => h.project_name === 'test-restore-project');
+      assert.ok(restoreEntry, "Deveria existir entrada no histórico após restauração");
+      assert.notStrictEqual(restoreEntry.restored_at, null, "restored_at NÃO deveria ser NULL após restauração");
+      
+      console.log(`✅ SUCESSO: restored_at = ${restoreEntry.restored_at}`);
+      
+      // === PASSO 6: Verificar dados restaurados via SQL direto ===
+      console.log("🔍 Verificando se dados foram restaurados corretamente...");
+      const restoredRecords = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries 
+         WHERE project = ? AND deleted_at IS NULL`,
+        ['test-restore-project']
+      );
+      
+      assert.strictEqual(
+        restoredRecords[0].count, 
+        2, 
+        "Deveria ter 2 registros restaurados (deleted_at = NULL)"
+      );
+      
+      console.log("✅ Dados restaurados corretamente!");
+      
+      // === LIMPEZA ===
+      await dbManager.close();
+      
+      console.log("✅ TESTE COMPLETO: Restauração registra corretamente na deletion_history!");
+      
+    } catch (error) {
+      console.error("❌ Erro no teste de restauração:", error);
+      throw error;
+    } finally {
+      // Limpar diretório de teste
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("Sistema de exclusão - Soft delete, Hard delete e Cleanup", async function() {
+    this.timeout(15000);
+    
+    const testDbDir = path.join(__dirname, "testDbDeletion");
+    
+    try {
+      // Criar diretório de teste
+      if (!fs.existsSync(testDbDir)) {
+        fs.mkdirSync(testDbDir, { recursive: true });
+      }
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // === TESTE 1: SOFT DELETE ===
+      console.log("\n🧪 TESTE 1: Soft Delete");
+      
+      // Inserir dados
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'projeto-soft-delete',
+        file: 'index.ts',
+        duration: 3600
+      });
+      
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T11:00:00',
+        project: 'projeto-soft-delete',
+        file: 'auth.ts',
+        duration: 1800
+      });
+      
+      // Executar soft delete
+      const softDeleted = await dbManager.deleteProjectHistory('projeto-soft-delete');
+      assert.strictEqual(softDeleted, 2, "Soft delete deveria marcar 2 registros");
+      
+      // Verificar que registros ainda existem mas marcados como deletados
+      const afterSoftDelete = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries WHERE project = ?`,
+        ['projeto-soft-delete']
+      );
+      assert.strictEqual(afterSoftDelete[0].count, 2, "Registros ainda devem existir no banco");
+      
+      // Verificar deleted_at preenchido
+      const deletedRecords = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries 
+         WHERE project = ? AND deleted_at IS NOT NULL`,
+        ['projeto-soft-delete']
+      );
+      assert.strictEqual(deletedRecords[0].count, 2, "Registros devem ter deleted_at preenchido");
+      
+      // Verificar registro no histórico
+      const history1 = await dbManager.getDeletionHistory(true);
+      const historyEntry1 = history1.find((h: any) => h.project_name === 'projeto-soft-delete');
+      assert.ok(historyEntry1, "Deve existir entrada no histórico");
+      assert.strictEqual(historyEntry1.deletion_type, 'soft', "Tipo deve ser 'soft'");
+      assert.strictEqual(historyEntry1.records_count, 2, "Deve registrar 2 records");
+      
+      console.log("✅ Soft delete funcionando corretamente");
+      
+      // === TESTE 2: HARD DELETE (Exclusão Permanente) ===
+      console.log("\n🧪 TESTE 2: Hard Delete (Exclusão Permanente)");
+      
+      // Inserir novo projeto
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T12:00:00',
+        project: 'projeto-hard-delete',
+        file: 'main.ts',
+        duration: 7200
+      });
+      
+      // Soft delete primeiro
+      await dbManager.deleteProjectHistory('projeto-hard-delete');
+      
+      // Hard delete (exclusão permanente)
+      const hardDeleted = await dbManager.hardDeleteProjectHistory('projeto-hard-delete');
+      assert.strictEqual(hardDeleted, 1, "Hard delete deveria remover 1 registro");
+      
+      // Verificar que registro foi REMOVIDO permanentemente
+      const afterHardDelete = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries WHERE project = ?`,
+        ['projeto-hard-delete']
+      );
+      assert.strictEqual(afterHardDelete[0].count, 0, "Registros devem ser REMOVIDOS do banco");
+      
+      // Verificar registro no histórico como 'hard'
+      const history2 = await dbManager.getDeletionHistory(true);
+      const historyEntry2 = history2.find(
+        (h: any) => h.project_name === 'projeto-hard-delete' && h.deletion_type === 'hard'
+      );
+      assert.ok(historyEntry2, "Deve existir entrada 'hard' no histórico");
+      
+      console.log("✅ Hard delete funcionando corretamente");
+      
+      // === TESTE 3: CLEANUP DE PROJETOS EXPIRADOS (>30 dias) ===
+      console.log("\n🧪 TESTE 3: Cleanup de Projetos Expirados");
+      
+      // Inserir projeto que será marcado como expirado
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-01T10:00:00',
+        project: 'projeto-expirado',
+        file: 'old.ts',
+        duration: 1800
+      });
+      
+      // Soft delete
+      await dbManager.deleteProjectHistory('projeto-expirado');
+      
+      // Simular expiração: Alterar deleted_at para 31 dias atrás
+      await dbManager.query(
+        `UPDATE time_entries 
+         SET deleted_at = datetime('now', '-31 days') 
+         WHERE project = ?`,
+        ['projeto-expirado']
+      );
+      
+      // Verificar que está marcado como expirado
+      const expiredCheck = await dbManager.getDeletedProjectsWithDays();
+      const expiredProject = expiredCheck.find((p: any) => p.project === 'projeto-expirado');
+      assert.ok(expiredProject, "Projeto deveria estar na lista de deletados");
+      assert.ok(expiredProject.days_since_deletion >= 30, "Deveria estar expirado (>30 dias)");
+      
+      // Executar cleanup
+      const cleanedCount = await dbManager.cleanupExpiredProjects();
+      assert.strictEqual(cleanedCount, 1, "Cleanup deveria remover 1 projeto expirado");
+      
+      // Verificar remoção permanente
+      const afterCleanup = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries WHERE project = ?`,
+        ['projeto-expirado']
+      );
+      assert.strictEqual(afterCleanup[0].count, 0, "Projeto expirado deve ser REMOVIDO");
+      
+      console.log("✅ Cleanup de expirados funcionando corretamente");
+      
+      // === TESTE 4: CLEANUP SEM PROJETOS EXPIRADOS ===
+      console.log("\n🧪 TESTE 4: Cleanup sem projetos expirados");
+      
+      const emptyCleanup = await dbManager.cleanupExpiredProjects();
+      assert.strictEqual(emptyCleanup, 0, "Cleanup sem projetos expirados deve retornar 0");
+      
+      console.log("✅ Cleanup vazio funcionando corretamente");
+      
+      await dbManager.close();
+      
+      console.log("\n✅ TODOS OS TESTES DE EXCLUSÃO PASSARAM!");
+      
+    } catch (error) {
+      console.error("❌ Erro nos testes de exclusão:", error);
+      throw error;
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("Sistema de exclusão - Tratamento de erros", async function() {
+    this.timeout(10000);
+    
+    const testDbDir = path.join(__dirname, "testDbErrors");
+    
+    try {
+      console.log("\n🧪 TESTANDO TRATAMENTO DE ERROS");
+      
+      // === TESTE 1: Erro ao deletar projeto inexistente ===
+      console.log("\n🧪 TESTE 1: Deletar projeto inexistente");
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      const deleteInexistent = await dbManager.deleteProjectHistory('projeto-nao-existe');
+      assert.strictEqual(deleteInexistent, 0, "Deletar projeto inexistente deve retornar 0");
+      
+      console.log("✅ Tratamento de projeto inexistente OK");
+      
+      // === TESTE 2: Erro ao restaurar projeto não deletado ===
+      console.log("\n🧪 TESTE 2: Restaurar projeto não deletado");
+      
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'projeto-ativo',
+        file: 'index.ts',
+        duration: 3600
+      });
+      
+      const restoreActive = await dbManager.restoreProjectHistory('projeto-ativo');
+      assert.strictEqual(restoreActive, 0, "Restaurar projeto ativo deve retornar 0");
+      
+      console.log("✅ Tratamento de restauração inválida OK");
+      
+      // === TESTE 3: Hard delete sem soft delete prévio ===
+      console.log("\n🧪 TESTE 3: Hard delete sem soft delete prévio");
+      
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T11:00:00',
+        project: 'projeto-direto',
+        file: 'main.ts',
+        duration: 1800
+      });
+      
+      const hardDeleteDirect = await dbManager.hardDeleteProjectHistory('projeto-direto');
+      assert.strictEqual(hardDeleteDirect, 0, "Hard delete de projeto ativo deve retornar 0");
+      
+      console.log("✅ Proteção contra hard delete direto OK");
+      
+      // === TESTE 4: Banco não inicializado ===
+      console.log("\n🧪 TESTE 4: Operações com banco não inicializado");
+      
+      const dbNotInit = new DatabaseManager();
+      
+      try {
+        await dbNotInit.deleteProjectHistory('test');
+        assert.fail("Deveria ter lançado erro de banco não inicializado");
+      } catch (error: any) {
+        assert.ok(
+          error.message.includes("não inicializado") || error.message.includes("not initialized"),
+          "Erro deveria mencionar banco não inicializado"
+        );
+      }
+      
+      console.log("✅ Validação de banco não inicializado OK");
+      
+      // === TESTE 5: Múltiplas exclusões do mesmo projeto ===
+      console.log("\n🧪 TESTE 5: Múltiplas exclusões do mesmo projeto");
+      
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T12:00:00',
+        project: 'projeto-multiplo',
+        file: 'test.ts',
+        duration: 3600
+      });
+      
+      // Primeira exclusão
+      const delete1 = await dbManager.deleteProjectHistory('projeto-multiplo');
+      assert.strictEqual(delete1, 1, "Primeira exclusão deve funcionar");
+      
+      // Segunda exclusão (já está deletado)
+      const delete2 = await dbManager.deleteProjectHistory('projeto-multiplo');
+      assert.strictEqual(delete2, 0, "Segunda exclusão deve retornar 0 (já deletado)");
+      
+      console.log("✅ Proteção contra múltiplas exclusões OK");
+      
+      await dbManager.close();
+      
+      console.log("\n✅ TODOS OS TESTES DE ERRO PASSARAM!");
+      
+    } catch (error) {
+      console.error("❌ Erro nos testes de tratamento de erro:", error);
+      throw error;
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("Sistema de exclusão - Queries e listagens", async function() {
+    this.timeout(10000);
+    
+    const testDbDir = path.join(__dirname, "testDbQueries");
+    
+    try {
+      console.log("\n🧪 TESTANDO QUERIES E LISTAGENS");
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // === SETUP: Criar cenário com múltiplos projetos ===
+      console.log("\n📝 Criando cenário de teste...");
+      
+      // Projeto 1: Ativo (não deletado)
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'projeto-ativo',
+        file: 'index.ts',
+        duration: 3600
+      });
+      
+      // Projeto 2: Deletado recentemente (5 dias)
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-20T10:00:00',
+        project: 'projeto-recente',
+        file: 'main.ts',
+        duration: 1800
+      });
+      await dbManager.deleteProjectHistory('projeto-recente');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-5 days') WHERE project = ?`,
+        ['projeto-recente']
+      );
+      
+      // Projeto 3: Deletado há 20 dias (crítico)
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-01T10:00:00',
+        project: 'projeto-critico',
+        file: 'old.ts',
+        duration: 7200
+      });
+      await dbManager.deleteProjectHistory('projeto-critico');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-20 days') WHERE project = ?`,
+        ['projeto-critico']
+      );
+      
+      // Projeto 4: Antigo (28 dias) - DENTRO da janela de 30 dias
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-01T10:00:00',
+        project: 'projeto-antigo',
+        file: 'old.ts',
+        duration: 900
+      });
+      await dbManager.deleteProjectHistory('projeto-antigo');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-28 days') WHERE project = ?`,
+        ['projeto-antigo']
+      );
+      
+      // === TESTE 1: getDeletedProjects() ===
+      console.log("\n🧪 TESTE 1: getDeletedProjects()");
+      
+      const deletedList = await dbManager.getDeletedProjects();
+      console.log("📋 Projetos deletados retornados:", deletedList);
+      assert.strictEqual(deletedList.length, 3, "Deveria retornar 3 projetos deletados");
+      assert.ok(
+        deletedList.includes('projeto-recente'),
+        "Deveria incluir projeto-recente"
+      );
+      assert.ok(
+        !deletedList.includes('projeto-ativo'),
+        "NÃO deveria incluir projeto ativo"
+      );
+      
+      console.log("✅ getDeletedProjects() funcionando");
+      
+      // === TESTE 2: getDeletedProjectsWithDays() ===
+      console.log("\n🧪 TESTE 2: getDeletedProjectsWithDays()");
+      
+      const deletedWithDays = await dbManager.getDeletedProjectsWithDays();
+      
+      assert.strictEqual(deletedWithDays.length, 3, "Deveria retornar 3 projetos");
+      
+      const recente = deletedWithDays.find((p: any) => p.project === 'projeto-recente');
+      assert.ok(recente, "Deveria incluir projeto-recente");
+      assert.ok(recente.days_since_deletion >= 4 && recente.days_since_deletion <= 6, 
+        "Dias desde exclusão deveria ser ~5");
+      
+      const critico = deletedWithDays.find((p: any) => p.project === 'projeto-critico');
+      assert.ok(critico, "Deveria incluir projeto-critico");
+      assert.ok(critico.days_since_deletion >= 19 && critico.days_since_deletion <= 21,
+        "Dias desde exclusão deveria ser ~20");
+      
+      const antigo = deletedWithDays.find((p: any) => p.project === 'projeto-antigo');
+      assert.ok(antigo, "Deveria incluir projeto-antigo");
+      assert.ok(antigo.days_since_deletion >= 27 && antigo.days_since_deletion <= 29,
+        "Dias desde exclusão deveria ser ~28");
+      
+      console.log("✅ getDeletedProjectsWithDays() calculando corretamente");
+      
+      // === TESTE 3: getDeletionHistory() ===
+      console.log("\n🧪 TESTE 3: getDeletionHistory()");
+      
+      const history = await dbManager.getDeletionHistory(true);
+      assert.ok(history.length >= 3, "Histórico deveria ter pelo menos 3 entradas");
+      
+      const historyEntry = history.find((h: any) => h.project_name === 'projeto-recente');
+      assert.ok(historyEntry, "Histórico deveria incluir projeto-recente");
+      assert.strictEqual(historyEntry.deletion_type, 'soft', "Tipo deveria ser 'soft'");
+      assert.ok(historyEntry.deleted_at, "deleted_at deveria estar preenchido");
+      
+      console.log("✅ getDeletionHistory() funcionando");
+      
+      // === TESTE 4: Filtro de histórico (apenas não restaurados) ===
+      console.log("\n🧪 TESTE 4: Filtro de histórico (não restaurados)");
+      
+      // Restaurar um projeto
+      await dbManager.restoreProjectHistory('projeto-recente');
+      
+      const historyNotRestored = await dbManager.getDeletionHistory(false);
+      const restoredInList = historyNotRestored.find(
+        (h: any) => h.project_name === 'projeto-recente' && h.restored_at !== null
+      );
+      assert.ok(!restoredInList, "Projeto restaurado NÃO deveria aparecer no filtro");
+      
+      const historyAll = await dbManager.getDeletionHistory(true);
+      const restoredInAll = historyAll.find(
+        (h: any) => h.project_name === 'projeto-recente' && h.restored_at !== null
+      );
+      assert.ok(restoredInAll, "Projeto restaurado deveria aparecer com includeRestored=true");
+      
+      console.log("✅ Filtro de histórico funcionando");
+      
+      await dbManager.close();
+      
+      console.log("\n✅ TODOS OS TESTES DE QUERIES PASSARAM!");
+      
+    } catch (error) {
+      console.error("❌ Erro nos testes de queries:", error);
+      throw error;
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("Cleanup Automático - Exclusão permanente após 30 dias", async function() {
+    this.timeout(15000);
+    
+    const testDbDir = path.join(__dirname, "testDbAutoCleanup");
+    
+    try {
+      console.log("\n🧪 TESTANDO CLEANUP AUTOMÁTICO DE PROJETOS EXPIRADOS (>30 DIAS)");
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // ========================================
+      // CENÁRIO: Criar projetos em diferentes estágios de expiração
+      // ========================================
+      console.log("\n📝 Criando cenário de teste com múltiplos projetos...");
+      
+      // Projeto 1: 10 dias (SEGURO - não deve ser removido)
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'projeto-seguro',
+        file: 'safe.ts',
+        duration: 3600
+      });
+      await dbManager.deleteProjectHistory('projeto-seguro');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-10 days') WHERE project = ?`,
+        ['projeto-seguro']
+      );
+      
+      // Projeto 2: 29 dias (CRÍTICO - não deve ser removido ainda)
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-20T10:00:00',
+        project: 'projeto-critico',
+        file: 'critical.ts',
+        duration: 1800
+      });
+      await dbManager.deleteProjectHistory('projeto-critico');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-29 days') WHERE project = ?`,
+        ['projeto-critico']
+      );
+      
+      // Projeto 3: EXATAMENTE 30 dias (LIMIAR - não deve ser removido)
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-19T10:00:00',
+        project: 'projeto-limiar',
+        file: 'threshold.ts',
+        duration: 7200
+      });
+      await dbManager.deleteProjectHistory('projeto-limiar');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-30 days') WHERE project = ?`,
+        ['projeto-limiar']
+      );
+      
+      // Projeto 4: 31 dias (EXPIRADO - DEVE ser removido)
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-01T10:00:00',
+        project: 'projeto-expirado-31',
+        file: 'expired31.ts',
+        duration: 900
+      });
+      await dbManager.deleteProjectHistory('projeto-expirado-31');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-31 days') WHERE project = ?`,
+        ['projeto-expirado-31']
+      );
+      
+      // Projeto 5: 45 dias (EXPIRADO - DEVE ser removido)
+      await dbManager.saveActivityData({
+        timestamp: '2025-08-15T10:00:00',
+        project: 'projeto-expirado-45',
+        file: 'expired45.ts',
+        duration: 1500
+      });
+      await dbManager.deleteProjectHistory('projeto-expirado-45');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-45 days') WHERE project = ?`,
+        ['projeto-expirado-45']
+      );
+      
+      // Projeto 6: 60 dias (MUITO EXPIRADO - DEVE ser removido)
+      await dbManager.saveActivityData({
+        timestamp: '2025-08-01T10:00:00',
+        project: 'projeto-expirado-60',
+        file: 'expired60.ts',
+        duration: 2000
+      });
+      await dbManager.deleteProjectHistory('projeto-expirado-60');
+      await dbManager.query(
+        `UPDATE time_entries SET deleted_at = datetime('now', '-60 days') WHERE project = ?`,
+        ['projeto-expirado-60']
+      );
+      
+      console.log("✅ Cenário criado: 3 seguros + 3 expirados");
+      
+      // ========================================
+      // TESTE 1: Verificar estado ANTES do cleanup
+      // ========================================
+      console.log("\n🧪 TESTE 1: Estado ANTES do cleanup automático");
+      
+      const beforeCleanup = await dbManager.getDeletedProjectsWithDays();
+      console.log(`📊 Total de projetos deletados: ${beforeCleanup.length}`);
+      
+      assert.strictEqual(beforeCleanup.length, 6, "Deveria ter 6 projetos deletados antes do cleanup");
+      
+      // Verificar dias de cada projeto
+      const seguro = beforeCleanup.find((p: any) => p.project === 'projeto-seguro');
+      assert.ok(seguro && seguro.days_since_deletion >= 9 && seguro.days_since_deletion <= 11, 
+        "Projeto seguro deveria ter ~10 dias");
+      
+      const critico = beforeCleanup.find((p: any) => p.project === 'projeto-critico');
+      assert.ok(critico && critico.days_since_deletion >= 28 && critico.days_since_deletion <= 30,
+        "Projeto crítico deveria ter ~29 dias");
+      
+      const limiar = beforeCleanup.find((p: any) => p.project === 'projeto-limiar');
+      assert.ok(limiar && limiar.days_since_deletion === 30,
+        "Projeto limiar deveria ter exatamente 30 dias");
+      
+      const exp31 = beforeCleanup.find((p: any) => p.project === 'projeto-expirado-31');
+      assert.ok(exp31 && exp31.days_since_deletion >= 31,
+        "Projeto expirado-31 deveria ter >=31 dias");
+      
+      const exp45 = beforeCleanup.find((p: any) => p.project === 'projeto-expirado-45');
+      assert.ok(exp45 && exp45.days_since_deletion >= 45,
+        "Projeto expirado-45 deveria ter >=45 dias");
+      
+      const exp60 = beforeCleanup.find((p: any) => p.project === 'projeto-expirado-60');
+      assert.ok(exp60 && exp60.days_since_deletion >= 60,
+        "Projeto expirado-60 deveria ter >=60 dias");
+      
+      console.log("✅ Estado inicial verificado");
+      
+      // ========================================
+      // TESTE 2: Executar cleanup automático
+      // ========================================
+      console.log("\n🧪 TESTE 2: Executando cleanup automático");
+      
+      const cleanedCount = await dbManager.cleanupExpiredProjects();
+      console.log(`🧹 Projetos removidos: ${cleanedCount}`);
+      
+      assert.strictEqual(cleanedCount, 3, "Deveria ter removido EXATAMENTE 3 projetos (31+, 45+, 60+ dias)");
+      
+      console.log("✅ Cleanup executado corretamente");
+      
+      // ========================================
+      // TESTE 3: Verificar estado DEPOIS do cleanup
+      // ========================================
+      console.log("\n🧪 TESTE 3: Estado DEPOIS do cleanup automático");
+      
+      const afterCleanup = await dbManager.getDeletedProjectsWithDays();
+      console.log(`📊 Total de projetos deletados: ${afterCleanup.length}`);
+      
+      assert.strictEqual(afterCleanup.length, 3, "Deveria restar 3 projetos (10, 29, 30 dias)");
+      
+      // Verificar que projetos SEGUROS ainda existem
+      const afterSeguro = afterCleanup.find((p: any) => p.project === 'projeto-seguro');
+      assert.ok(afterSeguro, "Projeto seguro (10 dias) NÃO deveria ter sido removido");
+      
+      const afterCritico = afterCleanup.find((p: any) => p.project === 'projeto-critico');
+      assert.ok(afterCritico, "Projeto crítico (29 dias) NÃO deveria ter sido removido");
+      
+      const afterLimiar = afterCleanup.find((p: any) => p.project === 'projeto-limiar');
+      assert.ok(afterLimiar, "Projeto limiar (30 dias exatos) NÃO deveria ter sido removido");
+      
+      // Verificar que projetos EXPIRADOS foram removidos
+      const afterExp31 = afterCleanup.find((p: any) => p.project === 'projeto-expirado-31');
+      assert.ok(!afterExp31, "Projeto expirado-31 (31 dias) DEVERIA ter sido removido");
+      
+      const afterExp45 = afterCleanup.find((p: any) => p.project === 'projeto-expirado-45');
+      assert.ok(!afterExp45, "Projeto expirado-45 (45 dias) DEVERIA ter sido removido");
+      
+      const afterExp60 = afterCleanup.find((p: any) => p.project === 'projeto-expirado-60');
+      assert.ok(!afterExp60, "Projeto expirado-60 (60 dias) DEVERIA ter sido removido");
+      
+      console.log("✅ Projetos corretos removidos, projetos seguros preservados");
+      
+      // ========================================
+      // TESTE 4: Verificar remoção permanente no banco
+      // ========================================
+      console.log("\n🧪 TESTE 4: Verificação de remoção permanente no banco");
+      
+      // Projetos seguros devem existir
+      const safeCount = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries 
+         WHERE project IN ('projeto-seguro', 'projeto-critico', 'projeto-limiar')`,
+        []
+      );
+      assert.strictEqual(safeCount[0].count, 3, "3 projetos seguros devem existir no banco");
+      
+      // Projetos expirados NÃO devem existir
+      const expiredCount = await dbManager.query(
+        `SELECT COUNT(*) as count FROM time_entries 
+         WHERE project IN ('projeto-expirado-31', 'projeto-expirado-45', 'projeto-expirado-60')`,
+        []
+      );
+      assert.strictEqual(expiredCount[0].count, 0, "Projetos expirados NÃO devem existir no banco");
+      
+      console.log("✅ Banco de dados validado");
+      
+      // ========================================
+      // TESTE 5: Verificar histórico de exclusões
+      // ========================================
+      console.log("\n🧪 TESTE 5: Verificação do histórico de exclusões");
+      
+      const history = await dbManager.getDeletionHistory(true);
+      
+      // Deveria ter 6 entradas 'soft' + 3 entradas 'hard'
+      const softDeletes = history.filter((h: any) => h.deletion_type === 'soft');
+      const hardDeletes = history.filter((h: any) => h.deletion_type === 'hard');
+      
+      assert.ok(softDeletes.length >= 6, "Deveria ter pelo menos 6 exclusões 'soft'");
+      assert.strictEqual(hardDeletes.length, 3, "Deveria ter exatamente 3 exclusões 'hard'");
+      
+      // Verificar que exclusões 'hard' são dos projetos corretos
+      const hardProjects = hardDeletes.map((h: any) => h.project_name);
+      assert.ok(
+        hardProjects.includes('projeto-expirado-31'),
+        "Histórico deveria incluir hard delete de projeto-expirado-31"
+      );
+      assert.ok(
+        hardProjects.includes('projeto-expirado-45'),
+        "Histórico deveria incluir hard delete de projeto-expirado-45"
+      );
+      assert.ok(
+        hardProjects.includes('projeto-expirado-60'),
+        "Histórico deveria incluir hard delete de projeto-expirado-60"
+      );
+      
+      console.log("✅ Histórico de exclusões validado");
+      
+      // ========================================
+      // TESTE 6: Segundo cleanup não deve remover nada
+      // ========================================
+      console.log("\n🧪 TESTE 6: Segundo cleanup (não deve remover nada)");
+      
+      const secondCleanup = await dbManager.cleanupExpiredProjects();
+      assert.strictEqual(secondCleanup, 0, "Segundo cleanup não deveria remover nada");
+      
+      console.log("✅ Segundo cleanup vazio (esperado)");
+      
+      await dbManager.close();
+      
+      console.log("\n🎉 ✅ TODOS OS TESTES DE CLEANUP AUTOMÁTICO PASSARAM!");
+      console.log("📋 Resumo:");
+      console.log("   - Projetos ≤30 dias: PRESERVADOS ✅");
+      console.log("   - Projetos >30 dias: REMOVIDOS ✅");
+      console.log("   - Histórico: REGISTRADO ✅");
+      console.log("   - Segundo cleanup: VAZIO ✅");
+      
+    } catch (error) {
+      console.error("❌ Erro no teste de cleanup automático:", error);
+      throw error;
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  test("Hard Delete Manual - Exclusão permanente individual", async function() {
+    this.timeout(10000);
+    
+    const testDbDir = path.join(__dirname, "testDbHardDelete");
+    
+    try {
+      console.log("\n🧪 TESTANDO HARD DELETE MANUAL (EXCLUSÃO PERMANENTE INDIVIDUAL)");
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // === SETUP: Criar 3 projetos e soft deletar ===
+      console.log("\n📝 Setup: Criando 3 projetos...");
+      
+      // Projeto 1: Para hard delete
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T10:00:00',
+        project: 'projeto-para-deletar',
+        file: 'main.ts',
+        duration: 1800
+      });
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-01T11:00:00',
+        project: 'projeto-para-deletar',
+        file: 'utils.ts',
+        duration: 900
+      });
+      
+      // Projeto 2: Para manter deletado
+      await dbManager.saveActivityData({
+        timestamp: '2025-09-20T10:00:00',
+        project: 'projeto-manter-deletado',
+        file: 'index.ts',
+        duration: 2400
+      });
+      
+      // Projeto 3: Para manter ativo
+      await dbManager.saveActivityData({
+        timestamp: '2025-10-15T10:00:00',
+        project: 'projeto-ativo',
+        file: 'app.ts',
+        duration: 3600
+      });
+      
+      // Soft delete dos projetos 1 e 2
+      await dbManager.deleteProjectHistory('projeto-para-deletar');
+      await dbManager.deleteProjectHistory('projeto-manter-deletado');
+      
+      console.log("✅ Setup completo: 3 projetos (2 soft-deleted, 1 ativo)");
+      
+      // === TESTE 1: Verificar estado inicial ===
+      console.log("\n🧪 TESTE 1: Estado ANTES do hard delete");
+      
+      const deletedBefore = await dbManager.getDeletedProjects();
+      assert.strictEqual(deletedBefore.length, 2, "Deveria ter 2 projetos soft-deleted");
+      assert.ok(deletedBefore.includes('projeto-para-deletar'), "Deveria incluir projeto-para-deletar");
+      assert.ok(deletedBefore.includes('projeto-manter-deletado'), "Deveria incluir projeto-manter-deletado");
+      
+      const allProjectsBefore = await dbManager.query(
+        'SELECT DISTINCT project FROM time_entries ORDER BY project',
+        []
+      );
+      assert.strictEqual(allProjectsBefore.length, 3, "Deveria ter 3 projetos no banco");
+      
+      console.log("✅ Estado inicial verificado: 2 soft-deleted, 3 no total");
+      
+      // === TESTE 2: Hard delete de projeto ativo (deve retornar 0) ===
+      console.log("\n🧪 TESTE 2: Tentar hard delete de projeto ATIVO (deve falhar)");
+      
+      const hardDeleteAtivo = await dbManager.hardDeleteProjectHistory('projeto-ativo');
+      assert.strictEqual(hardDeleteAtivo, 0, "Hard delete de projeto ativo deve retornar 0");
+      
+      console.log("✅ Proteção funcionando: projeto ativo não foi deletado");
+      
+      // === TESTE 3: Hard delete manual do projeto soft-deleted ===
+      console.log("\n🧪 TESTE 3: Hard delete MANUAL do projeto soft-deleted");
+      
+      const hardDeleteResult = await dbManager.hardDeleteProjectHistory('projeto-para-deletar');
+      assert.strictEqual(hardDeleteResult, 2, "Deveria deletar 2 registros");
+      
+      console.log(`✅ Hard delete executado: ${hardDeleteResult} registros removidos`);
+      
+      // === TESTE 4: Verificar que projeto foi removido permanentemente ===
+      console.log("\n🧪 TESTE 4: Verificar remoção permanente do banco");
+      
+      const allProjectsAfter = await dbManager.query(
+        'SELECT DISTINCT project FROM time_entries ORDER BY project',
+        []
+      );
+      assert.strictEqual(allProjectsAfter.length, 2, "Deveria ter 2 projetos (1 removido)");
+      
+      const projectNames = allProjectsAfter.map((row: any) => row.project);
+      assert.ok(!projectNames.includes('projeto-para-deletar'), "Projeto deletado não deveria existir");
+      assert.ok(projectNames.includes('projeto-ativo'), "Projeto ativo deveria existir");
+      assert.ok(projectNames.includes('projeto-manter-deletado'), "Projeto soft-deleted deveria existir");
+      
+      console.log("✅ Projeto removido permanentemente do banco");
+      
+      // === TESTE 5: Verificar lista de deletados ===
+      console.log("\n🧪 TESTE 5: Verificar lista de projetos deletados");
+      
+      const deletedAfter = await dbManager.getDeletedProjects();
+      assert.strictEqual(deletedAfter.length, 1, "Deveria ter 1 projeto soft-deleted");
+      assert.ok(!deletedAfter.includes('projeto-para-deletar'), "Projeto hard-deleted não deveria aparecer");
+      assert.ok(deletedAfter.includes('projeto-manter-deletado'), "Outro projeto deveria continuar");
+      
+      console.log("✅ Lista de deletados atualizada corretamente");
+      
+      // === TESTE 6: Verificar histórico de exclusões ===
+      console.log("\n🧪 TESTE 6: Verificar histórico de exclusões");
+      
+      const history = await dbManager.getDeletionHistory();
+      
+      // Deve ter 2 soft + 1 hard = 3 entradas
+      assert.ok(history.length >= 3, "Deveria ter pelo menos 3 entradas no histórico");
+      
+      const softDeleteEntries = history.filter((h: any) => 
+        h.deletion_type === 'soft' && h.project_name === 'projeto-para-deletar'
+      );
+      assert.strictEqual(softDeleteEntries.length, 1, "Deveria ter 1 soft delete registrado");
+      
+      const hardDeleteEntries = history.filter((h: any) => 
+        h.deletion_type === 'hard' && h.project_name === 'projeto-para-deletar'
+      );
+      assert.strictEqual(hardDeleteEntries.length, 1, "Deveria ter 1 hard delete registrado");
+      assert.strictEqual(hardDeleteEntries[0].records_count, 2, "Hard delete deveria ter 2 registros");
+      
+      console.log("✅ Histórico de exclusões correto (soft + hard)");
+      
+      // === TESTE 7: Tentar hard delete novamente (deve retornar 0) ===
+      console.log("\n🧪 TESTE 7: Tentar hard delete novamente (idempotência)");
+      
+      const secondHardDelete = await dbManager.hardDeleteProjectHistory('projeto-para-deletar');
+      assert.strictEqual(secondHardDelete, 0, "Segundo hard delete deve retornar 0");
+      
+      console.log("✅ Idempotência verificada");
+      
+      await dbManager.close();
+      
+      console.log("\n🎉 ✅ TODOS OS TESTES DE HARD DELETE MANUAL PASSARAM!");
+      console.log("📋 Resumo:");
+      console.log("   - Proteção projeto ativo: OK ✅");
+      console.log("   - Hard delete individual: OK ✅");
+      console.log("   - Remoção permanente: OK ✅");
+      console.log("   - Lista atualizada: OK ✅");
+      console.log("   - Histórico registrado: OK ✅");
+      console.log("   - Idempotência: OK ✅");
+      
+    } catch (error) {
+      console.error("❌ Erro no teste de hard delete manual:", error);
+      throw error;
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
   });
 });

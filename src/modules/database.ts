@@ -226,8 +226,8 @@ export class DatabaseManager {
         return;
       }
       
-      // HARD DELETE: Remove permanentemente do banco
-      const sql = `DELETE FROM time_entries WHERE project = ?`;
+      // HARD DELETE: Remove permanentemente apenas projetos que já estão soft-deleted
+      const sql = `DELETE FROM time_entries WHERE project = ? AND deleted_at IS NOT NULL`;
       
       console.log(`💥 Executando HARD DELETE para projeto: ${projectName}`);
       
@@ -303,20 +303,20 @@ export class DatabaseManager {
       }
       
       const sql = `
-        SELECT DISTINCT project, 
-               MAX(deleted_at) as deleted_at,
-               COUNT(*) as records_count
+        SELECT DISTINCT project
         FROM time_entries 
         WHERE deleted_at IS NOT NULL
         GROUP BY project
-        ORDER BY deleted_at DESC
+        ORDER BY MAX(deleted_at) DESC
       `;
       
       this.db.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
           reject(err);
         } else {
-          resolve(rows);
+          // Extrai apenas os nomes dos projetos
+          const projectNames = rows.map((row: any) => row.project);
+          resolve(projectNames);
         }
       });
     });
@@ -363,13 +363,19 @@ export class DatabaseManager {
         return;
       }
       
+      // SQLite não permite ORDER BY/LIMIT diretamente no UPDATE
+      // Solução: Usar WHERE id IN (SELECT...) para pegar o registro mais recente
       const sql = `
         UPDATE deletion_history 
         SET restored_at = datetime('now')
-        WHERE project_name = ? 
-          AND restored_at IS NULL
-        ORDER BY deleted_at DESC
-        LIMIT 1
+        WHERE id = (
+          SELECT id 
+          FROM deletion_history
+          WHERE project_name = ? 
+            AND restored_at IS NULL
+          ORDER BY deleted_at DESC
+          LIMIT 1
+        )
       `;
       
       this.db.run(sql, [projectName], (err: Error | null) => {
@@ -448,6 +454,111 @@ export class DatabaseManager {
       } else {
         console.log("Banco de dados já estava fechado ou não inicializado.");
         resolve();
+      }
+    });
+  }
+
+  /**
+   * Retorna projetos deletados (soft delete) com informações de tempo
+   */
+  async getDeletedProjectsWithDays(): Promise<Array<{
+    project: string;
+    deleted_at: string;
+    records_count: number;
+    days_since_deletion: number;
+  }>> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          project,
+          deleted_at,
+          COUNT(*) as records_count,
+          CAST((julianday('now') - julianday(deleted_at)) AS INTEGER) as days_since_deletion
+        FROM time_entries
+        WHERE deleted_at IS NOT NULL
+        GROUP BY project, deleted_at
+        ORDER BY deleted_at DESC
+      `;
+      
+      this.db!.all(sql, [], (err: Error | null, rows: any[]) => {
+        if (err) {
+          console.error('❌ Erro ao buscar projetos deletados com dias:', err);
+          reject(err);
+        } else {
+          console.log(`✅ ${rows.length} projeto(s) deletado(s) encontrado(s)`);
+          resolve(rows);
+        }
+      });
+    });
+  }
+
+  /**
+   * Deleta permanentemente projetos expirados (mais de 30 dias)
+   * @returns Número de projetos removidos permanentemente
+   */
+  async cleanupExpiredProjects(): Promise<number> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    console.log('🧹 Iniciando limpeza de projetos expirados (>30 dias)...');
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Primeiro, buscar projetos que serão deletados para log
+        const projectsToDelete = await new Promise<any[]>((res, rej) => {
+          this.db!.all(
+            `SELECT DISTINCT project, COUNT(*) as records_count
+             FROM time_entries 
+             WHERE deleted_at IS NOT NULL 
+             AND CAST((julianday('now') - julianday(deleted_at)) AS INTEGER) > 30
+             GROUP BY project`,
+            [],
+            (err: Error | null, rows: any[]) => {
+              if (err) {
+                rej(err);
+              } else {
+                res(rows);
+              }
+            }
+          );
+        });
+
+        if (projectsToDelete.length === 0) {
+          console.log('✅ Nenhum projeto expirado para limpar');
+          resolve(0);
+          return;
+        }
+
+        // Registrar no histórico antes de deletar
+        for (const project of projectsToDelete) {
+          await this.logDeletion(project.project, project.records_count, 'hard');
+        }
+
+        // Deletar permanentemente
+        this.db!.run(
+          `DELETE FROM time_entries 
+           WHERE deleted_at IS NOT NULL 
+           AND CAST((julianday('now') - julianday(deleted_at)) AS INTEGER) > 30`,
+          [],
+          function(err: Error | null) {
+            if (err) {
+              console.error('❌ Erro ao limpar projetos expirados:', err);
+              reject(err);
+            } else {
+              const deletedCount = this.changes;
+              console.log(`✅ ${deletedCount} registro(s) de ${projectsToDelete.length} projeto(s) expirado(s) removido(s) permanentemente`);
+              resolve(projectsToDelete.length);
+            }
+          }
+        );
+      } catch (error) {
+        console.error('❌ Erro no cleanup:', error);
+        reject(error);
       }
     });
   }

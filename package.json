@@ -43,9 +43,9 @@
         "icon": "$(graph)"
       },
       {
-        "command": "my-time-trace-vscode.showDeletionHistory",
-        "title": "%my-time-trace-vscode.showDeletionHistory.title%",
-        "icon": "$(history)"
+        "command": "my-time-trace-vscode.showDeletedProjects",
+        "title": "%my-time-trace-vscode.showDeletedProjects.title%",
+        "icon": "$(trash)"
       }
     ],
     "configuration": {
@@ -80,7 +80,7 @@
           "command": "my-time-trace-vscode.showStats"
         },
         {
-          "command": "my-time-trace-vscode.showDeletionHistory"
+          "command": "my-time-trace-vscode.showDeletedProjects"
         }
       ]
     }

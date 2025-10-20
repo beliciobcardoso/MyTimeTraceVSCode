@@ -28,7 +28,7 @@ export class CommandManager {
     startTracking: () => void,
     pauseTracking: () => void,
     showStats: () => void,
-    showDeletionHistory?: () => void
+    showDeletedProjects?: () => void
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
@@ -55,12 +55,12 @@ export class CommandManager {
       })
     );
 
-    // Comando para mostrar histórico de exclusões
-    if (showDeletionHistory) {
+    // Comando para mostrar projetos deletados com interface visual
+    if (showDeletedProjects) {
       commands.push(
-        CommandManager.safeRegisterCommand("my-time-trace-vscode.showDeletionHistory", () => {
-          console.log("📝 Comando showDeletionHistory executado!");
-          showDeletionHistory();
+        CommandManager.safeRegisterCommand("my-time-trace-vscode.showDeletedProjects", () => {
+          console.log("🗑️ Comando showDeletedProjects executado!");
+          showDeletedProjects();
         })
       );
     }

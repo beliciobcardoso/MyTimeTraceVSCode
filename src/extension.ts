@@ -15,6 +15,7 @@ let dbManager: DatabaseManager;
 let statusBarManager: StatusBarManager;
 let myTimeTrace: timeTrace;
 let statsManager: StatsManager;
+let cleanupInterval: NodeJS.Timeout | undefined; // Timer para cleanup automático
 
 // Ativação da extensão
 export async function activate(context: vscode.ExtensionContext) {
@@ -46,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
       () => myTimeTrace.startTracking(),
       () => myTimeTrace.pauseTracking(),
       () => statsManager.showStats(),
-      () => statsManager.showDeletionHistory()
+      () => statsManager.showDeletedProjects()
     );
 
     // Registra os eventos para monitoramento
@@ -91,6 +92,69 @@ export async function activate(context: vscode.ExtensionContext) {
       }, 100);
     }
 
+    // ========================================
+    // 🧹 CLEANUP AUTOMÁTICO DE PROJETOS EXPIRADOS (>30 DIAS)
+    // ========================================
+    // Executar cleanup a cada 24 horas
+    const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas em ms
+    
+    console.log("🧹 Iniciando cleanup automático de projetos expirados...");
+    
+    // Executar cleanup imediatamente ao iniciar (após 5 minutos)
+    setTimeout(async () => {
+      try {
+        const deletedCount = await dbManager.cleanupExpiredProjects();
+        if (deletedCount > 0) {
+          console.log(`🧹 Cleanup inicial: ${deletedCount} projeto(s) expirado(s) removido(s)`);
+          vscode.window.showInformationMessage(
+            localize(
+              'cleanup.automatic', 
+              'My Time Trace: {0} expired project(s) automatically cleaned up',
+              deletedCount
+            )
+          );
+        } else {
+          console.log("✅ Nenhum projeto expirado para limpar (inicial)");
+        }
+      } catch (error) {
+        console.error('❌ Erro no cleanup automático inicial:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutos após iniciar
+    
+    // Executar cleanup periodicamente (a cada 24 horas)
+    cleanupInterval = setInterval(async () => {
+      try {
+        const deletedCount = await dbManager.cleanupExpiredProjects();
+        if (deletedCount > 0) {
+          console.log(`🧹 Cleanup automático: ${deletedCount} projeto(s) expirado(s) removido(s)`);
+          vscode.window.showInformationMessage(
+            localize(
+              'cleanup.automatic',
+              'My Time Trace: {0} expired project(s) automatically cleaned up',
+              deletedCount
+            )
+          );
+        } else {
+          console.log("✅ Nenhum projeto expirado para limpar (periódico)");
+        }
+      } catch (error) {
+        console.error('❌ Erro no cleanup automático periódico:', error);
+      }
+    }, CLEANUP_INTERVAL);
+    
+    // Registrar cleanup para ser cancelado ao desativar extensão
+    context.subscriptions.push({
+      dispose: () => {
+        if (cleanupInterval) {
+          clearInterval(cleanupInterval);
+          console.log("🛑 Cleanup automático desativado");
+        }
+      }
+    });
+    
+    console.log("✅ Cleanup automático configurado (executa a cada 24h)");
+    // ========================================
+
   } catch (error) {
     console.error("Falha ao inicializar a extensão:", error);
     vscode.window.showErrorMessage(
@@ -113,6 +177,12 @@ export function deactivate() {
 
   if (statusBarManager) {
     statusBarManager.dispose();
+  }
+
+  // Parar cleanup automático
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    console.log("🛑 Cleanup automático cancelado na desativação");
   }
 
   if (dbManager) {

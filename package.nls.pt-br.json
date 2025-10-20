@@ -4,7 +4,7 @@
     "my-time-trace-vscode.startTracking.title": "My Time Trace: Iniciar Rastreamento",
     "my-time-trace-vscode.pauseTracking.title": "My Time Trace: Pausar Rastreamento",
     "my-time-trace-vscode.showStats.title": "My Time Trace: Mostrar Estatísticas",
-    "my-time-trace-vscode.showDeletionHistory.title": "My Time Trace: Histórico de Exclusões",
+    "my-time-trace-vscode.showDeletedProjects.title": "My Time Trace: Projetos Deletados",
     "my-time-trace-vscode.configuration.title": "MyTimeTraceVSCode",
     "my-time-trace-vscode.configuration.properties.idleTimeout.description": "Tempo em minutos antes de considerar o usuário inativo",
     "my-time-trace-vscode.configuration.properties.autoStart.description": "Iniciar o rastreamento automaticamente ao abrir o VS Code",
@@ -26,8 +26,6 @@
     "stats.dbNotInitialized": "Banco de dados não inicializado. Tente novamente mais tarde.",
     "stats.loadError": "Erro ao carregar estatísticas de tempo.",
     "stats.loadFilteredError": "Erro ao carregar estatísticas de tempo com filtros.",
-    "stats.deletionHistory.empty": "Nenhum projeto foi deletado ainda.",
-    "stats.deletionHistory.error": "Erro ao carregar histórico de exclusões: {0}",
     "statusBar.tooltip": "Clique para ver as estatísticas de tempo",
     "statusBar.noFile": "Nenhum arquivo",
     "timeTrace.trackingStarted": "Monitoramento de tempo iniciado!",
@@ -63,5 +61,6 @@
     "dashboard.selectProjects": "Selecionar Projetos",
     "dashboard.allProjects": "Todos os Projetos",
     "dashboard.applyFilters": "Aplicar Filtros",
-    "dashboard.clearFilters": "Limpar Filtros"
+    "dashboard.clearFilters": "Limpar Filtros",
+    "cleanup.automatic": "My Time Trace: {0} projeto(s) expirado(s) limpo(s) automaticamente"
 }

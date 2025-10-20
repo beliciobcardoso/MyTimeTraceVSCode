@@ -8,3 +8,5 @@ export {
 } from './statsPanel';
 
 export { CssLoader } from './cssLoader';
+
+export { DeletedProjectsPanel, DeletedProject } from './deletedProjectsPanel';
