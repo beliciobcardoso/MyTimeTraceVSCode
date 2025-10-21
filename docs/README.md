@@ -53,7 +53,7 @@ docs/
 ├── DELETION_HISTORY.md            # 📝 Histórico de auditoria
 ├── COVERAGE_REPORT.md             # ✅ Métricas de qualidade e testes
 ├── PUBLICACAO.md                  # 🚀 Publicação no marketplace
-└── vsc-extension-quickstart.md    # �️ Setup e desenvolvimento
+└── vsc-extension-quickstart.md    # 🛠️ Setup e desenvolvimento
 ```
 
 ## 📚 Como Usar Esta Documentação
