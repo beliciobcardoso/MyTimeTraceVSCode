@@ -65,6 +65,7 @@ MyTimeTraceVSCode/
 │   │   ├── stats.ts                 # 📈 Geração de relatórios
 │   │   ├── commands.ts              # ⌨️ Registro de comandos
 │   │   ├── config.ts                # ⚙️ Configurações
+│   │   ├── deviceInfo.ts            # 🖥️ Informações do dispositivo
 │   │   ├── modal.ts                 # 🔲 Sistema de modais
 │   │   ├── pomodoro.ts              # 🍅 Sistema Pomodoro
 │   │   ├── desktopNotifications.ts  # 🔔 Notificações desktop
@@ -257,6 +258,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
   is_idle INTEGER DEFAULT 0,
   synced INTEGER DEFAULT 0,
   deleted_at TEXT,
+  device_name TEXT DEFAULT NULL, -- Nome do dispositivo/computador
   UNIQUE(timestamp, project, file)
 );
 

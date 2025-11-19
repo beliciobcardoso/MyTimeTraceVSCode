@@ -2486,4 +2486,93 @@ suite("Extension Test Suite", function () {
       }
     }
   });
+
+  test("DeviceInfo - deve capturar nome do dispositivo corretamente", async function() {
+    this.timeout(5000);
+    
+    console.log("\n🧪 === TESTE: DeviceInfo Module ===");
+    
+    try {
+      // Importar módulo deviceInfo
+      const { getDeviceName, getDeviceInfo } = await import("../modules/deviceInfo.js");
+      
+      // === TESTE 1: getDeviceName deve retornar string não vazia ===
+      console.log("\n🧪 TESTE 1: getDeviceName() retorna nome válido");
+      
+      const deviceName = getDeviceName();
+      assert.ok(deviceName, "Device name não deve ser vazio");
+      assert.strictEqual(typeof deviceName, "string", "Device name deve ser string");
+      assert.ok(deviceName.length > 0, "Device name deve ter conteúdo");
+      
+      console.log(`✅ Device name capturado: ${deviceName}`);
+      
+      // === TESTE 2: getDeviceInfo deve retornar objeto completo ===
+      console.log("\n🧪 TESTE 2: getDeviceInfo() retorna objeto completo");
+      
+      const deviceInfo = getDeviceInfo();
+      assert.ok(deviceInfo, "Device info não deve ser undefined");
+      assert.ok(deviceInfo.hostname, "Deve ter hostname");
+      assert.ok(deviceInfo.platform, "Deve ter platform");
+      assert.ok(deviceInfo.arch, "Deve ter arch");
+      assert.ok(deviceInfo.type, "Deve ter type");
+      
+      console.log("✅ Device info completo:", deviceInfo);
+      
+      // === TESTE 3: Consistência entre getDeviceName e getDeviceInfo ===
+      console.log("\n🧪 TESTE 3: Consistência entre funções");
+      
+      assert.strictEqual(deviceName, deviceInfo.hostname, "getDeviceName deve retornar o mesmo que hostname em getDeviceInfo");
+      
+      console.log("✅ Funções consistentes");
+      
+      // === TESTE 4: Integração com DatabaseManager ===
+      console.log("\n🧪 TESTE 4: Integração com salvamento no banco");
+      
+      const testDbDir = path.join(__dirname, "testDeviceInfoDB");
+      if (!fs.existsSync(testDbDir)) {
+        fs.mkdirSync(testDbDir, { recursive: true });
+      }
+      
+      const dbManager = new DatabaseManager();
+      await dbManager.initialize(testDbDir);
+      
+      // Salvar dados com device_name
+      await dbManager.saveActivityData({
+        timestamp: new Date().toISOString(),
+        project: "test-project",
+        file: "test-file.ts",
+        duration: 10,
+        device_name: deviceName,
+      });
+      
+      // Verificar se foi salvo corretamente
+      const rows = await dbManager.query(
+        "SELECT * FROM time_entries WHERE device_name = ?",
+        [deviceName]
+      );
+      
+      assert.strictEqual(rows.length, 1, "Deve ter 1 registro com device_name");
+      assert.strictEqual(rows[0].device_name, deviceName, "Device name salvo deve corresponder");
+      
+      console.log("✅ Device name salvo e recuperado do banco corretamente");
+      
+      await dbManager.close();
+      
+      // Cleanup
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+      
+      console.log("\n🎉 ✅ TODOS OS TESTES DE DEVICEINFO PASSARAM!");
+      console.log("📋 Resumo:");
+      console.log("   - getDeviceName(): OK ✅");
+      console.log("   - getDeviceInfo(): OK ✅");
+      console.log("   - Consistência: OK ✅");
+      console.log("   - Integração DB: OK ✅");
+      
+    } catch (error) {
+      console.error("❌ Erro no teste de DeviceInfo:", error);
+      throw error;
+    }
+  });
 });
