@@ -19,6 +19,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Pausa automática após 5 minutos de idle
 - **Organização por Projeto**: Agrupa dados por workspace/projeto
 - **Persistência Local**: Armazena dados em SQLite seguro
+- **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento (preparação para API)
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
 
 ### 📊 Dashboard Moderno Unificado

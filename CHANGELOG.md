@@ -3,7 +3,28 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Não Lançado]
+
+### Adicionado
+
+- **Rastreamento de Dispositivo**: Novo campo `device_name` na tabela `time_entries` para identificar o computador de origem
+- **Módulo deviceInfo**: Novo módulo `src/modules/deviceInfo.ts` para capturar informações do dispositivo usando `os.hostname()`
+- **Migração Automática**: Sistema de migração automática para adicionar coluna `device_name` em bancos existentes
+- **Testes DeviceInfo**: Suite de testes completa para validar captura e persistência do nome do dispositivo
+
+### Alterado
+
+- Interface `ActivityData` agora inclui campo opcional `device_name?: string`
+- Método `saveActivityData()` atualizado para salvar nome do dispositivo em todos os registros
+- `timeTrace.ts` agora captura automaticamente `device_name` usando `getDeviceName()`
+
+### Técnico
+
+- Preparação para sincronização com API: device_name permitirá identificar origem dos dados
+- Export de `getDeviceName()` e `getDeviceInfo()` no barrel file `modules/index.ts`
+- Cobertura de testes: 4 casos adicionados para deviceInfo (getDeviceName, getDeviceInfo, consistência, integração DB)
 
 ## [0.3.0] - 2025-10-20
 

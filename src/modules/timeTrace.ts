@@ -3,6 +3,7 @@ import * as nls from 'vscode-nls';
 import { DatabaseManager, ActivityData } from "./database";
 import { StatusBarManager } from "./statusBar";
 import { getConfig } from "./config";
+import { getDeviceName } from "./deviceInfo";
 
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
@@ -32,6 +33,7 @@ export class timeTrace {
         project: this.projectRoot,
         file: this.currentFile,
         duration: Math.round(this.timeSpentOnFile / 1000), // Convertendo ms para segundos
+        device_name: getDeviceName(),
       };
       await this.dbManager.saveActivityData(data);
     }
@@ -102,8 +104,9 @@ export class timeTrace {
               project: this.projectRoot,
               file: "IDLE", // Marca como um período de inatividade
               duration: Math.round((now - (this.lastActiveTime + this.timeSpentOnFile)) / 1000),
-            isIdle: true,
-          });
+              isIdle: true,
+              device_name: getDeviceName(),
+            });
 
           this.currentFile = undefined; // Limpa o arquivo atual, pois está inativo
           this.timeSpentOnFile = 0; // Reseta o contador

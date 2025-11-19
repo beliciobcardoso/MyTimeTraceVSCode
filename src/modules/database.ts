@@ -12,6 +12,7 @@ export interface ActivityData {
   file: string | undefined;
   duration: number; // em segundos
   isIdle?: boolean;
+  device_name?: string; // Nome do dispositivo/computador
 }
 
 /**
@@ -53,7 +54,8 @@ export class DatabaseManager {
               duration_seconds INTEGER NOT NULL,
               is_idle INTEGER DEFAULT 0,
               synced INTEGER DEFAULT 0, -- 0 para não sincronizado, 1 para sincronizado
-              deleted_at TEXT DEFAULT NULL -- Soft delete: NULL = ativo, data = deletado
+              deleted_at TEXT DEFAULT NULL, -- Soft delete: NULL = ativo, data = deletado
+              device_name TEXT DEFAULT NULL -- Nome do dispositivo/computador
           )`,
           (tableErr: Error | null) => {
             if (tableErr) {
@@ -80,23 +82,39 @@ export class DatabaseManager {
                   console.log('✅ Coluna deleted_at adicionada com sucesso (migração aplicada)');
                 }
                 
-                // Criar tabela de histórico de exclusões
+                // Migração: Adicionar coluna device_name se não existir
                 this.db!.run(
-                  `CREATE TABLE IF NOT EXISTS deletion_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_name TEXT NOT NULL,
-                    deleted_at TEXT NOT NULL,
-                    records_count INTEGER NOT NULL,
-                    deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
-                    restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
-                  )`,
-                  (historyErr: Error | null) => {
-                    if (historyErr) {
-                      console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                  `ALTER TABLE time_entries ADD COLUMN device_name TEXT DEFAULT NULL`,
+                  (deviceErr: Error | null) => {
+                    if (deviceErr) {
+                      if (deviceErr.message.includes('duplicate column name')) {
+                        console.log('✅ Coluna device_name já existe (migração já aplicada)');
+                      } else {
+                        console.warn('⚠️ Aviso ao adicionar coluna device_name:', deviceErr.message);
+                      }
                     } else {
-                      console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                      console.log('✅ Coluna device_name adicionada com sucesso (migração aplicada)');
                     }
-                    resolve();
+                    
+                    // Criar tabela de histórico de exclusões
+                    this.db!.run(
+                      `CREATE TABLE IF NOT EXISTS deletion_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_name TEXT NOT NULL,
+                        deleted_at TEXT NOT NULL,
+                        records_count INTEGER NOT NULL,
+                        deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
+                        restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
+                      )`,
+                      (historyErr: Error | null) => {
+                        if (historyErr) {
+                          console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                        } else {
+                          console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                        }
+                        resolve();
+                      }
+                    );
                   }
                 );
               }
@@ -122,10 +140,10 @@ export class DatabaseManager {
     }
 
     console.log("Salvando dados localmente:", data);
-    const { timestamp, project, file, duration, isIdle } = data;
+    const { timestamp, project, file, duration, isIdle, device_name } = data;
 
     const stmt = this.db.prepare(
-      "INSERT INTO time_entries (timestamp, project, file, duration_seconds, is_idle) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO time_entries (timestamp, project, file, duration_seconds, is_idle, device_name) VALUES (?, ?, ?, ?, ?, ?)"
     );
     
     return new Promise((resolve, reject) => {
@@ -135,6 +153,7 @@ export class DatabaseManager {
         file || "unknown-file",
         duration,
         isIdle ? 1 : 0,
+        device_name || null,
         (error: Error | null) => {
           if (error) {
             console.error("Erro ao inserir dados no SQLite:", error);
