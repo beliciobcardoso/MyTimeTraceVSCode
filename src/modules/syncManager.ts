@@ -3,7 +3,7 @@ import { ApiKeyManager } from './apiKeyManager';
 import { DeviceManager } from './deviceManager';
 import { DatabaseManager } from './database';
 import { SyncRetryManager } from './syncRetryManager';
-import { API_BASE_URL, SYNC_BATCH_LIMIT } from '../config/constants';
+import { API_BASE_URL, SYNC_BATCH_LIMIT, SYNC_DEFAULT_TIMES } from '../config/constants';
 
 /**
  * 🔄 SyncManager
@@ -32,7 +32,7 @@ export class SyncManager {
   private retryManager: SyncRetryManager;
   private statusBarManager: any; // StatusBarManager (evita circular dependency)
   private syncTimer: NodeJS.Timeout | null = null;
-  private syncTimes: string[] = ['08:00', '17:00']; // Padrão: 2x por dia
+  private syncTimes: string[] = SYNC_DEFAULT_TIMES; // Configurável via /sync/config
   private isSyncing: boolean = false;
   
   constructor(
@@ -104,7 +104,7 @@ export class SyncManager {
       
       if (response.ok) {
         const config: any = await response.json();
-        this.syncTimes = config.syncTimes || ['08:00', '17:00'];
+        this.syncTimes = config.syncTimes || SYNC_DEFAULT_TIMES;
         this.retryManager.updateConfig(
           config.maxRetries || 5,
           config.retryDelayMs || 10000
