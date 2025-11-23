@@ -4,7 +4,7 @@
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados.",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"
@@ -46,6 +46,31 @@
         "command": "my-time-trace-vscode.showDeletedProjects",
         "title": "%my-time-trace-vscode.showDeletedProjects.title%",
         "icon": "$(trash)"
+      },
+      {
+        "command": "my-time-trace-vscode.setApiKey",
+        "title": "%my-time-trace-vscode.setApiKey.title%",
+        "icon": "$(key)"
+      },
+      {
+        "command": "my-time-trace-vscode.viewApiKey",
+        "title": "%my-time-trace-vscode.viewApiKey.title%",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "my-time-trace-vscode.revokeApiKey",
+        "title": "%my-time-trace-vscode.revokeApiKey.title%",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "my-time-trace-vscode.syncNow",
+        "title": "%my-time-trace-vscode.syncNow.title%",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "my-time-trace-vscode.viewSyncStatus",
+        "title": "%my-time-trace-vscode.viewSyncStatus.title%",
+        "icon": "$(dashboard)"
       }
     ],
     "configuration": {
@@ -65,6 +90,18 @@
           "type": "boolean",
           "default": true,
           "description": "%my-time-trace-vscode.configuration.properties.showInStatusBar.description%"
+        },
+        "myTimeTraceVSCode.syncEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic cloud synchronization (requires API Key)"
+        },
+        "myTimeTraceVSCode.syncInterval": {
+          "type": "number",
+          "default": 60,
+          "description": "Auto-sync check interval in minutes",
+          "minimum": 5,
+          "maximum": 1440
         }
       }
     },
@@ -81,6 +118,15 @@
         },
         {
           "command": "my-time-trace-vscode.showDeletedProjects"
+        },
+        {
+          "command": "my-time-trace-vscode.setApiKey"
+        },
+        {
+          "command": "my-time-trace-vscode.viewApiKey"
+        },
+        {
+          "command": "my-time-trace-vscode.revokeApiKey"
         }
       ]
     }
@@ -99,6 +145,7 @@
   },
   "dependencies": {
     "sqlite3": "^5.1.6",
+    "uuid": "^10.0.0",
     "vscode-nls": "5.2.0"
   },
   "devDependencies": {
@@ -106,6 +153,7 @@
     "@types/node": "20.x",
     "@types/sinon": "17.0.4",
     "@types/sqlite3": "^3.1.11",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
@@ -124,5 +172,6 @@
     "productivity",
     "statistics",
     "development"
-  ]
+  ],
+  "packageManager": "pnpm@10.19.0+sha512.c9fc7236e92adf5c8af42fd5bf1612df99c2ceb62f27047032f4720b33f8eacdde311865e91c411f2774f618d82f320808ecb51718bfa82c060c4ba7c76a32b8"
 }
