@@ -634,13 +634,12 @@ export class DatabaseManager {
         `SELECT * FROM time_entries 
          WHERE synced = 0 AND deleted_at IS NULL 
          ORDER BY timestamp ASC 
-         LIMIT 500`,
+         LIMIT 100`,
         (err, rows) => {
           if (err) {
             console.error('❌ Erro ao buscar entries não sincronizadas:', err);
             reject(err);
           } else {
-            console.log(`✅ ${(rows || []).length} entries não sincronizadas encontradas`);
             resolve(rows || []);
           }
         }
@@ -680,7 +679,6 @@ export class DatabaseManager {
           console.error('❌ Erro ao marcar entries como sincronizadas:', err);
           reject(err);
         } else {
-          console.log(`✅ ${entryIds.length} entries marcadas como sincronizadas`);
           resolve();
         }
       });

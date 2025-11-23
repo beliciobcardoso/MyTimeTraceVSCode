@@ -87,7 +87,8 @@ export class CommandManager {
   static registerSyncCommands(
     context: vscode.ExtensionContext,
     apiKeyManager: ApiKeyManager,
-    deviceManager: DeviceManager
+    deviceManager: DeviceManager,
+    syncManager?: SyncManager
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
@@ -122,22 +123,29 @@ export class CommandManager {
           // Salva API Key
           await apiKeyManager.setApiKey(apiKey);
 
-          // Testa conexão com servidor
-          const isValid = await apiKeyManager.testConnection();
-          if (!isValid) {
+          // Registra dispositivo no servidor (já valida API Key + conexão)
+          const registered = await deviceManager.registerDevice(apiKey);
+          if (!registered) {
             vscode.window.showWarningMessage(
-              '⚠️ API Key salva, mas não foi possível conectar ao servidor. Verifique se o backend está rodando.'
+              '⚠️ API Key salva, mas falha ao registrar dispositivo. Verifique se o backend está rodando e se a API Key é válida.'
             );
             return;
           }
 
-          // Registra dispositivo no servidor
-          const registered = await deviceManager.registerDevice(apiKey);
-          if (registered) {
-            vscode.window.showInformationMessage('✅ API Key configurada! Sincronização ativada.');
-          } else {
-            vscode.window.showWarningMessage('⚠️ API Key configurada, mas falha ao registrar dispositivo. Tente sincronizar manualmente.');
+          // Inicializa sincronização automática
+          if (syncManager) {
+            await syncManager.initialize();
+            console.log('✅ Sync Manager inicializado após configuração de API Key');
           }
+
+          vscode.window.showInformationMessage(
+            '✅ API Key configurada! Dispositivo registrado e sincronização ativada.',
+            'Sincronizar Agora'
+          ).then(action => {
+            if (action === 'Sincronizar Agora') {
+              vscode.commands.executeCommand('my-time-trace-vscode.syncNow');
+            }
+          });
         } catch (error: any) {
           vscode.window.showErrorMessage(`❌ Erro ao configurar API Key: ${error.message}`);
           console.error('Erro ao configurar API Key:', error);

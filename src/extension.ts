@@ -71,7 +71,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const syncCommands = CommandManager.registerSyncCommands(
       context,
       apiKeyManager,
-      deviceManager
+      deviceManager,
+      syncManager
     );
     
     // Registra comandos de operações de sync
