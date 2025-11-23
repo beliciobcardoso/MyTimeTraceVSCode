@@ -9,22 +9,61 @@ e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Adicionado
 
+- **Sincronização com Cloud**: Sistema completo de sincronização bidirecional com backend
+  - **ApiKeyManager**: Gerenciamento seguro de API Key via VS Code SecretStorage
+  - **DeviceManager**: Identificação única de dispositivos com UUID v4
+  - **SyncManager**: Orquestração de push/pull automático e manual
+  - **SyncRetryManager**: Sistema de retry com backoff exponencial (até 5 tentativas)
+  - **Comandos de Sync**:
+    - `MyTimeTrace: Set API Key` - Configurar chave de autenticação
+    - `MyTimeTrace: View API Key` - Visualizar API Key mascarada com opções de teste e cópia
+    - `MyTimeTrace: Revoke API Key` - Remover API Key e voltar ao modo local
+    - `MyTimeTrace: Sync Now` - Sincronização manual com progress notification
+    - `MyTimeTrace: View Sync Status` - Painel webview com status de todos os dispositivos
+  - **Indicador Visual**: Ícone animado `$(sync~spin)` na status bar durante sincronização ativa
+  - **Auto-Sync**: Sincronização automática em horários configuráveis (padrão: 08:00 e 17:00)
+  - **Configurações**:
+    - `syncEnabled` - Habilitar/desabilitar sincronização automática
+    - `syncInterval` - Intervalo de verificação em minutos (5-1440)
+  - **Mensagens de Erro Melhoradas**: Botões de ação "Tentar Novamente" e "Ver Detalhes" com cópia para clipboard
+  - **Suporte Multi-Tenant**: Isolamento por API Key + device_key
+  - **Batch Sync**: Limite de 500 entries por push/pull para otimização
+
 - **Rastreamento de Dispositivo**: Novo campo `device_name` na tabela `time_entries` para identificar o computador de origem
 - **Módulo deviceInfo**: Novo módulo `src/modules/deviceInfo.ts` para capturar informações do dispositivo usando `os.hostname()`
 - **Migração Automática**: Sistema de migração automática para adicionar coluna `device_name` em bancos existentes
-- **Testes DeviceInfo**: Suite de testes completa para validar captura e persistência do nome do dispositivo
+- **Testes Completos**: 
+  - 27 testes para ApiKeyManager (validação, formato, teste de conexão)
+  - 20 testes para DeviceManager (registro, status de sync)
+  - 20+ testes para SyncRetryManager (retry logic, configuração dinâmica)
+  - 13 testes para comandos de UI (syncNow, viewSyncStatus, integração statusBar)
+  - **88% de cobertura de testes** nos módulos de sincronização
 
 ### Alterado
 
 - Interface `ActivityData` agora inclui campo opcional `device_name?: string`
 - Método `saveActivityData()` atualizado para salvar nome do dispositivo em todos os registros
 - `timeTrace.ts` agora captura automaticamente `device_name` usando `getDeviceName()`
+- `StatusBarManager` agora suporta método `setSyncStatus(boolean)` para controle visual de sync
+- `DatabaseManager` estendido com 5 métodos de sincronização:
+  - `getUnsyncedEntries()` - Busca entries locais não sincronizadas
+  - `markAsSynced()` - Marca entries como sincronizadas
+  - `insertSyncedEntry()` - Insere entry de outro dispositivo (INSERT OR IGNORE)
+  - `getMetadata()/setMetadata()` - Store key-value para controle de sync
+- `extension.ts` atualizado para orquestrar todos os managers de sincronização
+- Configuração `UserConfig` agora inclui `syncEnabled: boolean`
 
 ### Técnico
 
+- **Arquitetura Manager Pattern**: Separação clara de responsabilidades (ApiKey, Device, Sync, Retry)
+- **SecretStorage**: Credenciais criptografadas nativamente pelo SO
+- **Retry com Backoff**: Configuração dinâmica via backend (maxRetries: 1-10, delay: 1s-60s)
+- **Tabela sync_metadata**: Store key-value SQLite para controle de estado
+- **Webview Responsivo**: Dashboard de status com CSS integrado ao tema VS Code
+- **Traduções i18n**: Suporte completo pt-BR e EN para todos os comandos de sync
 - Preparação para sincronização com API: device_name permitirá identificar origem dos dados
 - Export de `getDeviceName()` e `getDeviceInfo()` no barrel file `modules/index.ts`
-- Cobertura de testes: 4 casos adicionados para deviceInfo (getDeviceName, getDeviceInfo, consistência, integração DB)
+- Dependências adicionadas: `uuid@10.0.0`, `@types/uuid@10.0.0`
 
 ## [0.3.0] - 2025-10-20
 

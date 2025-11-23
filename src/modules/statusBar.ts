@@ -10,6 +10,7 @@ const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
  */
 export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;
+  private isSyncing: boolean = false;
 
   /**
    * Cria e configura o status bar item
@@ -44,7 +45,9 @@ export class StatusBarManager {
     const fileName = currentFile ? path.basename(currentFile) : localize('statusBar.noFile', 'No file');
     const timeFormatted = this.formatTime(Math.round(timeSpentOnFile / 1000));
 
-    this.statusBarItem.text = `$(clock) ${fileName} > ${timeFormatted}`;
+    // Adiciona indicador de sync se estiver sincronizando
+    const syncIndicator = this.isSyncing ? '$(sync~spin) ' : '';
+    this.statusBarItem.text = `${syncIndicator}$(clock) ${fileName} > ${timeFormatted}`;
 
     if (isTracking) {
       this.statusBarItem.backgroundColor = new vscode.ThemeColor(
@@ -55,6 +58,16 @@ export class StatusBarManager {
         "statusBarItem.warningBackground"
       );
     }
+  }
+
+  /**
+   * Define o estado de sincronização e atualiza o visual
+   * 
+   * @param syncing - true se está sincronizando, false caso contrário
+   */
+  setSyncStatus(syncing: boolean): void {
+    this.isSyncing = syncing;
+    console.log(`🔄 Status Bar: Sync ${syncing ? 'INICIADO' : 'FINALIZADO'}`);
   }
 
   /**

@@ -4,6 +4,7 @@ export interface UserConfig {
   IDLE_TIMEOUT_MS: number;
   autoStart: boolean;
   showInStatusBar: boolean;
+  syncEnabled: boolean;
 }
 
 /**
@@ -14,10 +15,12 @@ export function getConfig(): UserConfig {
   const idleTimeoutMinutes = config.get<number>("idleTimeout") || 5;
   const autoStart = config.get<boolean>("autoStart") || true;
   const showInStatusBar = config.get<boolean>("showInStatusBar") || true;
+  const syncEnabled = config.get<boolean>("syncEnabled") || true;
 
   return {
     IDLE_TIMEOUT_MS: idleTimeoutMinutes * 60 * 1000,
     autoStart,
     showInStatusBar,
+    syncEnabled,
   };
 }

@@ -112,7 +112,24 @@ export class DatabaseManager {
                         } else {
                           console.log('✅ Tabela deletion_history verificada/criada com sucesso');
                         }
-                        resolve();
+                        
+                        // 🔄 FASE 2: Criar tabela de metadados de sincronização
+                        this.db!.run(
+                          `CREATE TABLE IF NOT EXISTS sync_metadata (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            key TEXT NOT NULL UNIQUE,
+                            value TEXT NOT NULL,
+                            updated_at TEXT NOT NULL
+                          )`,
+                          (syncMetaErr: Error | null) => {
+                            if (syncMetaErr) {
+                              console.error('❌ Erro ao criar tabela sync_metadata:', syncMetaErr);
+                            } else {
+                              console.log('✅ Tabela sync_metadata verificada/criada com sucesso');
+                            }
+                            resolve();
+                          }
+                        );
                       }
                     );
                   }
@@ -588,4 +605,227 @@ export class DatabaseManager {
   isInitialized(): boolean {
     return this.db !== undefined;
   }
+
+  // ============================================
+  // 🔄 MÉTODOS DE SINCRONIZAÇÃO (FASE 2)
+  // ============================================
+
+  /**
+   * Busca entries locais não sincronizadas (synced = 0)
+   * 
+   * **Usado por:** SyncManager.pushEntries()
+   * **Limite:** 500 entries por vez (conforme spec backend)
+   * 
+   * @returns Array de time_entries não sincronizadas
+   * 
+   * @example
+   * ```typescript
+   * const unsyncedEntries = await dbManager.getUnsyncedEntries();
+   * console.log(`${unsyncedEntries.length} entries para sincronizar`);
+   * ```
+   */
+  async getUnsyncedEntries(): Promise<any[]> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.all(
+        `SELECT * FROM time_entries 
+         WHERE synced = 0 AND deleted_at IS NULL 
+         ORDER BY timestamp ASC 
+         LIMIT 500`,
+        (err, rows) => {
+          if (err) {
+            console.error('❌ Erro ao buscar entries não sincronizadas:', err);
+            reject(err);
+          } else {
+            console.log(`✅ ${(rows || []).length} entries não sincronizadas encontradas`);
+            resolve(rows || []);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Marca entries como sincronizadas (synced = 1)
+   * 
+   * **Usado por:** SyncManager.pushEntries() após sucesso no servidor
+   * 
+   * @param entryIds - Array de IDs (campo 'id' do SQLite)
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.markAsSynced([1, 2, 3, 4, 5]);
+   * console.log('✅ 5 entries marcadas como sincronizadas');
+   * ```
+   */
+  async markAsSynced(entryIds: number[]): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    if (entryIds.length === 0) {
+      console.log('⚠️ Nenhum ID fornecido para markAsSynced');
+      return;
+    }
+
+    const placeholders = entryIds.map(() => '?').join(',');
+    const query = `UPDATE time_entries SET synced = 1 WHERE id IN (${placeholders})`;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, entryIds, (err) => {
+        if (err) {
+          console.error('❌ Erro ao marcar entries como sincronizadas:', err);
+          reject(err);
+        } else {
+          console.log(`✅ ${entryIds.length} entries marcadas como sincronizadas`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Insere entry já sincronizada (vinda do servidor via pull)
+   * 
+   * **Usado por:** SyncManager.pullEntries()
+   * **Importante:** Usa INSERT OR IGNORE para evitar duplicatas
+   * 
+   * @param entry - Objeto com dados da entry (formato backend)
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.insertSyncedEntry({
+   *   clientId: 'uuid-entry-1',
+   *   timestamp: '2025-11-22T10:00:00Z',
+   *   project: 'MyProject',
+   *   file: 'src/main.ts',
+   *   durationSeconds: 300,
+   *   isIdle: false,
+   *   deviceKey: 'uuid-device-2'
+   * });
+   * ```
+   */
+  async insertSyncedEntry(entry: {
+    clientId: string;
+    timestamp: string;
+    project: string;
+    file: string;
+    durationSeconds: number;
+    isIdle: boolean;
+    deviceKey?: string;
+  }): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    // INSERT OR IGNORE para evitar duplicatas (caso entry já exista localmente)
+    const query = `
+      INSERT OR IGNORE INTO time_entries 
+      (timestamp, project, file, duration_seconds, is_idle, synced, device_name)
+      VALUES (?, ?, ?, ?, ?, 1, ?)
+    `;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(
+        query,
+        [
+          entry.timestamp,
+          entry.project,
+          entry.file,
+          entry.durationSeconds,
+          entry.isIdle ? 1 : 0,
+          entry.deviceKey || 'unknown'
+        ],
+        (err) => {
+          if (err) {
+            console.error('❌ Erro ao inserir entry sincronizada:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Gerencia metadados de sincronização (key-value store)
+   * 
+   * **Usado para:** Armazenar last_pull_timestamp, last_push_timestamp, etc.
+   * **Tabela:** sync_metadata
+   * 
+   * @param key - Chave do metadado (ex: 'last_pull_timestamp')
+   * @returns Valor ou null se não existe
+   * 
+   * @example
+   * ```typescript
+   * const lastPull = await dbManager.getMetadata('last_pull_timestamp');
+   * if (lastPull) {
+   *   console.log('Última sincronização:', new Date(lastPull));
+   * }
+   * ```
+   */
+  async getMetadata(key: string): Promise<string | null> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.get(
+        'SELECT value FROM sync_metadata WHERE key = ?',
+        [key],
+        (err, row: any) => {
+          if (err) {
+            console.error(`❌ Erro ao buscar metadata '${key}':`, err);
+            reject(err);
+          } else {
+            resolve(row?.value || null);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Define metadado de sincronização (INSERT ou UPDATE)
+   * 
+   * **Usado por:** SyncManager após pull bem-sucedido
+   * 
+   * @param key - Chave do metadado
+   * @param value - Valor a ser armazenado
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.setMetadata('last_pull_timestamp', new Date().toISOString());
+   * console.log('✅ Timestamp de última sincronização atualizado');
+   * ```
+   */
+  async setMetadata(key: string, value: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    const now = new Date().toISOString();
+    const query = `
+      INSERT INTO sync_metadata (key, value, updated_at) 
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+    `;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, [key, value, now, value, now], (err) => {
+        if (err) {
+          console.error(`❌ Erro ao definir metadata '${key}':`, err);
+          reject(err);
+        } else {
+          console.log(`✅ Metadata '${key}' definido: ${value}`);
+          resolve();
+        }
+      });
+    });
+  }
 }
+
