@@ -154,9 +154,10 @@ export class SyncManager {
    * Executa sincronização completa (Push + Pull)
    * 
    * **Fluxo:**
-   * 1. Push: Envia entries locais não sincronizadas
+   * 1. Push: Envia entries locais não sincronizadas (batches de 100)
    * 2. Pull: Recebe entries de outros dispositivos
    * 3. Retry: Tenta novamente em caso de falha
+   * 4. Loop: Continua até não ter mais entries para sincronizar
    * 
    * **Comportamento:**
    * - Sucesso: Silencioso (sem notificação)
@@ -192,19 +193,39 @@ export class SyncManager {
     console.log('🔄 Iniciando sincronização completa...');
     
     try {
-      // Executa com retry automático
-      const result = await this.retryManager.execute(async () => {
-        await this.pushEntries(apiKey);
-        await this.pullEntries(apiKey);
-      });
+      let totalSynced = 0;
+      let hasMoreEntries = true;
+      let batchCount = 0;
       
-      if (result !== null) {
-        console.log('✅ Sincronização completa com sucesso');
-        return true;
-      } else {
-        console.error('❌ Sincronização falhou após todos os retries');
-        return false;
+      // Loop: continua até não ter mais entries
+      while (hasMoreEntries) {
+        batchCount++;
+        console.log(`🔄 Batch ${batchCount}...`);
+        
+        // Executa com retry automático
+        const result = await this.retryManager.execute(async () => {
+          const syncedCount = await this.pushEntries(apiKey);
+          await this.pullEntries(apiKey);
+          return syncedCount;
+        });
+        
+        if (result === null) {
+          console.error('❌ Sincronização falhou após todos os retries');
+          return false;
+        }
+        
+        totalSynced += result;
+        
+        // Se sincronizou menos que 100, não tem mais entries
+        hasMoreEntries = result >= 100;
+        
+        if (hasMoreEntries) {
+          console.log(`📊 Batch ${batchCount} completo. ${result} entries sincronizadas. Continuando...`);
+        }
       }
+      
+      console.log(`✅ Sincronização completa! Total: ${totalSynced} entries em ${batchCount} batch(es)`);
+      return true;
     } finally {
       this.isSyncing = false;
       if (this.statusBarManager?.setSyncStatus) {
@@ -225,9 +246,10 @@ export class SyncManager {
    * 3. Marca como synced=1 no SQLite
    * 
    * @param apiKey - API Key do usuário
+   * @returns Número de entries sincronizadas
    * @throws Error se push falhar
    */
-  private async pushEntries(apiKey: string): Promise<void> {
+  private async pushEntries(apiKey: string): Promise<number> {
     const deviceKey = await this.deviceManager.getOrCreateDeviceKey();
     
     // Busca entries não sincronizadas (máx 500)
@@ -235,7 +257,7 @@ export class SyncManager {
     
     if (unsyncedEntries.length === 0) {
       console.log('✅ Push: Nenhuma entry para sincronizar');
-      return;
+      return 0;
     }
     
     console.log(`📤 Push: Enviando ${unsyncedEntries.length} entries...`);
@@ -249,7 +271,7 @@ export class SyncManager {
       body: JSON.stringify({
         deviceKey,
         entries: unsyncedEntries.map(entry => ({
-          clientId: `local-${entry.id}`, // ID único local
+          clientId: `local-${entry.id}`,
           timestamp: entry.timestamp,
           project: entry.project || 'Unknown',
           file: entry.file || 'Unknown',
@@ -275,6 +297,9 @@ export class SyncManager {
     if (result.conflictsCount > 0) {
       console.warn(`⚠️ Push: ${result.conflictsCount} conflitos detectados`);
     }
+    
+    // Retorna quantidade de entries sincronizadas
+    return result.savedCount || 0;
   }
   
   /**

@@ -1,7 +1,7 @@
 # 📡 Documentação de Endpoints - MyTimeTrace Backend API
 
-> **Base URL:** `http://localhost:8989/api` (desenvolvimento)  
-> **Produção:** `https://api.mytimetrace.com/api` (futuro)
+> **Base URL:** `http://localhost:8989` (desenvolvimento)  
+> **Produção:** `https://api.mytimetrace.com` (futuro)
 
 ## 🔐 Autenticação
 
@@ -321,7 +321,7 @@ DELETE /entries/server-uuid-789
 ### Constantes Globais (`src/config/constants.ts`):
 
 ```typescript
-export const API_BASE_URL = 'http://localhost:8989/api';
+export const API_BASE_URL = 'http://localhost:8989';
 export const SYNC_BATCH_LIMIT = 500;
 export const REQUEST_TIMEOUT = 30000; // 30 segundos
 ```

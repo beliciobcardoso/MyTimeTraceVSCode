@@ -24,7 +24,7 @@ export const REQUEST_TIMEOUT = 30000; // 30 segundos
 /**
  * Limite de entries por batch de sincronização
  */
-export const SYNC_BATCH_LIMIT = 500;
+export const SYNC_BATCH_LIMIT = 100;
 
 /**
  * Chaves do SecretStorage
