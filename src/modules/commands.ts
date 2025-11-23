@@ -271,7 +271,7 @@ export class CommandManager {
           const success = await syncManager.performSync();
 
           if (success) {
-            vscode.window.showInformationMessage('✅ Sincronização completa!');
+            vscode.window.showInformationMessage('✅ Sincronização completa! - My Time Trace');
           } else {
             vscode.window.showWarningMessage('⚠️ Sincronização falhou. Verifique os logs.');
           }

@@ -24,7 +24,7 @@ export const REQUEST_TIMEOUT = 30000; // 30 segundos
 /**
  * Limite de entries por batch de sincronização
  */
-export const SYNC_BATCH_LIMIT = 100;
+export const SYNC_BATCH_LIMIT = 200;
 
 /**
  * Horários padrão para auto-sync (HH:MM)
@@ -32,7 +32,7 @@ export const SYNC_BATCH_LIMIT = 100;
  * **Configurável via API:** /sync/config
  * **Padrão:** 2x por dia (manhã e tarde)
  */
-export const SYNC_DEFAULT_TIMES = ['01:03', '01:05', '01:06', '01:07','01:08', '01:09', '01:10', '01:11'];
+export const SYNC_DEFAULT_TIMES = ['20:25', '20:26', '20:27', '20:28','20:29', '20:30', '20:31', '20:32'];
 
 /**
  * Chaves do SecretStorage
