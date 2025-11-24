@@ -33,6 +33,7 @@ export class SyncManager {
   private statusBarManager: any; // StatusBarManager (evita circular dependency)
   private syncTimer: NodeJS.Timeout | null = null;
   private syncTimes: string[] = SYNC_DEFAULT_TIMES; // Configurável via /sync/config
+  private batchLimit: number = SYNC_BATCH_LIMIT; // Configurável via /sync/config
   private isSyncing: boolean = false;
   
   constructor(
@@ -70,6 +71,9 @@ export class SyncManager {
     
     console.log('🔄 Inicializando SyncManager...');
     
+    // Carrega configurações salvas do banco (fallback para API)
+    await this.loadSavedConfig();
+    
     // Busca configurações de sync do servidor
     await this.fetchSyncConfig();
     
@@ -80,11 +84,34 @@ export class SyncManager {
   }
   
   /**
+   * Carrega configurações salvas do banco local
+   */
+  private async loadSavedConfig(): Promise<void> {
+    try {
+      const savedSyncTimes = await this.dbManager.getMetadata('sync_times');
+      const savedBatchLimit = await this.dbManager.getMetadata('sync_batch_limit');
+      
+      if (savedSyncTimes) {
+        this.syncTimes = JSON.parse(savedSyncTimes);
+        console.log('📦 Sync times carregados do banco:', this.syncTimes);
+      }
+      
+      if (savedBatchLimit) {
+        this.batchLimit = parseInt(savedBatchLimit, 10);
+        console.log('📦 Batch limit carregado do banco:', this.batchLimit);
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao carregar config salva, usando padrão:', error);
+    }
+  }
+  
+  /**
    * Busca configurações de sync do servidor (opcional)
    * 
    * **Endpoint:** GET /sync/config
    * **Configurações:**
    * - syncTimes: Horários de auto-sync (ex: ["08:00", "17:00"])
+   * - batchLimit: Limite de entries por batch (ex: 100)
    * - maxRetries: Número máximo de tentativas
    * - retryDelayMs: Delay entre tentativas
    * 
@@ -105,10 +132,16 @@ export class SyncManager {
       if (response.ok) {
         const config: any = await response.json();
         this.syncTimes = config.syncTimes || SYNC_DEFAULT_TIMES;
+        this.batchLimit = config.batchLimit || SYNC_BATCH_LIMIT;
         this.retryManager.updateConfig(
           config.maxRetries || 5,
           config.retryDelayMs || 10000
         );
+        
+        // Salva configurações no banco para persistência
+        await this.dbManager.setMetadata('sync_times', JSON.stringify(this.syncTimes));
+        await this.dbManager.setMetadata('sync_batch_limit', this.batchLimit.toString());
+        
         console.log('✅ Config de sync obtida do servidor:', config);
       } else {
         console.warn('⚠️ Falha ao buscar config, usando padrão');
@@ -216,8 +249,8 @@ export class SyncManager {
         
         totalSynced += result;
         
-        // Se sincronizou menos que 100, não tem mais entries
-        hasMoreEntries = result >= 100;
+        // Continua enquanto houver entries sincronizadas (se processou algo, pode ter mais)
+        hasMoreEntries = result > 0;
         
         if (hasMoreEntries) {
           console.log(`📊 Batch ${batchCount} completo. ${result} entries sincronizadas. Continuando...`);
@@ -252,15 +285,15 @@ export class SyncManager {
   private async pushEntries(apiKey: string): Promise<number> {
     const deviceKey = await this.deviceManager.getOrCreateDeviceKey();
     
-    // Busca entries não sincronizadas (máx 500)
-    const unsyncedEntries = await this.dbManager.getUnsyncedEntries();
+    // Busca entries não sincronizadas (limite dinâmico via /sync/config)
+    const unsyncedEntries = await this.dbManager.getUnsyncedEntries(this.batchLimit);
     
     if (unsyncedEntries.length === 0) {
       console.log('✅ Push: Nenhuma entry para sincronizar');
       return 0;
     }
     
-    console.log(`📤 Push: Enviando ${unsyncedEntries.length} entries...`);
+    console.log(`📤 Push: Enviando ${SYNC_BATCH_LIMIT} entries...`);
     
     const response = await fetch(`${API_BASE_URL}/sync/push`, {
       method: 'POST',
@@ -288,18 +321,23 @@ export class SyncManager {
     
     const result: any = await response.json();
     
-    // Marca entries como sincronizadas
-    const syncedIds = unsyncedEntries.map(e => e.id);
-    await this.dbManager.markAsSynced(syncedIds);
+    // Quantidade realmente salva pelo backend
+    const syncedCount = result.savedCount || 0;
     
-    console.log(`✅ Push: ${result.savedCount} entries sincronizadas`);
+    // Marca APENAS as entries que o backend confirmou (primeiras N entries)
+    const syncedIds = unsyncedEntries.slice(0, syncedCount).map(e => e.id);
+    if (syncedIds.length > 0) {
+      await this.dbManager.markAsSynced(syncedIds);
+    }
+    
+    console.log(`✅ Push: ${syncedCount} entries sincronizadas`);
     
     if (result.conflictsCount > 0) {
       console.warn(`⚠️ Push: ${result.conflictsCount} conflitos detectados`);
     }
     
     // Retorna quantidade de entries sincronizadas
-    return result.savedCount || 0;
+    return syncedCount;
   }
   
   /**
@@ -327,7 +365,7 @@ export class SyncManager {
     console.log(`📥 Pull: Buscando entries desde ${since}...`);
     
     const response = await fetch(
-      `${API_BASE_URL}/sync/pull?deviceKey=${deviceKey}&since=${encodeURIComponent(since)}&limit=${SYNC_BATCH_LIMIT}`,
+      `${API_BASE_URL}/sync/pull?deviceKey=${deviceKey}&since=${encodeURIComponent(since)}&limit=${this.batchLimit}`,
       {
         method: 'GET',
         headers: {
@@ -394,11 +432,13 @@ export class SyncManager {
   getStatus(): {
     isSyncing: boolean;
     syncTimes: string[];
+    batchLimit: number;
     retryConfig: { maxRetries: number; retryDelayMs: number };
   } {
     return {
       isSyncing: this.isSyncing,
       syncTimes: this.syncTimes,
+      batchLimit: this.batchLimit,
       retryConfig: this.retryManager.getConfig()
     };
   }
