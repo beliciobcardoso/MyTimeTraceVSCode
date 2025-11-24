@@ -618,13 +618,14 @@ export class DatabaseManager {
    * 
    * @returns Array de time_entries não sincronizadas
    * 
+   * @param limit - Limite de entries a buscar (padrão: 100)
    * @example
    * ```typescript
-   * const unsyncedEntries = await dbManager.getUnsyncedEntries();
+   * const unsyncedEntries = await dbManager.getUnsyncedEntries(200);
    * console.log(`${unsyncedEntries.length} entries para sincronizar`);
    * ```
    */
-  async getUnsyncedEntries(): Promise<any[]> {
+  async getUnsyncedEntries(limit: number = 100): Promise<any[]> {
     if (!this.db) {
       throw new Error('Database não inicializado');
     }
@@ -634,7 +635,8 @@ export class DatabaseManager {
         `SELECT * FROM time_entries 
          WHERE synced = 0 AND deleted_at IS NULL 
          ORDER BY timestamp ASC 
-         LIMIT 100`,
+         LIMIT ?`,
+        [limit],
         (err, rows) => {
           if (err) {
             console.error('❌ Erro ao buscar entries não sincronizadas:', err);
