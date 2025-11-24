@@ -1,4 +1,4 @@
-# My Time Trace VSCode (Beta 0.3.0)
+# My Time Trace VSCode (v0.5.0)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
@@ -7,10 +7,11 @@
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.5.0-blue?style=flat-square)]()
 
 </div>
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e visualizações interativas!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **sincronização em nuvem**!
 
 ## ✨ Funcionalidades
 
@@ -19,8 +20,18 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Pausa automática após 5 minutos de idle
 - **Organização por Projeto**: Agrupa dados por workspace/projeto
 - **Persistência Local**: Armazena dados em SQLite seguro
-- **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento (preparação para API)
+- **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
+
+### ☁️ Sincronização em Nuvem (NOVO v0.5.0)
+- **Sync Bidirecional**: Push/Pull automático entre dispositivos
+- **Configuração Dinâmica**: Backend controla `batchLimit`, `syncTimes`, `maxRetries` e `retryDelayMs`
+- **Loop Automático**: Processa TODAS entries pendentes em um único comando
+- **Retry Inteligente**: Até 5 tentativas com delay configurável (padrão: 10s)
+- **Persistência de Config**: Configs salvas localmente para uso offline
+- **Auto-Sync**: Sincronização automática em horários configuráveis
+- **Status Visual**: Ícone animado na status bar durante sincronização
+- **Multi-Dispositivo**: Sincronize entre Windows, Linux e macOS
 
 ### 📊 Dashboard Moderno Unificado
 - **Interface Responsiva**: Layout grid 40/60 otimizado

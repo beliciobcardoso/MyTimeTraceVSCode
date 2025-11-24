@@ -5,6 +5,46 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-11-23
+
+### Adicionado
+
+- **Configurações Dinâmicas via API**: Sistema completo de configuração remota via `/sync/config`
+  - `syncTimes` - Horários de auto-sync configuráveis pelo superadmin
+  - `batchLimit` - Limite de entries por batch configurável remotamente
+  - `maxRetries` - Número de tentativas de retry ajustável
+  - `retryDelayMs` - Delay entre tentativas configurável
+  - **Persistência Local**: Configs salvas no SQLite para uso offline
+  - **Fallback Inteligente**: constants → banco → API (sempre atualizado)
+
+- **Loop Automático de Sincronização**: Sistema inteligente que processa todas entries pendentes
+  - Continua automaticamente enquanto houver entries não sincronizadas
+  - Reduz ações do usuário em 80% (5 comandos → 1 comando)
+  - Feedback de progresso batch por batch nos logs
+  - Para automaticamente quando `synced=0` acabar
+
+- **Documentação Backend Completa**: Novo arquivo `BACKEND_SYNC_VALIDATION.md`
+  - Checklist de 10 etapas para validação de sincronização
+  - Queries SQL de diagnóstico
+  - Estrutura da tabela recomendada
+  - Testes manuais com exemplos práticos
+  - Problemas comuns e soluções
+
+### Alterado
+
+- **SyncManager.pushEntries()**: Retorna objeto `{ syncedCount, conflictsCount }` ao invés de `number`
+- **Marcação Inteligente**: Marca todas entries enviadas como `synced=1` (conflitos = já na cloud)
+- **DatabaseManager.getUnsyncedEntries()**: Aceita parâmetro `limit` dinâmico (padrão: 100)
+- **Loop de Sync**: Baseado em `result.syncedCount > 0` (independente de conflitos)
+- **Logs Melhorados**: Distingue entre entries novas salvas e conflitos detectados
+- **SYNC_DEFAULT_TIMES**: Movido de valor hard-coded para constante exportável
+
+### Corrigido
+
+- **Bug de Conflitos Infinitos**: Entries com conflito não ficam mais presas em loop
+- **Sincronização Incompleta**: Agora processa TODAS entries até `synced=0` acabar
+- **Inconsistência de Config**: `batchLimit` agora sincronizado entre extensão e backend
+
 ## [Não Lançado]
 
 ### Adicionado
