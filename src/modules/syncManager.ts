@@ -237,9 +237,9 @@ export class SyncManager {
         
         // Executa com retry automático
         const result = await this.retryManager.execute(async () => {
-          const syncedCount = await this.pushEntries(apiKey);
+          const syncResult = await this.pushEntries(apiKey);
           await this.pullEntries(apiKey);
-          return syncedCount;
+          return syncResult;
         });
         
         if (result === null) {
@@ -247,13 +247,13 @@ export class SyncManager {
           return false;
         }
         
-        totalSynced += result;
+        totalSynced += result.syncedCount;
         
-        // Continua enquanto houver entries sincronizadas (se processou algo, pode ter mais)
-        hasMoreEntries = result > 0;
+        // Para quando syncedCount = 0 (não tinha mais entries pra enviar)
+        hasMoreEntries = result.syncedCount > 0;
         
         if (hasMoreEntries) {
-          console.log(`📊 Batch ${batchCount} completo. ${result} entries sincronizadas. Continuando...`);
+          console.log(`📊 Batch ${batchCount} completo. ${result.syncedCount} entries processadas. Continuando...`);
         }
       }
       
@@ -279,10 +279,10 @@ export class SyncManager {
    * 3. Marca como synced=1 no SQLite
    * 
    * @param apiKey - API Key do usuário
-   * @returns Número de entries sincronizadas
+   * @returns Objeto com syncedCount e conflictsCount
    * @throws Error se push falhar
    */
-  private async pushEntries(apiKey: string): Promise<number> {
+  private async pushEntries(apiKey: string): Promise<{ syncedCount: number; conflictsCount: number }> {
     const deviceKey = await this.deviceManager.getOrCreateDeviceKey();
     
     // Busca entries não sincronizadas (limite dinâmico via /sync/config)
@@ -290,7 +290,7 @@ export class SyncManager {
     
     if (unsyncedEntries.length === 0) {
       console.log('✅ Push: Nenhuma entry para sincronizar');
-      return 0;
+      return { syncedCount: 0, conflictsCount: 0 };
     }
     
     console.log(`📤 Push: Enviando ${SYNC_BATCH_LIMIT} entries...`);
@@ -321,23 +321,30 @@ export class SyncManager {
     
     const result: any = await response.json();
     
-    // Quantidade realmente salva pelo backend
-    const syncedCount = result.savedCount || 0;
+    // Estratégia SIMPLES: Marca TODAS as entries enviadas como synced=1
+    // Motivo: Se backend aceitou → salvou na cloud
+    //         Se backend rejeitou (conflito) → JÁ estava na cloud
+    // Conclusão: Não precisa reenviar em ambos os casos
     
-    // Marca APENAS as entries que o backend confirmou (primeiras N entries)
-    const syncedIds = unsyncedEntries.slice(0, syncedCount).map(e => e.id);
-    if (syncedIds.length > 0) {
-      await this.dbManager.markAsSynced(syncedIds);
+    const syncedIds = unsyncedEntries.map(e => e.id);
+    await this.dbManager.markAsSynced(syncedIds);
+    
+    const savedCount = result.savedCount || 0;
+    const conflictsCount = result.conflictsCount || 0;
+    
+    console.log(`✅ Push: ${unsyncedEntries.length} entries marcadas como synced`);
+    if (savedCount > 0) {
+      console.log(`   └─ ${savedCount} novas salvas na cloud`);
+    }
+    if (conflictsCount > 0) {
+      console.log(`   └─ ${conflictsCount} já existiam na cloud (ignoradas)`);
     }
     
-    console.log(`✅ Push: ${syncedCount} entries sincronizadas`);
-    
-    if (result.conflictsCount > 0) {
-      console.warn(`⚠️ Push: ${result.conflictsCount} conflitos detectados`);
-    }
-    
-    // Retorna quantidade de entries sincronizadas
-    return syncedCount;
+    // Retorna quantidade enviada (não importa se salvou ou conflitou)
+    return {
+      syncedCount: unsyncedEntries.length,
+      conflictsCount: conflictsCount
+    };
   }
   
   /**
