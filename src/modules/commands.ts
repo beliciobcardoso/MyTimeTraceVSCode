@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { ApiKeyManager } from './apiKeyManager';
 import { DeviceManager } from './deviceManager';
 import { SyncManager } from './syncManager';
+import { DatabaseManager } from './database';
 
 /**
  * Classe responsável por gerenciar o registro de comandos
@@ -236,7 +237,8 @@ export class CommandManager {
     context: vscode.ExtensionContext,
     apiKeyManager: ApiKeyManager,
     deviceManager: DeviceManager,
-    syncManager: SyncManager
+    syncManager: SyncManager,
+    dbManager: DatabaseManager
   ): vscode.Disposable[] {
     const commands: vscode.Disposable[] = [];
 
@@ -301,6 +303,9 @@ export class CommandManager {
           return;
         }
 
+        // Busca total de entries locais do SQLite
+        const localEntriesCount = await dbManager.getTotalEntriesCount();
+
         // Cria painel webview com status
         const panel = vscode.window.createWebviewPanel(
           'syncStatus',
@@ -309,7 +314,7 @@ export class CommandManager {
           { enableScripts: true }
         );
 
-        panel.webview.html = CommandManager.generateSyncStatusHTML(status, syncManager);
+        panel.webview.html = CommandManager.generateSyncStatusHTML(status, syncManager, localEntriesCount);
       })
     );
 
@@ -322,12 +327,30 @@ export class CommandManager {
    * 
    * @param status - Status obtido do servidor
    * @param syncManager - Manager para obter config local
+   * @param localEntriesCount - Total de entries no banco local SQLite
    * @returns HTML string
    */
-  private static generateSyncStatusHTML(status: any, syncManager: SyncManager): string {
+  private static generateSyncStatusHTML(status: any, syncManager: SyncManager, localEntriesCount: number): string {
     const localStatus = syncManager.getStatus();
     
-    const otherDevicesHTML = status.otherDevices.map((device: any) => `
+    // Mapear resposta do backend para estrutura esperada
+    const totalDevices = (status?.otherDevicesCount || 0) + 1; // +1 = dispositivo atual
+    
+    const safeStatus = {
+      currentDevice: {
+        ...status?.currentDevice,
+        deviceName: status?.currentDevice?.deviceName || 'Desconhecido',
+        totalEntries: localEntriesCount, // Entries LOCAIS do SQLite
+        lastSeen: status?.currentDevice?.lastSeen || new Date().toISOString()
+      },
+      otherDevices: status?.otherDevices || [],
+      totals: {
+        totalDevices: totalDevices,
+        totalEntriesAllDevices: status?.totalEntriesAllDevices || 0
+      }
+    };
+    
+    const otherDevicesHTML = safeStatus.otherDevices.map((device: any) => `
       <tr>
         <td>${device.deviceName}</td>
         <td>${device.totalEntries}</td>
@@ -461,15 +484,15 @@ export class CommandManager {
           <div class="status-grid">
             <div class="status-item">
               <div class="status-label">Nome do Dispositivo</div>
-              <div class="status-value">${status.currentDevice.deviceName}</div>
+              <div class="status-value">${safeStatus.currentDevice.deviceName}</div>
             </div>
             <div class="status-item">
               <div class="status-label">Entries Locais</div>
-              <div class="status-value">${status.currentDevice.totalEntries}</div>
+              <div class="status-value">${safeStatus.currentDevice.totalEntries}</div>
             </div>
             <div class="status-item">
               <div class="status-label">Última Atividade</div>
-              <div class="status-value">${new Date(status.currentDevice.lastSeen).toLocaleString('pt-BR')}</div>
+              <div class="status-value">${new Date(safeStatus.currentDevice.lastSeen).toLocaleString('pt-BR')}</div>
             </div>
           </div>
         </div>
@@ -479,11 +502,11 @@ export class CommandManager {
           <div class="status-grid">
             <div class="status-item">
               <div class="status-label">Total de Dispositivos</div>
-              <div class="status-value">${status.totals.totalDevices}</div>
+              <div class="status-value">${safeStatus.totals.totalDevices}</div>
             </div>
             <div class="status-item">
               <div class="status-label">Total de Entries (Cloud)</div>
-              <div class="status-value">${status.totals.totalEntriesAllDevices}</div>
+              <div class="status-value">${safeStatus.totals.totalEntriesAllDevices}</div>
             </div>
             <div class="status-item">
               <div class="status-label">Status</div>
@@ -496,7 +519,7 @@ export class CommandManager {
           </div>
         </div>
         
-        ${status.otherDevices.length > 0 ? `
+        ${safeStatus.otherDevices.length > 0 ? `
         <div class="status-card">
           <h2>💻 Outros Dispositivos</h2>
           <table>

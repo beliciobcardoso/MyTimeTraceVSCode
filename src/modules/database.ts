@@ -650,6 +650,38 @@ export class DatabaseManager {
   }
 
   /**
+   * Retorna o total de entries no banco local (não deletadas)
+   * 
+   * **Usado por:** Status de sincronização
+   * 
+   * @returns Total de entries
+   * @example
+   * ```typescript
+   * const total = await dbManager.getTotalEntriesCount();
+   * console.log(`Total: ${total} entries`);
+   * ```
+   */
+  async getTotalEntriesCount(): Promise<number> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.get(
+        `SELECT COUNT(*) as count FROM time_entries WHERE deleted_at IS NULL`,
+        (err, row: any) => {
+          if (err) {
+            console.error('❌ Erro ao contar entries:', err);
+            reject(err);
+          } else {
+            resolve(row?.count || 0);
+          }
+        }
+      );
+    });
+  }
+
+  /**
    * Marca entries como sincronizadas (synced = 1)
    * 
    * **Usado por:** SyncManager.pushEntries() após sucesso no servidor

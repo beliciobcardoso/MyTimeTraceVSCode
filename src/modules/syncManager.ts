@@ -90,6 +90,8 @@ export class SyncManager {
     try {
       const savedSyncTimes = await this.dbManager.getMetadata('sync_times');
       const savedBatchLimit = await this.dbManager.getMetadata('sync_batch_limit');
+      const savedMaxRetries = await this.dbManager.getMetadata('max_retries');
+      const savedRetryDelay = await this.dbManager.getMetadata('retry_delay_ms');
       
       if (savedSyncTimes) {
         this.syncTimes = JSON.parse(savedSyncTimes);
@@ -99,6 +101,17 @@ export class SyncManager {
       if (savedBatchLimit) {
         this.batchLimit = parseInt(savedBatchLimit, 10);
         console.log('📦 Batch limit carregado do banco:', this.batchLimit);
+      }
+      
+      if (savedMaxRetries && savedRetryDelay) {
+        this.retryManager.updateConfig(
+          parseInt(savedMaxRetries, 10),
+          parseInt(savedRetryDelay, 10)
+        );
+        console.log('📦 Retry config carregado do banco:', {
+          maxRetries: savedMaxRetries,
+          retryDelayMs: savedRetryDelay
+        });
       }
     } catch (error) {
       console.warn('⚠️ Erro ao carregar config salva, usando padrão:', error);
@@ -133,14 +146,16 @@ export class SyncManager {
         const config: any = await response.json();
         this.syncTimes = config.syncTimes || SYNC_DEFAULT_TIMES;
         this.batchLimit = config.batchLimit || SYNC_BATCH_LIMIT;
-        this.retryManager.updateConfig(
-          config.maxRetries || 5,
-          config.retryDelayMs || 10000
-        );
+        const maxRetries = config.maxRetries || 5;
+        const retryDelayMs = config.retryDelayMs || 10000;
+        
+        this.retryManager.updateConfig(maxRetries, retryDelayMs);
         
         // Salva configurações no banco para persistência
         await this.dbManager.setMetadata('sync_times', JSON.stringify(this.syncTimes));
         await this.dbManager.setMetadata('sync_batch_limit', this.batchLimit.toString());
+        await this.dbManager.setMetadata('max_retries', maxRetries.toString());
+        await this.dbManager.setMetadata('retry_delay_ms', retryDelayMs.toString());
         
         console.log('✅ Config de sync obtida do servidor:', config);
       } else {
