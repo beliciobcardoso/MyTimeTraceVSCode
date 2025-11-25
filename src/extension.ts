@@ -80,7 +80,8 @@ export async function activate(context: vscode.ExtensionContext) {
       context,
       apiKeyManager,
       deviceManager,
-      syncManager
+      syncManager,
+      dbManager
     );
 
     // Registra os eventos para monitoramento
@@ -127,11 +128,9 @@ export async function activate(context: vscode.ExtensionContext) {
       }, 100);
     }
     
-    // Iniciar auto-sync se configurado
-    if (userConfig.syncEnabled) {
-      console.log("🔄 Auto-sync habilitado, iniciando scheduler...");
-      syncManager.scheduleAutoSync();
-    }
+    // Inicializar SyncManager (busca config do servidor e agenda auto-sync)
+    console.log("🔄 Inicializando SyncManager...");
+    await syncManager.initialize();
 
     // ========================================
     // 🧹 CLEANUP AUTOMÁTICO DE PROJETOS EXPIRADOS (>30 DIAS)
