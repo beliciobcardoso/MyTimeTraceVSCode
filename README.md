@@ -158,15 +158,16 @@ As seguintes configurações já estão disponíveis:
 ## Melhorias Planejadas
 
 - ✅ **Status Bar Item**: Mostrar o tempo atual do arquivo ou o status do monitoramento na barra de status do VS Code.
-- ❌ **Heartbeat**: Implementar "heartbeats" periódicos para uma contagem de tempo mais precisa.
+- ✅ **Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
 - ✅ **Interface de Visualização**: Adicionar painéis e gráficos para visualizar os dados de tempo coletados.
-- ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos.
-- ❌ **Tratamento de Erros**: Melhora o tratamento de erros de rede e outras exceções.
-- ❌ **Autenticação**: Planeja-se implementar um método de autenticação (como API Key) para permitir a sincronização segura dos dados com um servidor externo em versões futuras.
-- ✅ **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
-- ✅ **Melhor tratamento de erros**: Adicionar tratamento de exceções mais robusto (implementado safeRegisterCommand)
-- ✅ **Visualização de dados**: Implementar painéis organizados na pasta `ui/` para visualizar as estatísticas de tempo por projeto
-- ✅ **Status Bar interativa**: Melhorar a interação com o usuário através da barra de status
+- ✅ **Separação de responsabilidades**: Arquitetura modular com 7 módulos especializados
+- ✅ **Melhor tratamento de erros**: Tratamento robusto com async/await e safeRegisterCommand
+- ✅ **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos
+- ✅ **Status Bar interativa**: Feedback visual constante com atualização em tempo real
+- ✅ **Sincronização em Nuvem**: Push/Pull bidirecional com retry inteligente e auto-sync
+- ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos (CSV, JSON, Excel)
+- ❌ **Relatórios Personalizados**: Criar relatórios customizáveis por período e projeto
+- ❌ **Integração Git**: Correlacionar tempo de desenvolvimento com commits
 
 ## Notas de Lançamento
 
@@ -178,7 +179,8 @@ Terceira versão com refatoração completa e interface avançada:
 - Separação de responsabilidades em módulos específicos
 - Módulos especializados: configuração, banco de dados, status bar, estatísticas, rastreamento e comandos
 - Melhor organização do código com classes especializadas
-- Tratamento de erros aprimorado com async/await
+- **Sistema Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
+- **Tratamento de erros robusto**: safeRegisterCommand com async/await para operações assíncronas
 - Refatoração completa do arquivo extension.ts para usar arquitetura modular
 
 **Interface de Estatísticas Avançada:**
@@ -196,6 +198,7 @@ Terceira versão com refatoração completa e interface avançada:
 - Correção de bug crítico com elemento HTML ausente
 - Verificações de elementos DOM antes do acesso
 - Layout responsivo funcionando em diferentes tamanhos de tela
+- Status Bar com feedback visual constante em tempo real
 
 ### 0.1.0 - Beta (18/06/2025)
 
