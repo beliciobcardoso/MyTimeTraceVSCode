@@ -72,32 +72,80 @@ Para documentação detalhada, consulte a pasta [`docs/`](./docs/):
 - ✅ **[Relatório de Cobertura](./docs/COVERAGE_REPORT.md)** - Métricas de qualidade e testes (88%)
 - 🚀 **[Guia de Desenvolvimento](./docs/vsc-extension-quickstart.md)** - Setup e desenvolvimento
 
-## Instalação
+## 📦 Instalação
 
 No momento, esta extensão está em desenvolvimento e não está disponível no VS Code Marketplace. Para instalá-la:
 
-1. Clone o repositório
-2. Execute `npm install` para instalar as dependências
-3. Execute `npm run compile` para compilar o TypeScript
-4. Instale a ferramenta `vsce` globalmente: `npm install -g vsce`
-5. Crie um VSIX com `vsce package`. Este comando irá gerar um arquivo `.vsix`.
+### Passo 1: Preparar o Ambiente
 
-### Como Instalar o Arquivo .vsix
+```bash
+# Clone o repositório
+git clone https://github.com/beliciobcardoso/MyTimeTraceVSCode.git
+cd MyTimeTraceVSCode
 
-Após gerar o pacote, você pode instalá-lo de duas maneiras:
+# Instale as dependências
+npm install
 
-**1. Pela Interface do VS Code:**
-- Vá para a visualização de **Extensões** (clique no ícone de blocos na barra lateral).
-- Clique nos três pontos (`...`) no canto superior da visualização.
-- Selecione **Instalar do VSIX...** e escolha o arquivo `.vsix` gerado.
+# Compile o TypeScript
+npm run compile
+```
 
-**2. Pelo Terminal:**
-- Execute o seguinte comando no terminal, substituindo `nome-do-arquivo.vsix` pelo nome do seu arquivo:
-  ```bash
-  code --install-extension nome-do-arquivo.vsix
-  ```
+### Passo 2: Instalar a Ferramenta de Empacotamento
 
-Depois de instalar, o VS Code solicitará que você recarregue a janela para ativar a extensão.
+```bash
+# Instale o vsce globalmente
+npm install -g @vscode/vsce
+```
+
+### Passo 3: Empacotar a Extensão
+
+```bash
+# Gera o arquivo .vsix
+vsce package
+```
+
+Este comando irá gerar um arquivo como `my-time-trace-vscode-X.X.X.vsix`.
+
+### Passo 4: Instalar no VS Code
+
+Após gerar o pacote, você pode instalá-lo de **três maneiras**:
+
+#### Opção 1: Pela Interface do VS Code (Recomendado)
+
+1. Abra o VS Code (ou VS Code Insiders)
+2. Vá para a visualização de **Extensões** (`Ctrl+Shift+X` ou `Cmd+Shift+X`)
+3. Clique nos três pontos (`...`) no canto superior da visualização
+4. Selecione **Instalar do VSIX...**
+5. Navegue e selecione o arquivo `.vsix` gerado
+
+#### Opção 2: Pelo Terminal (VS Code)
+
+```bash
+# Para o VS Code normal
+code --install-extension my-time-trace-vscode-0.5.0.vsix
+```
+
+#### Opção 3: Pelo Terminal (VS Code Insiders)
+
+```bash
+# Para o VS Code Insiders
+code-insiders --install-extension my-time-trace-vscode-0.5.0.vsix
+```
+
+> **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).
+
+### Passo 5: Ativar a Extensão
+
+Depois de instalar, o VS Code solicitará que você **recarregue a janela** para ativar a extensão. Você também pode:
+
+- Pressionar `Ctrl+Shift+P` (ou `Cmd+Shift+P`) e executar **Developer: Reload Window**
+- Fechar e reabrir o VS Code
+
+### ✅ Verificar Instalação
+
+Após recarregar, você deve ver:
+- Ícone do relógio na barra de status inferior
+- Comando disponível: `My Time Trace: Show Statistics`
 
 ## Configurações da Extensão
 
