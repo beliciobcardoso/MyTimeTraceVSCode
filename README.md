@@ -126,7 +126,7 @@ Terceira versão com refatoração completa e interface avançada:
 - **Header Fixo**: Título sempre visível durante a navegação
 - **Filtros Interativos**: Controles por data (início/fim) e seleção múltipla de projetos
 - **Resumo Dinâmico**: Estatísticas em tempo real dos dados filtrados
-- **Projetos Expansíveis**: Interface colapsável para melhor organização visual
+- **Projetos Expansíveis**: Interface colapsível para melhor organização visual
 - **CSS Modular**: Estilos organizados usando variáveis do tema VS Code
 - **JavaScript Robusto**: Verificações de segurança e tratamento de erros
 
