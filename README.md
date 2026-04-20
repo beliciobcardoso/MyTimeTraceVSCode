@@ -58,6 +58,71 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 6. Oferece visualização unificada com filtros interativos para análise detalhada
 7. Permite exclusão segura de projetos com histórico completo de restauração
 
+## 🔬 Fisiologia da Extensão
+
+### Arquitetura Interna
+
+A extensão utiliza uma **arquitetura modular enterprise** com separação clara de responsabilidades:
+
+- **Timer Heartbeat**: Pulso de 1 segundo para contagem precisa em tempo real
+- **Event Listeners**: Monitora mudanças de arquivos, janelas e atividade do usuário
+- **Database Layer**: Camada de persistência com SQLite para armazenamento local
+- **UI Components**: Webviews com HTML/CSS/JS para dashboards interativos
+- **Sync Manager**: Sistema de sincronização com retry inteligente e auto-sync
+
+### 💾 Armazenamento de Dados
+
+Os dados são persistidos localmente em um banco **SQLite** seguro:
+
+**Linux:**
+```
+~/.config/Code/User/globalStorage/<your-username>.my-time-trace-vscode/time_tracker.sqlite
+```
+
+**macOS:**
+```
+~/Library/Application Support/Code/User/globalStorage/<your-username>.my-time-trace-vscode/time_tracker.sqlite
+```
+
+**Windows:**
+```
+%APPDATA%\Code\User\globalStorage\<your-username>.my-time-trace-vscode\time_tracker.sqlite
+```
+
+**VS Code Insiders:**
+Substitua `Code` por `Code - Insiders` nos caminhos acima.
+
+### 📊 Estrutura do Banco de Dados
+
+**Tabela `time_entries`** - Registros de rastreamento de tempo:
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | INTEGER | Chave primária auto-incremento |
+| `timestamp` | TEXT | Data/hora ISO 8601 do registro |
+| `project` | TEXT | Nome do projeto/workspace |
+| `file` | TEXT | Caminho completo do arquivo |
+| `duration_seconds` | INTEGER | Duração em segundos |
+| `is_idle` | INTEGER | 1 = período inativo, 0 = ativo |
+| `synced` | INTEGER | 1 = sincronizado na nuvem, 0 = local |
+| `deleted_at` | TEXT | Timestamp do soft delete (NULL = ativo) |
+| `device_name` | TEXT | Nome do dispositivo/computador |
+
+**Tabela `deletion_history`** - Histórico de exclusões e restaurações:
+- Registro completo de soft/hard deletes
+- Permite restauração de projetos excluídos
+- Auditoria de operações de exclusão
+
+**Índices otimizados**: Queries rápidas para filtros por projeto, data e dispositivo
+
+### 🔄 Ciclo de Vida
+
+1. **Ativação**: Inicializa DB, cria listeners, inicia heartbeat
+2. **Monitoramento**: Timer incrementa 1s, detecta idle após 5min
+3. **Salvamento**: Persiste dados a cada mudança de arquivo ou idle
+4. **Sincronização**: Auto-sync em horários configuráveis (se habilitado)
+5. **Desativação**: Cleanup de recursos, fecha DB, cancela timers
+
 ## Requisitos
 
 - Visual Studio Code 1.100.0 ou superior
