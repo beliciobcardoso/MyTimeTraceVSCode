@@ -1,8 +1,8 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.3.1  
-**Status:** Beta - Produção  
-**Última Atualização:** 17 de novembro de 2025  
+**Versão:** 0.5.0
+**Status:** Beta - Produção
+**Última Atualização:** 23 de novembro de 2025
 **Linguagem:** TypeScript + SQLite
 
 ---
@@ -12,29 +12,32 @@
 1. [Visão Geral do Projeto](#-visão-geral-do-projeto)
 2. [Arquitetura e Estrutura](#-arquitetura-e-estrutura)
 3. [Módulos Principais](#-módulos-principais)
-4. [Sistema de Interface (UI)](#-sistema-de-interface-ui)
-5. [Funcionalidades Core](#-funcionalidades-core)
-6. [Sistema Pomodoro](#-sistema-pomodoro)
-7. [Gerenciamento de Dados](#-gerenciamento-de-dados)
-8. [Comandos e Configurações](#-comandos-e-configurações)
-9. [Testes e Qualidade](#-testes-e-qualidade)
-10. [Padrões e Convenções](#-padrões-e-convenções)
+4. [Sistema de Sincronização em Nuvem](#-sistema-de-sincronização-em-nuvem)
+5. [Sistema de Interface (UI)](#-sistema-de-interface-ui)
+6. [Gerenciamento de Dados](#-gerenciamento-de-dados)
+7. [Comandos e Configurações](#-comandos-e-configurações)
+8. [Testes e Qualidade](#-testes-e-qualidade)
+9. [Padrões e Convenções](#-padrões-e-convenções)
+10. [Roadmap](#-roadmap-e-próximos-passos)
 
 ---
 
 ## 🎯 Visão Geral do Projeto
 
-**MyTimeTrace VSCode** é uma extensão profissional para Visual Studio Code que implementa um sistema avançado de rastreamento de tempo de desenvolvimento com funcionalidades de produtividade Pomodoro integradas.
+**MyTimeTrace VSCode** é uma extensão para Visual Studio Code que monitora automaticamente o tempo gasto em arquivos e projetos, com **sincronização bidirecional em nuvem** e dashboard unificado para análise.
 
 ### Características Principais
 
-- ✅ **Rastreamento Automático** - Monitoramento inteligente de tempo por arquivo e projeto
-- ✅ **Sistema Pomodoro** - Técnica Pomodoro integrada com alertas e configurações
-- ✅ **Dashboard Moderno** - Interface responsiva com filtros avançados e gráficos interativos
-- ✅ **Soft Delete** - Exclusão reversível de projetos com auto-limpeza após 30 dias
-- ✅ **Histórico de Auditoria** - Rastreamento completo de todas as operações
-- ✅ **88% Cobertura de Testes** - 23 testes automatizados passando
-- ✅ **Arquitetura Modular** - 7 módulos especializados com padrão Singleton
+- ✅ **Rastreamento Automático** — Monitoramento inteligente por arquivo e projeto
+- ✅ **Sincronização em Nuvem** — Push/Pull bidirecional com backend via API Key
+- ✅ **Loop Automático de Sync** — Processa TODAS entries pendentes em um único comando
+- ✅ **Configurações Dinâmicas** — Servidor controla `syncTimes`, `batchLimit`, `maxRetries`, `retryDelayMs`
+- ✅ **Multi-Dispositivo** — Identificação única via `device_key` (UUID v4) + `device_name` (hostname)
+- ✅ **Dashboard Moderno** — Layout grid 40/60, donut interativo, filtros por data e projeto
+- ✅ **Soft Delete** — Exclusão reversível com auto-limpeza após 30 dias
+- ✅ **Histórico de Auditoria** — Rastreamento completo de soft/hard deletes e restaurações
+- ✅ **Arquitetura Manager Pattern** — Separação clara de responsabilidades
+- ✅ **88% Cobertura de Testes** — Suítes dedicadas para cada Manager de sync
 
 ### Tecnologias Core
 
@@ -43,8 +46,10 @@
   "engine": "vscode ^1.100.0",
   "linguagem": "TypeScript 5.8.3",
   "database": "SQLite3 5.1.6",
-  "testes": "Mocha + Sinon",
-  "i18n": "vscode-nls (PT-BR + EN)"
+  "uuid": "uuid 10.0.0",
+  "i18n": "vscode-nls 5.2.0 (PT-BR + EN)",
+  "testes": "Mocha + Sinon (@vscode/test-cli)",
+  "packageManager": "pnpm 10.19.0"
 }
 ```
 
@@ -57,963 +62,474 @@
 ```
 MyTimeTraceVSCode/
 ├── 📁 src/                           # Código fonte principal
-│   ├── extension.ts                  # 🚪 Ponto de entrada
+│   ├── extension.ts                  # 🚪 Ponto de entrada (activate/deactivate)
 │   ├── 📁 modules/                   # 🧩 Módulos especializados
+│   │   ├── index.ts                 # 📦 Barrel exports
+│   │   ├── database.ts              # 💾 DatabaseManager (SQLite)
 │   │   ├── timeTrace.ts             # ⏱️ Engine de rastreamento
-│   │   ├── database.ts              # 💾 Gerenciamento SQLite
-│   │   ├── statusBar.ts             # 📊 Interface barra de status
-│   │   ├── stats.ts                 # 📈 Geração de relatórios
-│   │   ├── commands.ts              # ⌨️ Registro de comandos
-│   │   ├── config.ts                # ⚙️ Configurações
-│   │   ├── deviceInfo.ts            # 🖥️ Informações do dispositivo
-│   │   ├── modal.ts                 # 🔲 Sistema de modais
-│   │   ├── pomodoro.ts              # 🍅 Sistema Pomodoro
-│   │   ├── desktopNotifications.ts  # 🔔 Notificações desktop
-│   │   ├── soundManager.ts          # 🔊 Gerenciador de áudio
-│   │   ├── visualEffectsManager.ts  # 🎨 Efeitos visuais
-│   │   ├── audioFilePlayer.ts       # 🎵 Player de arquivos WAV
-│   │   ├── webAudioPlayer.ts        # 🌐 Web Audio API
-│   │   ├── simpleSoundPlayer.ts     # 🔔 Beeps do sistema
-│   │   ├── syntheticSoundGenerator.ts # 🎹 Sons sintéticos
-│   │   └── index.ts                 # 📦 Barrel exports
+│   │   ├── statusBar.ts             # 📊 StatusBarManager
+│   │   ├── stats.ts                 # 📈 StatsManager
+│   │   ├── commands.ts              # ⌨️ CommandManager
+│   │   ├── config.ts                # ⚙️ getConfig / UserConfig
+│   │   ├── deviceInfo.ts            # 🖥️ getDeviceName / getDeviceInfo
+│   │   ├── apiKeyManager.ts         # 🔐 API Key via SecretStorage
+│   │   ├── deviceManager.ts         # 💻 device_key (UUID v4)
+│   │   ├── syncManager.ts           # 🔄 Push/Pull orchestrator
+│   │   └── syncRetryManager.ts      # 🔁 Retry com config dinâmica
 │   ├── 📁 ui/                        # 🎨 Componentes de interface
-│   │   ├── statsPanel.ts            # 📊 Painel de estatísticas
+│   │   ├── index.ts                 # 📦 Barrel exports
+│   │   ├── statsPanel.ts            # 📊 Dashboard moderno
 │   │   ├── deletedProjectsPanel.ts  # 🗑️ Painel de projetos deletados
-│   │   ├── focusCompleteModal.ts    # 🍅 Modal de foco completo
-│   │   ├── pomodoroSettingsModal.ts # ⚙️ Configurações Pomodoro
 │   │   ├── cssLoader.ts             # 🎨 Loader de CSS
-│   │   ├── dashboard-styles.css     # 🎨 Estilos dashboard
-│   │   ├── modal-styles.css         # 🎨 Estilos modais
-│   │   └── index.ts                 # 📦 Barrel exports
+│   │   └── dashboard-styles.css     # 🎨 Estilos dashboard
+│   ├── 📁 config/                    # 🌐 Constantes globais
+│   │   └── constants.ts             # API_BASE_URL, SYNC_BATCH_LIMIT, etc.
 │   └── 📁 test/                      # 🧪 Testes automatizados
-│       ├── extension.test.ts        # ✅ Testes principais (1625 linhas)
-│       ├── pomodoro.test.ts         # 🍅 Testes Pomodoro
-│       ├── tarefa1.3.test.ts        # 🔔 Testes eventos Pomodoro
-│       ├── focusCompleteModal.test.ts
-│       ├── modal-system.test.ts
-│       ├── pomodoro-events.test.ts
-│       └── pomodoro-integration.test.ts
-├── 📁 docs/                          # 📖 Documentação completa
-│   ├── README.md                    # Índice geral
-│   ├── POMODORO_CONSOLIDADO_TAREFAS.md
-│   ├── DASHBOARD_MODERNO.md
-│   ├── DELETED_PROJECTS_PANEL.md
-│   ├── COVERAGE_REPORT.md
-│   ├── UI_COMPONENTS.md
-│   └── ... (19 arquivos)
+│       ├── extension.test.ts        # ✅ Suíte principal
+│       ├── apiKeyManager.test.ts    # 🔐 ApiKeyManager
+│       ├── deviceManager.test.ts    # 💻 DeviceManager
+│       ├── syncRetryManager.test.ts # 🔁 Retry logic
+│       ├── syncCommands.test.ts     # ⌨️ Comandos de sync
+│       └── sync-loop.test.ts        # 🔄 Loop automático
+├── 📁 docs/                          # 📖 Documentação (30+ arquivos)
 ├── 📁 images/                        # Assets visuais
-│   └── my-time-trace-logo.png
-├── 📁 sounds/                        # Arquivos de áudio
-│   ├── classic/                     # Sons clássicos
-│   ├── modern/                      # Sons eletrônicos
-│   ├── minimal/                     # Tons simples
-│   └── natural/                     # Harmônicos naturais
 ├── 📁 UI/                            # Demos e protótipos
-├── 📁 test-temp/                     # Testes temporários
-├── 📁 vsix/                          # Pacotes gerados
-├── package.json                      # Configuração npm
-├── tsconfig.json                     # Configuração TypeScript
-├── eslint.config.mjs                 # Configuração ESLint
+├── package.json                      # Config npm (v0.5.0)
+├── tsconfig.json                     # Config TypeScript
+├── eslint.config.mjs                 # Config ESLint
 ├── CHANGELOG.md                      # Histórico de mudanças
-└── README.md                         # Documentação principal
+├── README.md                         # Documentação principal
+└── GEMINI.md                         # Diretrizes para IA
 ```
 
 ### Padrões Arquiteturais
 
-#### 1. **Singleton Pattern**
-Gerenciamento global de estado e recursos:
+#### 1. **Manager Pattern**
+Cada responsabilidade tem seu próprio Manager:
+- `DatabaseManager` — acesso SQLite (SQL apenas aqui)
+- `StatusBarManager` — item da barra de status
+- `StatsManager` — painéis de relatório
+- `CommandManager` — registro centralizado
+- `ApiKeyManager` — SecretStorage da chave
+- `DeviceManager` — device_key e info do hardware
+- `SyncManager` — orquestra push/pull
+- `SyncRetryManager` — retry com backoff configurável
+
+#### 2. **Dependency Injection**
+Managers recebem dependências via construtor em `extension.ts`:
 ```typescript
-export class DatabaseManager {
-  private static instance: DatabaseManager;
-  
-  static getInstance(): DatabaseManager {
-    if (!DatabaseManager.instance) {
-      DatabaseManager.instance = new DatabaseManager();
-    }
-    return DatabaseManager.instance;
-  }
-}
+const syncManager = new SyncManager(
+  apiKeyManager,
+  deviceManager,
+  dbManager,
+  statusBarManager
+);
 ```
 
-#### 2. **Module Pattern**
-Separação clara de responsabilidades:
-- **timeTrace** - Lógica de rastreamento
-- **database** - Persistência de dados
-- **statusBar** - Interface visual
-- **stats** - Geração de relatórios
-- **commands** - Registro de comandos
-- **config** - Gerenciamento de configurações
-- **modal** - Sistema de modais
-
-#### 3. **Observer Pattern**
-Sistema de eventos para comunicação entre módulos:
-```typescript
-interface PomodoroEvents {
-  onFocusStart?: (duration: number) => void;
-  onFocusComplete?: () => void;
-  onBreakStart?: (duration: number, type: 'short' | 'long') => void;
-  onBreakComplete?: () => void;
-}
-```
+#### 3. **Barrel Files**
+Exports centralizados em `modules/index.ts` e `ui/index.ts`.
 
 ---
 
 ## 🧩 Módulos Principais
 
-### 1. **extension.ts** - Ponto de Entrada
+### 1. **extension.ts** — Ponto de Entrada
 
 **Responsabilidades:**
-- Inicialização da extensão (`activate()`)
-- Registro de comandos e eventos
-- Coordenação entre módulos
-- Cleanup de recursos (`deactivate()`)
+- Inicializar todos os Managers em ordem correta
+- Registrar comandos principais + comandos de sync
+- Conectar eventos do VS Code ao `timeTrace`
+- Agendar cleanup automático de projetos expirados (24h)
+- Orquestrar `deactivate()` com cleanup de recursos
 
-**Estrutura:**
+**Fluxo resumido:**
 ```typescript
-export function activate(context: vscode.ExtensionContext) {
-  // 1. Inicialização de módulos
-  const dbManager = new DatabaseManager();
-  const statusBarManager = new StatusBarManager();
-  const statsManager = new StatsManager(dbManager);
-  const myTimeTrace = new timeTrace(dbManager, statusBarManager);
-  const pomodoroManager = new PomodoroManager(dbManager, statusBarManager);
-  
-  // 2. Inicialização assíncrona
-  await dbManager.initialize(context);
-  
-  // 3. Registro de comandos (33 comandos)
-  const commands = CommandManager.registerCommands(...);
-  
-  // 4. Configuração de eventos do Pomodoro
-  pomodoroManager.setEvents({...});
-  
-  // 5. Auto-start se configurado
-  if (config.autoStart) {
-    myTimeTrace.startTracking();
-  }
+export async function activate(context) {
+  dbManager = new DatabaseManager();
+  await dbManager.initialize(context.globalStorageUri.fsPath);
+
+  statusBarManager = new StatusBarManager();
+  myTimeTrace = new timeTrace(dbManager, statusBarManager);
+  statsManager = new StatsManager(dbManager, context);
+
+  apiKeyManager = new ApiKeyManager(context);
+  deviceManager = new DeviceManager(context);
+  syncManager = new SyncManager(apiKeyManager, deviceManager, dbManager, statusBarManager);
+
+  statusBarManager.create();
+  CommandManager.registerCommands(...);
+  CommandManager.registerSyncCommands(...);
+  CommandManager.registerSyncOperationsCommands(...);
+
+  // Eventos VS Code
+  vscode.window.onDidChangeActiveTextEditor(...);
+  vscode.workspace.onDidChangeTextDocument(...);
+  vscode.window.onDidChangeWindowState(...);
+
+  if (userConfig.autoStart) { /* startTracking */ }
+  await syncManager.initialize();
+
+  // Cleanup automático (24h)
+  setInterval(() => dbManager.cleanupExpiredProjects(), CLEANUP_INTERVAL);
 }
 ```
 
-**Comandos Registrados:** 33 comandos (4 principais + 29 de desenvolvimento)
-
 ---
 
-### 2. **timeTrace.ts** - Engine de Rastreamento
+### 2. **timeTrace.ts** — Engine de Rastreamento
 
-**Classe:** `timeTrace`  
-**Padrão:** Singleton  
-**Cobertura:** 95%
+**Classe:** `timeTrace`
 
-**Funcionalidades Core:**
+**Estado interno:**
 ```typescript
-export class timeTrace {
-  // Estado
-  private currentFile: string | null;
-  private isTracking: boolean;
-  private idleTimer: NodeJS.Timeout | null;
-  
-  // Métodos principais
-  startTracking(): void
-  pauseTracking(): void
-  onActiveEditorChange(editor: vscode.TextEditor | undefined): void
-  onTextDocumentChange(event: vscode.TextDocumentChangeEvent): void
-  onWindowStateChange(state: vscode.WindowState): void
-  
-  // Métodos auxiliares
-  isActivelyCoding(): boolean
-  getCurrentFile(): string | null
-  getCurrentProject(): string | null
-  isCurrentlyTracking(): boolean
-}
+private timerInterval: NodeJS.Timeout | undefined;
+private lastActiveTime: number;
+private currentFile: string | undefined;
+private projectRoot: string | undefined;
+private timeSpentOnFile: number; // ms
+private isTracking: boolean;
 ```
 
-**Detecção de Idle Time:**
-- **Timeout padrão:** 5 minutos (configurável)
-- **Eventos monitorados:** Mudança de editor, alteração de texto, foco de janela
-- **Reinício automático:** Após atividade detectada
+**Fluxo principal:**
+- `startTracking()` — cria `setInterval` de 1s (heartbeat)
+- A cada segundo: incrementa `timeSpentOnFile`, atualiza status bar
+- Se `(now - lastActiveTime) > IDLE_TIMEOUT_MS` → salva entry + registra IDLE
+- `onActiveEditorChange` / `onTextDocumentChange` / `onWindowStateChange` atualizam `lastActiveTime` e trocam de arquivo
+- Cada salvamento captura `device_name` via `getDeviceName()`
 
-**Integração com Pomodoro:**
-- Verifica se usuário está codificando ativamente
-- Detecta extensões de arquivo de código (25+ tipos)
-- Fornece contexto de projeto/arquivo para sessões
+**Detecção de Idle:**
+- Timeout padrão: **5 minutos** (configurável via `myTimeTraceVSCode.idleTimeout`)
+- Quando idle: salva o tempo acumulado e cria registro `file="IDLE"` com `isIdle=true`
 
 ---
 
-### 3. **database.ts** - Gerenciamento SQLite
+### 3. **database.ts** — Gerenciamento SQLite
 
-**Classe:** `DatabaseManager`  
-**Padrão:** Singleton  
-**Cobertura:** 95%
+**Classe:** `DatabaseManager`
 
 **Schema do Banco:**
 
 ```sql
--- Tabela principal de rastreamento
+-- Entries de rastreamento
 CREATE TABLE IF NOT EXISTS time_entries (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp TEXT NOT NULL,
-  project TEXT NOT NULL,
-  file TEXT NOT NULL,
+  project TEXT,
+  file TEXT,
   duration_seconds INTEGER NOT NULL,
   is_idle INTEGER DEFAULT 0,
-  synced INTEGER DEFAULT 0,
-  deleted_at TEXT,
-  device_name TEXT DEFAULT NULL, -- Nome do dispositivo/computador
-  UNIQUE(timestamp, project, file)
+  synced INTEGER DEFAULT 0,           -- 0 local / 1 na cloud
+  deleted_at TEXT DEFAULT NULL,       -- Soft delete
+  device_name TEXT DEFAULT NULL       -- Hostname do PC
 );
 
--- Tabela de configurações Pomodoro
-CREATE TABLE IF NOT EXISTS pomodoro_config (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  focusDuration INTEGER DEFAULT 45,
-  shortBreakDuration INTEGER DEFAULT 15,
-  longBreakDuration INTEGER DEFAULT 30,
-  sessionsUntilLongBreak INTEGER DEFAULT 4,
-  autoStartBreaks INTEGER DEFAULT 1,
-  autoStartFocus INTEGER DEFAULT 0,
-  enableSoundAlerts INTEGER DEFAULT 1,
-  enableDesktopNotifications INTEGER DEFAULT 1,
-  enableStatusBarTimer INTEGER DEFAULT 1,
-  dailyGoalSessions INTEGER DEFAULT 8,
-  updated_at TEXT NOT NULL
-);
-
--- Tabela de sessões Pomodoro
-CREATE TABLE IF NOT EXISTS pomodoro_sessions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  startTime TEXT NOT NULL,
-  endTime TEXT,
-  type TEXT NOT NULL,
-  duration INTEGER NOT NULL,
-  actualDuration INTEGER,
-  wasCompleted INTEGER DEFAULT 0,
-  wasInterrupted INTEGER DEFAULT 0,
-  interruptionReason TEXT,
-  project TEXT,
-  file TEXT
-);
-
--- Tabela de histórico de exclusões
+-- Histórico de exclusões
 CREATE TABLE IF NOT EXISTS deletion_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   project_name TEXT NOT NULL,
-  deletion_type TEXT NOT NULL,
-  records_count INTEGER NOT NULL,
   deleted_at TEXT NOT NULL,
-  restored_at TEXT
+  records_count INTEGER NOT NULL,
+  deletion_type TEXT NOT NULL,        -- 'soft' ou 'hard'
+  restored_at TEXT DEFAULT NULL
+);
+
+-- Metadados de sincronização (key-value)
+CREATE TABLE IF NOT EXISTS sync_metadata (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  value TEXT,
+  updated_at TEXT
 );
 ```
 
-**Métodos Principais:**
+**Migrações automáticas:**
+- `ALTER TABLE ... ADD COLUMN deleted_at` — compatibilidade com bancos antigos
+- `ALTER TABLE ... ADD COLUMN device_name` — introduzida na v0.5.0
+- Erros do tipo `duplicate column name` são ignorados silenciosamente
+
+**Métodos principais:**
 
 ```typescript
-class DatabaseManager {
-  // Inicialização
-  async initialize(context: vscode.ExtensionContext): Promise<void>
-  
-  // Operações CRUD
-  async saveActivityData(data: ActivityData): Promise<void>
-  async query(sql: string, params?: any[]): Promise<any[]>
-  
-  // Soft Delete
-  async softDeleteProject(projectName: string): Promise<number>
-  async restoreProjectHistory(projectName: string): Promise<number>
-  async hardDeleteProjectHistory(projectName: string): Promise<number>
-  
-  // Histórico
-  async logDeletion(projectName: string, type: 'soft' | 'hard', count: number): Promise<void>
-  async getDeletionHistory(): Promise<DeletionHistoryEntry[]>
-  
-  // Projetos Deletados
-  async getDeletedProjectsWithDays(): Promise<DeletedProjectInfo[]>
-  async cleanupExpiredProjects(): Promise<number>
-  
-  // Pomodoro
-  async savePomodoroConfig(config: PomodoroConfig): Promise<void>
-  async getPomodoroConfig(): Promise<PomodoroConfig | null>
-  async savePomodoroSession(session: PomodoroSession): Promise<void>
-  async getPomodoroSessions(filters?: SessionFilters): Promise<PomodoroSession[]>
-}
+// Core
+initialize(storagePath: string): Promise<void>
+saveActivityData(data: ActivityData): Promise<void>
+query(sql: string, params?: any[]): Promise<any[]>
+isInitialized(): boolean
+close(): Promise<void>
+
+// Soft delete
+softDeleteProject(projectName: string): Promise<number>
+restoreProjectHistory(projectName: string): Promise<number>
+hardDeleteProjectHistory(projectName: string): Promise<number>
+cleanupExpiredProjects(): Promise<number>
+
+// Histórico
+logDeletion(projectName: string, type: 'soft'|'hard', count: number): Promise<void>
+logRestoration(projectName: string, count: number): Promise<void>
+getDeletionHistory(): Promise<DeletionHistoryEntry[]>
+getDeletedProjectsWithDays(): Promise<DeletedProjectInfo[]>
+
+// Sincronização
+getUnsyncedEntries(limit?: number): Promise<TimeEntry[]>  // limite dinâmico
+markAsSynced(ids: number[]): Promise<void>
+insertSyncedEntry(entry: RemoteEntry): Promise<void>      // INSERT OR IGNORE
+getMetadata(key: string): Promise<string | null>
+setMetadata(key: string, value: string): Promise<void>
 ```
 
-**Auto-Delete de Projetos:**
-- **Prazo:** 30 dias após soft delete
-- **Processo:** `cleanupExpiredProjects()` remove permanentemente
-- **Auditoria:** Registra em `deletion_history` antes de deletar
+**Regra crítica (GEMINI.md):** *toda* consulta SQL deve viver dentro do `DatabaseManager`. Nenhum outro módulo escreve SQL cru.
 
 ---
 
-### 4. **statusBar.ts** - Interface de Status
+### 4. **statusBar.ts** — StatusBarManager
 
-**Classe:** `StatusBarManager`  
-**Padrão:** Singleton  
-**Cobertura:** 95%
+**Classe:** `StatusBarManager`
 
-**Funcionalidades:**
-```typescript
-class StatusBarManager {
-  // Criação e atualização
-  create(): void
-  update(timeInSeconds: number, file: string): void
-  formatTime(timeInSeconds: number): string
-  
-  // Efeitos visuais
-  applyVisualEffect(state: VisualState): void
-  
-  // Limpeza
-  dispose(): void
-}
-```
+**Estado:** `isSyncing: boolean` controla o ícone animado `$(sync~spin)` no status bar.
 
-**Formatação de Tempo:**
-```typescript
-formatTime(3665) // "1h 1m 5s"
-formatTime(65)   // "1m 5s"
-formatTime(5)    // "5s"
-```
-
-**Estados Visuais:**
-- IDLE (neutro)
-- FOCUS_ACTIVE (azul pulsante)
-- FOCUS_ENDING (amarelo alerta)
-- BREAK_ACTIVE (verde)
-- PAUSED (roxo)
-- NOTIFICATION (ciano)
+**Comportamento:**
+- Texto: `${syncIcon}$(clock) ${fileName} > ${HHh MMm SSs}`
+- Cor de fundo: `activeBackground` (rastreando) ou `warningBackground` (pausado)
+- Comando ao clicar: `my-time-trace-vscode.showStats`
+- `setSyncStatus(true/false)` é chamado pelo `SyncManager` antes/depois do `performSync`
 
 ---
 
-### 5. **stats.ts** - Geração de Relatórios
+### 5. **stats.ts** — StatsManager
 
-**Classe:** `StatsManager`  
-**Padrão:** Singleton  
-**Cobertura:** 95%
+**Classe:** `StatsManager`
 
-**Métodos Principais:**
-```typescript
-class StatsManager {
-  // Painéis
-  async showStats(): Promise<void>
-  async showSimpleStats(): Promise<void>
-  async showStatsWithFilters(): Promise<void>
-  async showDeletedProjects(): Promise<void>
-  
-  // Gerenciamento de projetos deletados
-  private async handleRestoreProject(projectName: string, panel: vscode.WebviewPanel): Promise<void>
-  private async handleHardDeleteProject(projectName: string, panel: vscode.WebviewPanel): Promise<void>
-  private async handleCleanupExpired(panel: vscode.WebviewPanel): Promise<void>
-  private async refreshDeletedProjectsPanel(panel: vscode.WebviewPanel): Promise<void>
-}
-```
+**Painéis gerados:**
+- `showStats()` → dashboard moderno unificado (grid 40/60 + donut + filtros)
+- `showDeletedProjects()` → painel de lixeira com auto-delete 30 dias
 
-**Tipos de Painéis:**
-1. **Simple Stats** - Estatísticas básicas sem filtros
-2. **Stats with Filters** - Dashboard moderno com filtros avançados
-3. **Deleted Projects** - Painel de projetos deletados com auto-delete
+**Handlers de mensagens (webview ↔ extension):**
+- Restaurar projeto → `handleRestoreProject`
+- Hard delete → `handleHardDeleteProject`
+- Cleanup manual → `handleCleanupExpired`
+- Refresh do painel → `refreshDeletedProjectsPanel`
 
 ---
 
-### 6. **commands.ts** - Registro de Comandos
+### 6. **commands.ts** — CommandManager
 
-**Classe:** `CommandManager`  
-**Padrão:** Static Class  
-**Cobertura:** 90%
+Classe estática com três métodos de registro:
 
-**Métodos:**
 ```typescript
-class CommandManager {
-  // Registro seguro (previne duplicação)
-  static safeRegisterCommand(commandId: string, handler: Function): vscode.Disposable
-  
-  // Registro em lote
-  static registerCommands(
-    startTracking: () => void,
-    pauseTracking: () => void,
-    showStats: () => void,
-    showDeletedProjects: () => void
-  ): vscode.Disposable[]
-}
+CommandManager.registerCommands(startTracking, pauseTracking, showStats, showDeletedProjects)
+CommandManager.registerSyncCommands(context, apiKeyManager, deviceManager, syncManager)
+CommandManager.registerSyncOperationsCommands(context, apiKeyManager, deviceManager, syncManager, dbManager)
 ```
 
-**Comandos Principais:**
-- `my-time-trace-vscode.startTracking` - Inicia rastreamento
-- `my-time-trace-vscode.pauseTracking` - Pausa rastreamento
-- `my-time-trace-vscode.showStats` - Exibe estatísticas
-- `my-time-trace-vscode.showDeletedProjects` - Painel de deletados
+Inclui `safeRegisterCommand` para evitar erro "command already exists" em re-ativações (útil em testes e reloads).
 
 ---
 
-### 7. **modal.ts** - Sistema de Modais
+### 7. **config.ts** — Configurações do Usuário
 
-**Classe:** `ModalManager`  
-**Padrão:** Singleton  
-**Cobertura:** 80%
-
-**Funcionalidades:**
 ```typescript
-class ModalManager {
-  // Gerenciamento de modais
-  async showModal(config: ModalConfig): Promise<void>
-  async closeModal(id: string): Promise<void>
-  async closeAllModals(): Promise<void>
-  
-  // Comunicação
-  async sendMessageToModal(id: string, message: any): Promise<boolean>
-  async updateModalContent(id: string, content: string): Promise<boolean>
-  
-  // Estado
-  isModalActive(id: string): boolean
+export interface UserConfig {
+  IDLE_TIMEOUT_MS: number;
+  autoStart: boolean;
+  showInStatusBar: boolean;
+  syncEnabled: boolean;
 }
 ```
 
-**Interface ModalConfig:**
+Lê de `vscode.workspace.getConfiguration("myTimeTraceVSCode")`.
+
+---
+
+### 8. **deviceInfo.ts** — Hardware Info
+
+Exporta funções puras:
+- `getDeviceName()` → `os.hostname()`
+- `getDeviceInfo()` → `{ hostname, platform, arch, type, release }`
+
+---
+
+## ☁️ Sistema de Sincronização em Nuvem
+
+### Arquitetura dos Managers
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    extension.ts                     │
+│  (injeta dependências e chama syncManager.init)     │
+└──────────────────────┬──────────────────────────────┘
+                       │
+     ┌─────────────────┼─────────────────┬────────────┐
+     ▼                 ▼                 ▼            ▼
+┌──────────┐   ┌──────────────┐   ┌────────────┐  ┌──────────┐
+│  ApiKey  │   │   Device     │   │   Sync     │  │   Retry  │
+│ Manager  │   │   Manager    │   │  Manager   │◄─│ Manager  │
+└────┬─────┘   └──────┬───────┘   └──────┬─────┘  └──────────┘
+     │                │                  │
+     │ SecretStorage  │ SecretStorage    │ fetch(API_BASE_URL)
+     │ (mtt_xxx…)     │ (UUID v4)        │
+     ▼                ▼                  ▼
+  API Key          device_key      POST /sync/push
+  (32 chars        (UUID único     GET  /sync/pull
+   + prefixo        por PC)        GET  /sync/config
+   mtt_)                           GET  /sync/status
+                                   POST /sync/register
+```
+
+### 1. **ApiKeyManager**
+
+Armazena API Key no `vscode.context.secrets` (criptografado pelo SO: Keychain, Credential Manager, libsecret).
+
+**Formato validado:** regex `/^mtt_[a-z0-9]{32}$/i`
+
+**Métodos:** `setApiKey`, `getApiKey`, `revokeApiKey`, `hasApiKey`, `getMaskedApiKey`, `testConnection`.
+
+### 2. **DeviceManager**
+
+Gera UUID v4 único por instalação e o armazena no SecretStorage. Também registra hardware no backend via `POST /sync/register`.
+
+**Métodos:** `getOrCreateDeviceKey`, `revokeDeviceKey`, `hasDeviceKey`, `getDeviceInfo`, `getDeviceName`, `registerDevice`, `getSyncStatus`.
+
+### 3. **SyncManager**
+
+Orquestra toda a sincronização bidirecional:
+
+**Ciclo `performSync()`:**
+1. Verifica se já existe sync em andamento (`isSyncing` guard)
+2. Ativa ícone `$(sync~spin)` na status bar
+3. **Loop:** enquanto `result.syncedCount > 0`:
+   - `pushEntries(apiKey)` — envia batch via `POST /sync/push`
+   - `pullEntries(apiKey)` — recebe batch via `GET /sync/pull?since=...`
+   - `retryManager.execute(...)` encapsula as chamadas
+4. Marca TODAS entries enviadas como `synced=1` (inclusive conflitos — já estão na cloud)
+5. Atualiza `sync_metadata.last_pull_timestamp` com `syncedAt` do servidor
+
+**Config dinâmica (`GET /sync/config`):**
+- `syncTimes: string[]` → horários de auto-sync (ex: `["08:00", "17:00"]`)
+- `batchLimit: number` → entries por request
+- `maxRetries: number` → passado ao `SyncRetryManager`
+- `retryDelayMs: number` → delay entre tentativas
+
+Config é persistida em `sync_metadata` para uso offline (fallback: `constants.ts`).
+
+**Auto-sync:** `setInterval` de 60s compara `HH:MM` atual com `syncTimes`.
+
+### 4. **SyncRetryManager**
+
+Wrapper genérico de retry:
 ```typescript
-interface ModalConfig {
-  id: string;
-  title: string;
-  content?: string;
-  customContent?: string;
-  buttons?: ModalButton[];
-  size?: 'small' | 'medium' | 'large';
-  width?: string;
-  height?: string;
-}
+await retryManager.execute(async () => {
+  const r = await syncManager.pushEntries(...);
+  await syncManager.pullEntries(...);
+  return r;
+});
+```
+
+- `maxRetries` clamp `[1, 10]`, `retryDelayMs` clamp `[1000, 60000]`
+- Após falha total: `vscode.window.showWarningMessage` com ações "Tentar Novamente" e "Ver Detalhes"
+
+### Constantes (`src/config/constants.ts`)
+
+```typescript
+API_BASE_URL = 'http://localhost:8989';   // Desenvolvimento
+REQUEST_TIMEOUT = 30000;                   // 30s
+SYNC_BATCH_LIMIT = 200;                    // Entries por batch
+SYNC_DEFAULT_TIMES = ['08:00', '17:00'];   // Auto-sync padrão
+SECRET_KEYS = {
+  API_KEY: 'mytimetrace.apiKey',
+  DEVICE_KEY: 'mytimetrace.deviceKey'
+};
+CLEANUP_INTERVAL = 24 * 60 * 60 * 1000;    // 24h
+CLEANUP_INITIAL_DELAY = 5 * 60 * 1000;     // 5min
 ```
 
 ---
 
 ## 🎨 Sistema de Interface (UI)
 
-### 1. **statsPanel.ts** - Painel de Estatísticas
+### 1. **statsPanel.ts** — Dashboard Moderno
 
-**Funcionalidades:**
-- ✅ **Dashboard Moderno** - Layout grid 40/60 responsivo
-- ✅ **Gráficos Donut** - Canvas HTML5 com cores dinâmicas
-- ✅ **Filtros Avançados** - Data inicial/final + seleção múltipla de projetos
-- ✅ **Projetos Expansíveis** - Interface colapsável para organização
-- ✅ **Temas VS Code** - Integração completa com variáveis CSS
+- Layout **grid 40/60** responsivo
+- **Gráfico donut** (Canvas HTML5) com tooltips e atualização dinâmica
+- **Filtros:** data inicial/final + seleção múltipla de projetos
+- **Tabela expansível** com ordenação por nome, tempo ou nº de arquivos
+- **Cards** de estatísticas (Total, Hoje, Arquivos, Esta Semana)
+- **Paleta de 50 cores** — `getProjectColor()` garante cor estável por projeto independente de filtros
+- Tema integrado com variáveis CSS do VS Code
 
-**Métodos Principais:**
-```typescript
-class StatsPanel {
-  // Geração de painéis
-  static createStatsPanel(projectsData: ProjectsData): vscode.WebviewPanel
-  static createStatsWithFiltersPanel(rawData: TimeEntry[], availableProjects: string[]): vscode.WebviewPanel
-  
-  // Filtragem de dados
-  static filterData(data: TimeEntry[], filters: StatsFilters): TimeEntry[]
-  static convertToProjectsData(entries: TimeEntry[]): ProjectsData
-  
-  // Formatação
-  static formatTime(timeInSeconds: number): string
-  static formatFilePath(filePath: string, projectName: string): string
-}
-```
+### 2. **deletedProjectsPanel.ts** — Lixeira
 
-**Paleta de Cores (Gráfico Donut):**
-```javascript
-const colors = [
-  '#1a7f37', // Verde
-  '#4A90E2', // Azul
-  '#F5A623', // Laranja
-  '#7ED321', // Verde claro
-  '#BD10E0', // Roxo
-  '#50E3C2', // Ciano
-  '#F8E71C'  // Amarelo
-];
-```
+Sistema de cores por urgência:
 
----
+| Dias restantes | Badge          | Cor     | Animação |
+|----------------|---------------|---------|----------|
+| 15–30          | ✅ RECUPERÁVEL | Verde   | —        |
+| 8–14           | ⚠️ EXPIRANDO  | Amarelo | —        |
+| 1–7            | 🚨 CRÍTICO    | Vermelho | Pulse 2s |
+| ≤ 0            | ❌ EXPIRADO   | Cinza   | Opacidade 60% |
 
-### 2. **deletedProjectsPanel.ts** - Painel de Projetos Deletados
+Refresh automático a cada 60s. Ações por card: **Restaurar**, **Deletar permanentemente**.
 
-**Funcionalidades:**
-- ✅ **Visualização Intuitiva** - Cards com informações detalhadas
-- ✅ **Restauração 1 Clique** - Botão "Restaurar Projeto"
-- ✅ **Auto-Delete 30 Dias** - Limpeza automática
-- ✅ **Alertas Visuais** - Cores por urgência (verde/amarelo/vermelho)
-- ✅ **Estatísticas em Tempo Real** - Dashboard resumido
-- ✅ **Refresh Automático** - Atualização a cada 60 segundos
+### 3. **cssLoader.ts** + **dashboard-styles.css**
 
-**Sistema de Cores por Urgência:**
-
-| Urgência | Dias Restantes | Badge | Cor Barra | Animação |
-|----------|---------------|-------|-----------|----------|
-| 🟢 Normal | 15-30 | ✅ RECUPERÁVEL | Verde | - |
-| 🟡 Warning | 8-14 | ⚠️ EXPIRANDO | Amarelo | - |
-| 🔴 Critical | 1-7 | 🚨 CRÍTICO | Vermelho | Pulse 2s |
-| ⚫ Expired | ≤0 | ❌ EXPIRADO | Cinza | Opacidade 60% |
-
-**Estrutura do Painel:**
-```
-┌────────────────────────────────────────┐
-│ 🗑️ Projetos Deletados [🔄] [🧹]        │
-├────────────────────────────────────────┤
-│ Stats: 3 Recuperáveis | 0 Expirados    │
-├────────────────────────────────────────┤
-│ ┌──────────────────────────────────┐   │
-│ │ MeuProjeto [✅ RECUPERÁVEL]      │   │
-│ │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ (50%) │   │
-│ │ 15 dias | 15 restantes          │   │
-│ │ [♻️ Restaurar] [💥 Deletar]     │   │
-│ └──────────────────────────────────┘   │
-└────────────────────────────────────────┘
-```
-
----
-
-### 3. **focusCompleteModal.ts** - Modal de Foco Completo
-
-**Funcionalidades:**
-- ✅ Modal responsivo ao completar sessão de foco
-- ✅ 3 botões de ação: Fazer Pausa, Continuar Foco, Configurações
-- ✅ Sistema de callbacks integrado
-- ✅ Animações e feedback visual
-- ✅ Suporte à internacionalização
-
-**Interface:**
-```typescript
-interface FocusCompleteOptions {
-  focusDuration: number;
-  canContinue: boolean;
-  continueMinutes?: number;
-}
-```
-
----
-
-### 4. **pomodoroSettingsModal.ts** - Configurações Pomodoro
-
-**Funcionalidades:**
-- ✅ Interface completa com 764 linhas
-- ✅ 4 presets predefinidos (Clássico, Foco Profundo, Sprint, Personalizado)
-- ✅ Controles avançados: sliders + campos numéricos
-- ✅ Sistema de validação em tempo real
-- ✅ Persistência automática no SQLite
-
-**Presets:**
-```typescript
-const presets = {
-  classic: { focus: 25, shortBreak: 5, longBreak: 15 },
-  deepFocus: { focus: 45, shortBreak: 15, longBreak: 30 },
-  sprint: { focus: 15, shortBreak: 3, longBreak: 10 },
-  custom: { /* valores do usuário */ }
-};
-```
-
----
-
-## 🍅 Sistema Pomodoro
-
-### Arquitetura Completa
-
-**Status:** 85% Implementado  
-**Última Atualização:** 25 de julho de 2025
-
-### 1. **pomodoro.ts** - Core Manager
-
-**Classe:** `PomodoroManager`  
-**Padrão:** Singleton  
-**Cobertura:** 97%
-
-**Estados do Sistema (6 estados):**
-```typescript
-enum PomodoroState {
-  INACTIVE = 'inactive',
-  FOCUS = 'focus',
-  FOCUS_PAUSED = 'focus_paused',
-  SHORT_BREAK = 'short_break',
-  LONG_BREAK = 'long_break',
-  BREAK_EXTENDED = 'break_extended'
-}
-```
-
-**Métodos Principais:**
-```typescript
-class PomodoroManager {
-  // Configuração
-  async initialize(): Promise<void>
-  async loadConfig(): Promise<void>
-  async updateConfig(config: Partial<PomodoroConfig>): Promise<void>
-  
-  // Controle de sessão
-  async startFocusSession(): Promise<void>
-  async startBreakSession(type: 'short' | 'long'): Promise<void>
-  async pauseSession(): Promise<void>
-  async resumeSession(): Promise<void>
-  async stopSession(): Promise<void>
-  
-  // Estado
-  getCurrentState(): PomodoroState
-  getRemainingTime(): number
-  isActive(): boolean
-  
-  // Eventos
-  setEvents(events: PomodoroEvents): void
-  
-  // Cleanup
-  dispose(): void
-}
-```
-
-**Sistema de Eventos:**
-```typescript
-interface PomodoroEvents {
-  onFocusStart?: (duration: number) => void;
-  onFocusComplete?: () => void;
-  onBreakStart?: (duration: number, type: 'short' | 'long') => void;
-  onBreakComplete?: () => void;
-}
-```
-
-**Auto-Start Inteligente:**
-```typescript
-// 4 condições necessárias:
-1. autoStartFocus === true
-2. Estado INACTIVE
-3. Arquivo é de código (isCodeFile())
-4. Usuário está codificando ativamente (timeTrace.isActivelyCoding())
-```
-
----
-
-### 2. **desktopNotifications.ts** - Notificações
-
-**Classe:** `DesktopNotificationManager`  
-**Padrão:** Singleton  
-**Cobertura:** 80%
-
-**Tipos de Notificação:**
-```typescript
-class DesktopNotificationManager {
-  // Notificações do Pomodoro
-  async showFocusStartNotification(duration: number): Promise<void>
-  async showFocusCompleteNotification(): Promise<void>
-  async showBreakStartNotification(duration: number): Promise<void>
-  async showBreakCompleteNotification(): Promise<void>
-  async showPomodoroCompleteNotification(): Promise<void>
-}
-```
-
-**Integração Automática (em extension.ts):**
-```typescript
-pomodoroManager.setEvents({
-  onFocusStart: async (duration) => {
-    await notificationManager.showFocusStartNotification(duration);
-  },
-  onBreakStart: async (duration, type) => {
-    await notificationManager.showBreakStartNotification(duration);
-  },
-  onFocusComplete: async () => {
-    await notificationManager.showFocusCompleteNotification();
-  },
-  onBreakComplete: async () => {
-    await notificationManager.showBreakCompleteNotification();
-  }
-});
-```
-
----
-
-### 3. **Sistema de Áudio**
-
-#### **soundManager.ts** - Gerenciador Principal
-
-```typescript
-class SoundManager {
-  static getInstance(): SoundManager
-  async initialize(context: vscode.ExtensionContext): Promise<void>
-  async playSound(type: SoundType, theme?: SoundTheme): Promise<void>
-  dispose(): void
-}
-
-enum SoundType {
-  FOCUS_START = 'focus_start',
-  FOCUS_COMPLETE = 'focus_complete',
-  BREAK_START = 'break_start',
-  BREAK_COMPLETE = 'break_complete',
-  NOTIFICATION = 'notification',
-  WARNING = 'warning',
-  SUCCESS = 'success',
-  ERROR = 'error'
-}
-
-enum SoundTheme {
-  CLASSIC = 'classic',
-  MODERN = 'modern',
-  MINIMAL = 'minimal',
-  NATURAL = 'natural'
-}
-```
-
-#### **Estrutura de Sons:**
-```
-sounds/
-├── classic/           # Sons clássicos harmônicos
-│   ├── focus_start.wav
-│   ├── focus_complete.wav
-│   ├── break_start.wav
-│   ├── break_complete.wav
-│   ├── notification.wav
-│   ├── warning.wav
-│   ├── success.wav
-│   └── error.wav
-├── modern/            # Sons eletrônicos
-├── minimal/           # Tons simples
-└── natural/           # Harmônicos naturais
-```
-
-#### **Sistema de Fallback:**
-```
-1. Web Audio API (osciladores reais)
-2. System Beeps (beeps do SO)
-3. Simulação (logs no console)
-```
-
----
-
-### 4. **visualEffectsManager.ts** - Efeitos Visuais
-
-**Classe:** `VisualEffectsManager`  
-**Padrão:** Singleton  
-**Cobertura:** 70%
-
-**Estados Visuais (10 estados):**
-```typescript
-enum VisualState {
-  IDLE,
-  FOCUS_ACTIVE,
-  FOCUS_ENDING,
-  BREAK_ACTIVE,
-  BREAK_ENDING,
-  PAUSED,
-  NOTIFICATION,
-  SUCCESS,
-  WARNING,
-  ERROR
-}
-```
-
-**Temas Visuais (4 temas):**
-```typescript
-const themes = {
-  productivity: {
-    focus: '#4A90E2',      // Azul
-    success: '#7ED321',    // Verde
-    warning: '#F5A623'     // Laranja
-  },
-  dark: {
-    focus: '#5DADE2',
-    success: '#58D68D'
-  },
-  highContrast: {
-    focus: '#00FF00',
-    success: '#00FF00',
-    warning: '#FFFF00',
-    error: '#FF0000'
-  },
-  minimal: {
-    focus: '#333333',
-    success: '#777777'
-  }
-};
-```
-
-**Animações:**
-- PULSE - Pulsação contínua
-- FADE - Transição suave
-- BLINK - Piscada rápida
-- FLASH - Flash colorido temporário
+Loader de CSS usado pelos painéis — copiado para `out/ui/` pelo script `copy-assets`.
 
 ---
 
 ## 💾 Gerenciamento de Dados
 
-### Sistema de Soft Delete
-
-**Fluxo de Exclusão Reversível:**
+### Fluxo de Soft Delete
 
 ```
 1. Usuário deleta projeto → softDeleteProject()
-2. Registros marcados com deleted_at (timestamp)
-3. Entrada criada em deletion_history
-4. Projeto aparece no painel de deletados
-5. Usuário tem 30 dias para restaurar
-6. Após 30 dias → cleanupExpiredProjects() remove permanentemente
+2. time_entries.deleted_at = datetime('now')
+3. INSERT em deletion_history (type='soft')
+4. Projeto aparece no painel de lixeira
+5. 30 dias de janela de restauração
+6. Após 30 dias → cleanupExpiredProjects() (24h em 24h)
+   → DELETE FROM time_entries WHERE project=? AND deleted_at IS NOT NULL
+   → INSERT em deletion_history (type='hard')
 ```
 
-**Métodos:**
-```typescript
-// Soft Delete (reversível)
-async softDeleteProject(projectName: string): Promise<number> {
-  const sql = `UPDATE time_entries 
-               SET deleted_at = datetime('now') 
-               WHERE project = ? AND deleted_at IS NULL`;
-  await this.query(sql, [projectName]);
-  await this.logDeletion(projectName, 'soft', affectedRows);
-  return affectedRows;
-}
+Restauração: `UPDATE time_entries SET deleted_at = NULL` + `UPDATE deletion_history SET restored_at = datetime('now')`.
 
-// Restaurar projeto
-async restoreProjectHistory(projectName: string): Promise<number> {
-  const sql = `UPDATE time_entries 
-               SET deleted_at = NULL 
-               WHERE project = ? AND deleted_at IS NOT NULL`;
-  await this.query(sql, [projectName]);
-  await this.logRestoration(projectName, restoredRows);
-  return restoredRows;
-}
+### Interação com Sync
 
-// Hard Delete (permanente)
-async hardDeleteProjectHistory(projectName: string): Promise<number> {
-  const sql = `DELETE FROM time_entries 
-               WHERE project = ?`;
-  await this.logDeletion(projectName, 'hard', deletedRows);
-  await this.query(sql, [projectName]);
-  return deletedRows;
-}
-
-// Limpeza automática (>30 dias)
-async cleanupExpiredProjects(): Promise<number> {
-  const expiredProjects = await this.getDeletedProjectsWithDays();
-  const toDelete = expiredProjects.filter(p => p.days_since_deletion > 30);
-  
-  for (const project of toDelete) {
-    await this.logDeletion(project.project, 'hard', project.records_count);
-    await this.query(
-      `DELETE FROM time_entries 
-       WHERE project = ? AND deleted_at IS NOT NULL`,
-      [project.project]
-    );
-  }
-  
-  return toDelete.length;
-}
-```
-
-### Histórico de Auditoria
-
-**Tabela:** `deletion_history`
-
-**Estrutura:**
-```sql
-CREATE TABLE deletion_history (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  project_name TEXT NOT NULL,
-  deletion_type TEXT NOT NULL,  -- 'soft' ou 'hard'
-  records_count INTEGER NOT NULL,
-  deleted_at TEXT NOT NULL,
-  restored_at TEXT              -- NULL se não restaurado
-);
-```
-
-**Métodos:**
-```typescript
-async logDeletion(
-  projectName: string, 
-  type: 'soft' | 'hard', 
-  count: number
-): Promise<void> {
-  const sql = `INSERT INTO deletion_history 
-               (project_name, deletion_type, records_count, deleted_at) 
-               VALUES (?, ?, ?, datetime('now'))`;
-  await this.query(sql, [projectName, type, count]);
-}
-
-async logRestoration(
-  projectName: string, 
-  count: number
-): Promise<void> {
-  const sql = `UPDATE deletion_history 
-               SET restored_at = datetime('now') 
-               WHERE project_name = ? AND restored_at IS NULL`;
-  await this.query(sql, [projectName]);
-}
-
-async getDeletionHistory(): Promise<DeletionHistoryEntry[]> {
-  return await this.query(
-    `SELECT * FROM deletion_history ORDER BY deleted_at DESC`
-  );
-}
-```
+- Entries com `deleted_at IS NOT NULL` **não** são enviadas em `getUnsyncedEntries`
+- Pull recebe entries de outros devices com `INSERT OR IGNORE` (evita duplicatas)
+- `sync_metadata.last_pull_timestamp` define o ponto `since` da próxima sincronização
 
 ---
 
 ## ⌨️ Comandos e Configurações
 
-### Comandos Principais (4)
+### Comandos Principais
+
+| Comando | Título | Ícone |
+|---------|--------|-------|
+| `my-time-trace-vscode.startTracking` | Iniciar Rastreamento | `$(play)` |
+| `my-time-trace-vscode.pauseTracking` | Pausar Rastreamento | `$(debug-pause)` |
+| `my-time-trace-vscode.showStats` | Exibir Estatísticas | `$(graph)` |
+| `my-time-trace-vscode.showDeletedProjects` | Projetos Deletados | `$(trash)` |
+
+### Comandos de Sincronização
+
+| Comando | Título | Ícone |
+|---------|--------|-------|
+| `my-time-trace-vscode.setApiKey` | Configurar API Key | `$(key)` |
+| `my-time-trace-vscode.viewApiKey` | Ver API Key (mascarada) | `$(eye)` |
+| `my-time-trace-vscode.revokeApiKey` | Revogar API Key | `$(trash)` |
+| `my-time-trace-vscode.syncNow` | Sincronizar Agora | `$(sync)` |
+| `my-time-trace-vscode.viewSyncStatus` | Status de Sincronização | `$(dashboard)` |
+
+### Configurações (settings.json)
 
 ```json
 {
-  "my-time-trace-vscode.startTracking": "Iniciar Rastreamento",
-  "my-time-trace-vscode.pauseTracking": "Pausar Rastreamento",
-  "my-time-trace-vscode.showStats": "Exibir Estatísticas",
-  "my-time-trace-vscode.showDeletedProjects": "Projetos Deletados"
-}
-```
-
-### Comandos Pomodoro (4)
-
-```json
-{
-  "my-time-trace-vscode.startPomodoroFocus": "Iniciar Foco Pomodoro",
-  "my-time-trace-vscode.pausePomodoroSession": "Pausar Sessão",
-  "my-time-trace-vscode.stopPomodoroSession": "Parar Sessão",
-  "my-time-trace-vscode.showPomodoroConfig": "Configurações Pomodoro"
-}
-```
-
-### Comandos de Desenvolvimento (16)
-
-```json
-{
-  "my-time-trace-vscode.testPomodoroIntegration": "Test Pomodoro Integration",
-  "my-time-trace-vscode.testRealPomodoro": "Test Real Pomodoro",
-  "my-time-trace-vscode.testPomodoroSettings": "Test Pomodoro Settings",
-  "my-time-trace-vscode.testPomodoroNotifications": "Test Pomodoro Notifications",
-  "my-time-trace-vscode.testPomodoroAutoNotifications": "Test Auto Notifications",
-  "my-time-trace-vscode.testSoundSystem": "Test Sound System",
-  "my-time-trace-vscode.testSyntheticSounds": "Test Synthetic Sounds",
-  "my-time-trace-vscode.testWavSounds": "Test WAV Sounds",
-  "my-time-trace-vscode.testVisualEffects": "Test Visual Effects",
-  "my-time-trace-vscode.testRealAudio": "Test Real Audio",
-  "my-time-trace-vscode.testSystemBeeps": "Test System Beeps",
-  "my-time-trace-vscode.testDesktopNotifications": "Test Desktop Notifications",
-  "my-time-trace-vscode.testModal": "Test Modal System",
-  "my-time-trace-vscode.testFocusCompleteModal": "Test Focus Complete Modal",
-  "my-time-trace-vscode.previewSound": "Preview Sound",
-  "my-time-trace-vscode.testSpecialSounds": "Test Special Sounds"
-}
-```
-
-### Configurações do Usuário
-
-```json
-{
-  "myTimeTraceVSCode.idleTimeout": {
-    "type": "number",
-    "default": 5,
-    "description": "Tempo de inatividade (minutos) antes de pausar"
-  },
-  "myTimeTraceVSCode.autoStart": {
-    "type": "boolean",
-    "default": true,
-    "description": "Iniciar rastreamento automaticamente"
-  },
-  "myTimeTraceVSCode.showInStatusBar": {
-    "type": "boolean",
-    "default": true,
-    "description": "Exibir timer na barra de status"
-  },
-  "myTimeTrace.notifications.enabled": {
-    "type": "boolean",
-    "default": true,
-    "description": "Habilitar notificações desktop"
-  },
-  "myTimeTrace.notifications.soundEnabled": {
-    "type": "boolean",
-    "default": true,
-    "description": "Habilitar som nas notificações"
-  }
+  "myTimeTraceVSCode.idleTimeout": 5,           // min (padrão 5)
+  "myTimeTraceVSCode.autoStart": true,
+  "myTimeTraceVSCode.showInStatusBar": true,
+  "myTimeTraceVSCode.syncEnabled": true,        // precisa de API Key
+  "myTimeTraceVSCode.syncInterval": 60          // min, 5-1440
 }
 ```
 
@@ -1021,446 +537,139 @@ async getDeletionHistory(): Promise<DeletionHistoryEntry[]> {
 
 ## 🧪 Testes e Qualidade
 
-### Estatísticas de Testes
+### Suítes de Teste
 
-**Última Atualização:** 25 de julho de 2025  
-**Status:** ✅ 23 testes passando, 0 falhando  
-**Cobertura:** 88%
+| Arquivo | Foco |
+|---------|------|
+| `extension.test.ts` | Ativação, tracking, idle, status bar, stats, integração |
+| `apiKeyManager.test.ts` | Validação de formato, SecretStorage, testConnection |
+| `deviceManager.test.ts` | UUID, registro no backend, status |
+| `syncRetryManager.test.ts` | Retry logic, clamp de config, notificação de falha |
+| `syncCommands.test.ts` | Comandos `syncNow`, `viewSyncStatus`, integração status bar |
+| `sync-loop.test.ts` | Loop automático processando todas entries pendentes |
 
-### Distribuição de Testes
+**Cobertura declarada:** **88%** (módulos de sync com foco dedicado).
 
-```
-📊 Suíte Principal (15 testes):
-  1. Should activate the extension correctly
-  2. Should start and pause tracking
-  3. Should track time for an active file
-  4. Should switch tracking to a new file
-  5. Should handle idle time correctly
-  6. Should show stats panel
-  7. Should update status bar correctly
-  8. Should update status bar in real time
-  9. Should format time correctly
-  10. Should handle text document changes
-  11. Should handle window state changes
-  12. Should detect idle time
-  13. DatabaseManager - query() SQL tests
-  14. StatsManager - display tests
-  15. timeTrace - integration tests
-
-🍅 Suíte Pomodoro (7 testes):
-  16. Should create and retrieve Pomodoro config
-  17. Should update existing config
-  18. Should save and retrieve Pomodoro session
-  19. Should filter sessions by type
-  20. Should update existing session
-  21. Should return null when no config
-  22. Should return empty array when no sessions
-
-🔔 Testes de Eventos Automáticos (5 testes):
-  Arquivo: test/pomodoro-events.test.ts
-  1. onFocusStart Event test
-  2. onBreakStart Event test
-  3. Multiple events in sequence test
-  4. Integration with notifications test
-  5. Error handling test
-
-🔲 Testes de Modais (3 testes):
-  Arquivo: test/modal-system.test.ts
-  1. Modal creation and display
-  2. Modal communication
-  3. Modal cleanup
-
-📊 Total: 30+ cenários de teste validados
-```
-
-### Cobertura por Módulo
-
-| Módulo | Cobertura | Status |
-|--------|-----------|--------|
-| extension.ts | 95% | 🟢 Excelente |
-| timeTrace.ts | 95% | 🟢 Excelente |
-| database.ts | 95% | 🟢 Excelente |
-| statusBar.ts | 95% | 🟢 Excelente |
-| stats.ts | 95% | 🟢 Excelente |
-| pomodoro.ts | 97% | 🟢 Excelente |
-| commands.ts | 90% | 🟢 Bom |
-| config.ts | 80% | 🟢 Bom |
-| modal.ts | 80% | 🟢 Bom |
-| desktopNotifications.ts | 80% | 🟢 Bom |
-| soundManager.ts | 70% | 🟡 Indireto |
-| visualEffectsManager.ts | 70% | 🟡 Indireto |
-| statsPanel.ts | 60% | 🟡 Parcial |
-
-### Execução de Testes
+### Execução
 
 ```bash
-# Compilar e executar testes
-npm test
-
-# Compilar apenas
-npm run compile
-
-# Watch mode
-npm run watch
-
-# Lint
-npm run lint
+npm test               # compila + lint + executa vscode-test
+npm run compile        # tsc -p ./ && copy-assets
+npm run watch          # tsc -watch
+npm run lint           # eslint src
+npm run package        # vsce package → .vsix
 ```
 
 ---
 
 ## 📏 Padrões e Convenções
 
-### Convenções TypeScript
+### TypeScript
 
-**Sintaxe Moderna:**
-```typescript
-// ✅ Usar async/await
-async function getData(): Promise<Data> {
-  const result = await db.query('SELECT * FROM table');
-  return result;
-}
-
-// ✅ Destructuring
-const { focusDuration, shortBreakDuration } = config;
-
-// ✅ Template literals
-console.log(`Sessão de ${duration} minutos iniciada`);
-
-// ✅ Optional chaining
-const duration = config?.focusDuration ?? 45;
-```
-
-**Tipagem Estrita:**
-```typescript
-// Interfaces bem definidas
-interface PomodoroConfig {
-  focusDuration: number;
-  shortBreakDuration: number;
-  longBreakDuration: number;
-  sessionsUntilLongBreak: number;
-  autoStartBreaks: boolean;
-  autoStartFocus: boolean;
-  enableSoundAlerts: boolean;
-  enableDesktopNotifications: boolean;
-  enableStatusBarTimer: boolean;
-  dailyGoalSessions: number;
-}
-
-// Enums para estados
-enum PomodoroState {
-  INACTIVE = 'inactive',
-  FOCUS = 'focus',
-  FOCUS_PAUSED = 'focus_paused'
-}
-```
+- **Tipagem estrita** em todas as interfaces (`UserConfig`, `ActivityData`, etc.)
+- **async/await** em vez de callbacks onde possível (exceção: SQLite API interna)
+- **Named exports** — nenhum `export default`
+- **Barrel files** centralizam re-exports
 
 ### Nomenclatura
 
-**Classes:** PascalCase
-```typescript
-class DatabaseManager { }
-class StatusBarManager { }
-class PomodoroManager { }
-```
+| Elemento | Convenção | Exemplo |
+|----------|-----------|---------|
+| Classes | PascalCase | `DatabaseManager`, `SyncManager` |
+| Métodos/variáveis | camelCase | `startTracking`, `lastActiveTime` |
+| Constantes globais | UPPER_SNAKE_CASE | `SYNC_BATCH_LIMIT` |
+| Arquivos TS | camelCase | `apiKeyManager.ts` |
+| Arquivos CSS | kebab-case | `dashboard-styles.css` |
 
-**Métodos/Funções:** camelCase
-```typescript
-async startTracking(): Promise<void>
-async showStats(): Promise<void>
-getCurrentState(): PomodoroState
-```
+### Logs Estruturados
 
-**Constantes:** UPPER_SNAKE_CASE
-```typescript
-const IDLE_TIMEOUT = 5 * 60 * 1000;
-const DEFAULT_CONFIG: PomodoroConfig = { ... };
-```
-
-**Arquivos:** camelCase para modules, kebab-case para CSS
-```typescript
-timeTrace.ts
-database.ts
-modal-styles.css
-dashboard-styles.css
-```
-
-### Estrutura de Módulos
-
-**Exports Named:**
-```typescript
-// ✅ Preferir exports nomeados
-export class DatabaseManager { }
-export interface ActivityData { }
-
-// ❌ Evitar default exports
-export default DatabaseManager;
-```
-
-**Barrel Files:**
-```typescript
-// src/modules/index.ts
-export { DatabaseManager, ActivityData } from "./database";
-export { StatusBarManager } from "./statusBar";
-export { timeTrace } from "./timeTrace";
-export { StatsManager } from "./stats";
-```
-
-**Interface First:**
-```typescript
-// Definir interfaces antes das implementações
-interface ModalConfig {
-  id: string;
-  title: string;
-  content?: string;
-}
-
-class ModalManager {
-  async showModal(config: ModalConfig): Promise<void> { }
-}
-```
+Prefixos emoji para categorização rápida em Output:
+- `🚀` start, `✅` ok, `⚠️` warning, `❌` error, `🔄` sync, `📊` stats, `🧹` cleanup, `🔐` secret, `💻` device, `📤` push, `📥` pull
 
 ### Error Handling
 
-**Try/Catch Robusto:**
-```typescript
-async saveActivityData(data: ActivityData): Promise<void> {
-  try {
-    const sql = `INSERT INTO time_entries ...`;
-    await this.query(sql, [data.timestamp, data.project]);
-    console.log('✅ Dados salvos com sucesso');
-  } catch (error) {
-    console.error('❌ Erro ao salvar dados:', error);
-    throw error;
-  }
-}
-```
+Try/catch em operações async que tocam I/O (DB, HTTP). Notificações do usuário via `vscode.window.showWarningMessage` apenas no nível de orquestração (SyncRetryManager, extension.ts).
 
-**Logs Estruturados:**
-```typescript
-// Prefixos emoji para categorização
-console.log('🚀 Iniciando extensão...');
-console.log('✅ Operação concluída');
-console.log('⚠️ Aviso importante');
-console.error('❌ Erro crítico:', error);
-console.log('🔍 Debug:', value);
-```
+### Regras Importantes
+
+- **SQL apenas em `DatabaseManager`** (GEMINI.md §2)
+- **Nunca usar `confirm()`/`alert()`/`prompt()`** em webviews — sandbox do VS Code bloqueia. Criar modais customizados em HTML ou usar `vscode.window.showInformationMessage` no backend.
+- **i18n obrigatório** para strings visíveis ao usuário via `vscode-nls` + `package.nls.json` / `package.nls.pt-br.json`.
 
 ### Design System
 
-**Variáveis CSS VSCode:**
+Variáveis CSS do VS Code para garantir aderência aos temas:
 ```css
-:root {
-  --vscode-editor-background: cor de fundo principal;
-  --vscode-editor-foreground: cor do texto principal;
-  --vscode-button-background: cor de fundo dos botões;
-  --vscode-input-background: cor de fundo dos inputs;
-  --vscode-panel-border: cor das bordas;
-  --vscode-focusBorder: cor de foco dos elementos;
-}
-```
-
-**Layout Responsivo:**
-```css
-/* Grid principal */
-.overview {
-  display: grid;
-  grid-template-columns: 40% 60%;
-  gap: 20px;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .overview {
-    grid-template-columns: 1fr;
-  }
-}
-```
-
-**Animações Suaves:**
-```css
-.card {
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
+var(--vscode-editor-background)
+var(--vscode-editor-foreground)
+var(--vscode-button-background)
+var(--vscode-panel-border)
+var(--vscode-focusBorder)
 ```
 
 ---
 
 ## 🔮 Roadmap e Próximos Passos
 
-### v0.4.0 - Planejado
+### ✅ Concluído (v0.5.0)
+- Sincronização bidirecional com backend
+- Loop automático processando todas entries pendentes
+- Config dinâmica via `/sync/config`
+- Persistência local de config (modo offline)
+- Retry configurável com clamp
+- Comandos: setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
+- Indicador visual `$(sync~spin)` no status bar
+- Auto-sync em horários configurados (padrão 08:00 e 17:00)
 
-**Modais de Interface de Pausa:**
-- [ ] Modal de timer de pausa com contagem regressiva
-- [ ] Modal de fim de pausa com alertas visuais
-- [ ] Integração automática com PomodoroManager
+### 🚧 Planejado
 
-**Relatórios Básicos:**
-- [ ] Engine de relatórios Pomodoro
-- [ ] Interface de relatórios com gráficos
-- [ ] Métricas de produtividade (streak, sessões por projeto)
-- [ ] Comando `showPomodoroReports`
-
-### v0.5.0 - Futuro
-
-**Exportação de Dados:**
-- [ ] Export CSV de estatísticas
-- [ ] Export JSON para análise externa
-- [ ] Backup automático de dados
-
-**Sincronização Cloud:**
-- [ ] Backend opcional para sync
-- [ ] Backup em nuvem
-- [ ] Multi-device support
-
-**Integração Git:**
-- [ ] Correlação tempo vs commits
-- [ ] Analytics por branch
-- [ ] Produtividade por feature
+- **Exportação de dados** — CSV / JSON / Excel
+- **Relatórios personalizados** por período e projeto
+- **Integração Git** — correlacionar tempo com commits/branches
+- **Backup automático** do banco SQLite
+- **Dashboard web** — consumir dados sincronizados na plataforma
 
 ---
 
 ## 📚 Documentação Relacionada
 
-### Arquivos de Documentação
+Consulte [`docs/`](./docs/) para detalhamento:
 
-```
-docs/
-├── README.md                        # Índice geral
-├── POMODORO_CONSOLIDADO_TAREFAS.md  # Sistema Pomodoro completo
-├── DASHBOARD_MODERNO.md             # Interface dashboard
-├── DELETED_PROJECTS_PANEL.md        # Painel de deletados
-├── COVERAGE_REPORT.md               # Relatório de testes
-├── UI_COMPONENTS.md                 # Componentes de interface
-├── IDENTIDADE_VISUAL.md             # Brand guidelines
-├── SOFT_DELETE.md                   # Exclusão reversível
-├── DELETION_HISTORY.md              # Histórico de auditoria
-├── UNDO_GUIDE.md                    # Guia de restauração
-├── IMPLEMENTACAO_EXCLUSAO.md        # Sistema de exclusão
-└── PUBLICACAO.md                    # Publicação no marketplace
-```
+- **Sync:** `BACKEND_SYNC_SPEC.md`, `BACKEND_SYNC_VALIDATION.md`, `PLANO_SYNC_VSCODE.md`, `VSCODE_SYNC_IMPLEMENTATION.md`, `AUTO_LOOP_SYNC.md`, `ENDPOINTS_API.md`
+- **Dashboard:** `DASHBOARD_MODERNO.md`, `UI_COMPONENTS.md`, `VSCODE_COLORS_REFERENCE.md`
+- **Soft Delete:** `SOFT_DELETE.md`, `DELETION_HISTORY.md`, `DELETED_PROJECTS_PANEL.md`, `AUTO_DELETE_SYSTEM.md`, `UNDO_GUIDE.md`
+- **Qualidade:** `COVERAGE_REPORT.md`, `CSS_SEPARATION_REPORT.md`
 
-### Links Úteis
+### Links
 
-- **Repositório:** [https://github.com/beliciobcardoso/MyTimeTraceVSCode](https://github.com/beliciobcardoso/MyTimeTraceVSCode)
-- **Marketplace:** [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode)
-- **Issues:** [GitHub Issues](https://github.com/beliciobcardoso/MyTimeTraceVSCode/issues)
+- Repositório: https://github.com/beliciobcardoso/MyTimeTraceVSCode
+- Issues: https://github.com/beliciobcardoso/MyTimeTraceVSCode/issues
 
 ---
 
 ## 🎓 Como Começar
 
-### Para Usuários
+### Desenvolvedor
 
 ```bash
-# 1. Instalar extensão no VS Code
-Ctrl+Shift+X → Buscar "My Time Trace" → Instalar
-
-# 2. Configurar (opcional)
-Ctrl+, → Buscar "MyTime Trace"
-
-# 3. Usar
-Ctrl+Shift+P → "My Time Trace: Show Stats"
-```
-
-### Para Desenvolvedores
-
-```bash
-# 1. Clonar repositório
 git clone https://github.com/beliciobcardoso/MyTimeTraceVSCode.git
 cd MyTimeTraceVSCode
-
-# 2. Instalar dependências
-npm install
-
-# 3. Compilar
+pnpm install          # ou npm install
 npm run compile
-
-# 4. Executar testes
 npm test
-
-# 5. Abrir no VS Code
 code .
-
-# 6. Pressionar F5 para debug
+# F5 para debug em nova janela do VS Code
 ```
 
-### Estrutura de Desenvolvimento
+### Usuário
 
-```
-1. Análise de Requisitos
-   ↓
-2. Testes First (escrever testes antes)
-   ↓
-3. Implementação (código modular)
-   ↓
-4. Validação (executar testes)
-   ↓
-5. Documentação (comentários JSDoc)
-```
+1. Instale o `.vsix` gerado via `npm run package`
+2. (Opcional) Configure a API Key via `MyTimeTrace: Set API Key`
+3. Monitoramento inicia automaticamente (`autoStart=true`)
+4. Veja estatísticas com `MyTimeTrace: Show Statistics`
 
 ---
 
-## 📝 Notas Finais
+**🎉 v0.5.0 — Sincronização em Nuvem pronta para produção!**
 
-### ⚠️ REGRA CRÍTICA: Modais e Confirmações
-
-**NUNCA use `confirm()`, `alert()` ou `prompt()` em webviews!**
-
-- ❌ **PROIBIDO:** `confirm()`, `alert()`, `prompt()` - Bloqueados por sandbox do VS Code
-- ✅ **CORRETO - Frontend:** Crie modais customizados em HTML/CSS/JS dentro do webview
-- 📋 **Fluxo:** Frontend envia `postMessage` → Backend confirma com modal nativo → Executa ação
-
-**Motivo:** VS Code webviews são sandboxed e bloqueiam `confirm()`/`alert()` por segurança.
-
-### Identidade Visual
-
-**Logo:** Relógio laranja + chevron azul (tempo + código)  
-**Cores Primárias:**
-- Laranja (#F5A623) - Energia, ação
-- Azul (#4A90E2) - Tecnologia, confiança
-
-**Design Philosophy:** Profissional, clean, integração perfeita com VS Code
-
----
-
-## 🏆 Qualidade e Métricas
-
-### Indicadores de Qualidade
-
-- ✅ **Cobertura de Testes:** 88% (23 testes passando)
-- ✅ **Zero Testes Falhando:** Base sólida e confiável
-- ✅ **Performance:** Operações não-bloqueantes
-- ✅ **Error Handling:** Tratamento robusto de exceções
-- ✅ **Cleanup Automático:** Prevenção de vazamentos de memória
-- ✅ **Modularidade:** 7 módulos especializados
-- ✅ **Documentação:** 19 arquivos de documentação
-- ✅ **Internacionalização:** PT-BR + EN completos
-
-### Métricas de Código
-
-```
-Total de Linhas: ~8.500 linhas
-Arquivos TypeScript: 25+
-Arquivos CSS: 3
-Arquivos de Teste: 7
-Comandos: 33
-Interfaces: 15+
-Classes: 12
-```
-
----
-
-**🎉 Projeto Enterprise-Grade - Pronto para Produção!**
-
-*Documentação gerada automaticamente a partir do codebase em 17 de novembro de 2025*
+*Documentação alinhada ao código em 23 de novembro de 2025.*
