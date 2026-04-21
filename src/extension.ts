@@ -6,6 +6,10 @@ import { timeTrace } from "./modules/timeTrace";
 import { StatsManager } from "./modules/stats";
 import { CommandManager } from "./modules/commands";
 import { getConfig } from "./modules/config";
+import { ApiKeyManager } from "./modules/apiKeyManager";
+import { DeviceManager } from "./modules/deviceManager";
+import { SyncManager } from "./modules/syncManager";
+import { CLEANUP_INTERVAL, CLEANUP_INITIAL_DELAY } from "./config/constants";
 
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
@@ -15,6 +19,9 @@ let dbManager: DatabaseManager;
 let statusBarManager: StatusBarManager;
 let myTimeTrace: timeTrace;
 let statsManager: StatsManager;
+let apiKeyManager: ApiKeyManager;
+let deviceManager: DeviceManager;
+let syncManager: SyncManager;
 let cleanupInterval: NodeJS.Timeout | undefined; // Timer para cleanup automático
 
 // Ativação da extensão
@@ -24,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Logs de ativação
   console.log("=======================================");
   console.log(localize('extension.activated', 'Extension "my-time-trace-vscode" activated!'));
-  console.log("Versão: 0.2.0");
+  console.log("Versão: 0.5.1");
   console.log("Data/Hora: " + new Date().toISOString());
   console.log("=======================================");
 
@@ -38,6 +45,16 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarManager = new StatusBarManager();
     myTimeTrace = new timeTrace(dbManager, statusBarManager);
     statsManager = new StatsManager(dbManager, context);
+    
+    // Inicializa gerenciadores de sincronização
+    apiKeyManager = new ApiKeyManager(context);
+    deviceManager = new DeviceManager(context);
+    syncManager = new SyncManager(
+      apiKeyManager,
+      deviceManager,
+      dbManager,
+      statusBarManager
+    );
 
     // Cria e configura o status bar
     statusBarManager.create();
@@ -48,6 +65,23 @@ export async function activate(context: vscode.ExtensionContext) {
       () => myTimeTrace.pauseTracking(),
       () => statsManager.showStats(),
       () => statsManager.showDeletedProjects()
+    );
+    
+    // Registra comandos de sincronização
+    const syncCommands = CommandManager.registerSyncCommands(
+      context,
+      apiKeyManager,
+      deviceManager,
+      syncManager
+    );
+    
+    // Registra comandos de operações de sync
+    const syncOpsCommands = CommandManager.registerSyncOperationsCommands(
+      context,
+      apiKeyManager,
+      deviceManager,
+      syncManager,
+      dbManager
     );
 
     // Registra os eventos para monitoramento
@@ -65,6 +99,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Adiciona todos os subscriptions ao contexto
     context.subscriptions.push(...commands);
+    context.subscriptions.push(...syncCommands);
+    context.subscriptions.push(...syncOpsCommands);
     context.subscriptions.push(eventEditorChange);
     context.subscriptions.push(eventTextChange);
     context.subscriptions.push(eventWindowStateChange);
@@ -91,13 +127,14 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       }, 100);
     }
+    
+    // Inicializar SyncManager (busca config do servidor e agenda auto-sync)
+    console.log("🔄 Inicializando SyncManager...");
+    await syncManager.initialize();
 
     // ========================================
     // 🧹 CLEANUP AUTOMÁTICO DE PROJETOS EXPIRADOS (>30 DIAS)
     // ========================================
-    // Executar cleanup a cada 24 horas
-    const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas em ms
-    
     console.log("🧹 Iniciando cleanup automático de projetos expirados...");
     
     // Executar cleanup imediatamente ao iniciar (após 5 minutos)
@@ -119,7 +156,7 @@ export async function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         console.error('❌ Erro no cleanup automático inicial:', error);
       }
-    }, 5 * 60 * 1000); // 5 minutos após iniciar
+    }, CLEANUP_INITIAL_DELAY);
     
     // Executar cleanup periodicamente (a cada 24 horas)
     cleanupInterval = setInterval(async () => {

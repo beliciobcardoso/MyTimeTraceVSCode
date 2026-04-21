@@ -1,4 +1,4 @@
-# My Time Trace VSCode (Beta 0.3.0)
+# My Time Trace VSCode (v0.5.1)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
@@ -7,10 +7,11 @@
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.5.1-blue?style=flat-square)]()
 
 </div>
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e visualizações interativas!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **envio em nuvem**!
 
 ## ✨ Funcionalidades
 
@@ -19,7 +20,20 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Detecção de Inatividade**: Pausa automática após 5 minutos de idle
 - **Organização por Projeto**: Agrupa dados por workspace/projeto
 - **Persistência Local**: Armazena dados em SQLite seguro
+- **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
+
+### ☁️ Sincronização em Nuvem (NOVO v0.5.1)
+- **Sync Unidirecional**: Push automático da extensão para a cloud
+- **Configuração Dinâmica**: Backend controla `batchLimit`, `syncTimes`, `maxRetries` e `retryDelayMs`
+- **Loop Automático**: Processa TODAS entries pendentes em um único comando
+- **Retry Inteligente**: Até 5 tentativas com delay configurável (padrão: 10s)
+- **Persistência de Config**: Configs salvas localmente para uso offline
+- **Auto-Sync**: Sincronização automática em horários configuráveis
+- **Status Visual**: Ícone animado na status bar durante sincronização
+- **Multi-Dispositivo**: Cada device envia seu próprio histórico para a cloud
+
+> A partir da versão 0.5.1, o sync da extensão é unidirecional (ext -> cloud).
 
 ### 📊 Dashboard Moderno Unificado
 - **Interface Responsiva**: Layout grid 40/60 otimizado
@@ -46,6 +60,71 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 6. Oferece visualização unificada com filtros interativos para análise detalhada
 7. Permite exclusão segura de projetos com histórico completo de restauração
 
+## 🔬 Fisiologia da Extensão
+
+### Arquitetura Interna
+
+A extensão utiliza uma **arquitetura modular enterprise** com separação clara de responsabilidades:
+
+- **Timer Heartbeat**: Pulso de 1 segundo para contagem precisa em tempo real
+- **Event Listeners**: Monitora mudanças de arquivos, janelas e atividade do usuário
+- **Database Layer**: Camada de persistência com SQLite para armazenamento local
+- **UI Components**: Webviews com HTML/CSS/JS para dashboards interativos
+- **Sync Manager**: Sistema de sincronização com retry inteligente e auto-sync
+
+### 💾 Armazenamento de Dados
+
+Os dados são persistidos localmente em um banco **SQLite** seguro:
+
+**Linux:**
+```
+~/.config/Code/User/globalStorage/<your-username>.my-time-trace-vscode/time_tracker.sqlite
+```
+
+**macOS:**
+```
+~/Library/Application Support/Code/User/globalStorage/<your-username>.my-time-trace-vscode/time_tracker.sqlite
+```
+
+**Windows:**
+```
+%APPDATA%\Code\User\globalStorage\<your-username>.my-time-trace-vscode\time_tracker.sqlite
+```
+
+**VS Code Insiders:**
+Substitua `Code` por `Code - Insiders` nos caminhos acima.
+
+### 📊 Estrutura do Banco de Dados
+
+**Tabela `time_entries`** - Registros de rastreamento de tempo:
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | INTEGER | Chave primária auto-incremento |
+| `timestamp` | TEXT | Data/hora ISO 8601 do registro |
+| `project` | TEXT | Nome do projeto/workspace |
+| `file` | TEXT | Caminho completo do arquivo |
+| `duration_seconds` | INTEGER | Duração em segundos |
+| `is_idle` | INTEGER | 1 = período inativo, 0 = ativo |
+| `synced` | INTEGER | 1 = sincronizado na nuvem, 0 = local |
+| `deleted_at` | TEXT | Timestamp do soft delete (NULL = ativo) |
+| `device_name` | TEXT | Nome do dispositivo/computador |
+
+**Tabela `deletion_history`** - Histórico de exclusões e restaurações:
+- Registro completo de soft/hard deletes
+- Permite restauração de projetos excluídos
+- Auditoria de operações de exclusão
+
+**Índices otimizados**: Queries rápidas para filtros por projeto, data e dispositivo
+
+### 🔄 Ciclo de Vida
+
+1. **Ativação**: Inicializa DB, cria listeners, inicia heartbeat
+2. **Monitoramento**: Timer incrementa 1s, detecta idle após 5min
+3. **Salvamento**: Persiste dados a cada mudança de arquivo ou idle
+4. **Sincronização**: Auto-sync em horários configuráveis (se habilitado)
+5. **Desativação**: Cleanup de recursos, fecha DB, cancela timers
+
 ## Requisitos
 
 - Visual Studio Code 1.100.0 ou superior
@@ -60,32 +139,80 @@ Para documentação detalhada, consulte a pasta [`docs/`](./docs/):
 - ✅ **[Relatório de Cobertura](./docs/COVERAGE_REPORT.md)** - Métricas de qualidade e testes (88%)
 - 🚀 **[Guia de Desenvolvimento](./docs/vsc-extension-quickstart.md)** - Setup e desenvolvimento
 
-## Instalação
+## 📦 Instalação
 
 No momento, esta extensão está em desenvolvimento e não está disponível no VS Code Marketplace. Para instalá-la:
 
-1. Clone o repositório
-2. Execute `npm install` para instalar as dependências
-3. Execute `npm run compile` para compilar o TypeScript
-4. Instale a ferramenta `vsce` globalmente: `npm install -g vsce`
-5. Crie um VSIX com `vsce package`. Este comando irá gerar um arquivo `.vsix`.
+### Passo 1: Preparar o Ambiente
 
-### Como Instalar o Arquivo .vsix
+```bash
+# Clone o repositório
+git clone https://github.com/beliciobcardoso/MyTimeTraceVSCode.git
+cd MyTimeTraceVSCode
 
-Após gerar o pacote, você pode instalá-lo de duas maneiras:
+# Instale as dependências
+npm install
 
-**1. Pela Interface do VS Code:**
-- Vá para a visualização de **Extensões** (clique no ícone de blocos na barra lateral).
-- Clique nos três pontos (`...`) no canto superior da visualização.
-- Selecione **Instalar do VSIX...** e escolha o arquivo `.vsix` gerado.
+# Compile o TypeScript
+npm run compile
+```
 
-**2. Pelo Terminal:**
-- Execute o seguinte comando no terminal, substituindo `nome-do-arquivo.vsix` pelo nome do seu arquivo:
-  ```bash
-  code --install-extension nome-do-arquivo.vsix
-  ```
+### Passo 2: Instalar a Ferramenta de Empacotamento
 
-Depois de instalar, o VS Code solicitará que você recarregue a janela para ativar a extensão.
+```bash
+# Instale o vsce globalmente
+npm install -g @vscode/vsce
+```
+
+### Passo 3: Empacotar a Extensão
+
+```bash
+# Gera o arquivo .vsix
+vsce package
+```
+
+Este comando irá gerar um arquivo como `my-time-trace-vscode-X.X.X.vsix`.
+
+### Passo 4: Instalar no VS Code
+
+Após gerar o pacote, você pode instalá-lo de **três maneiras**:
+
+#### Opção 1: Pela Interface do VS Code (Recomendado)
+
+1. Abra o VS Code (ou VS Code Insiders)
+2. Vá para a visualização de **Extensões** (`Ctrl+Shift+X` ou `Cmd+Shift+X`)
+3. Clique nos três pontos (`...`) no canto superior da visualização
+4. Selecione **Instalar do VSIX...**
+5. Navegue e selecione o arquivo `.vsix` gerado
+
+#### Opção 2: Pelo Terminal (VS Code)
+
+```bash
+# Para o VS Code normal
+code --install-extension my-time-trace-vscode-0.5.1.vsix
+```
+
+#### Opção 3: Pelo Terminal (VS Code Insiders)
+
+```bash
+# Para o VS Code Insiders
+code-insiders --install-extension my-time-trace-vscode-0.5.1.vsix
+```
+
+> **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).
+
+### Passo 5: Ativar a Extensão
+
+Depois de instalar, o VS Code solicitará que você **recarregue a janela** para ativar a extensão. Você também pode:
+
+- Pressionar `Ctrl+Shift+P` (ou `Cmd+Shift+P`) e executar **Developer: Reload Window**
+- Fechar e reabrir o VS Code
+
+### ✅ Verificar Instalação
+
+Após recarregar, você deve ver:
+- Ícone do relógio na barra de status inferior
+- Comando disponível: `My Time Trace: Show Statistics`
 
 ## Configurações da Extensão
 
@@ -98,15 +225,16 @@ As seguintes configurações já estão disponíveis:
 ## Melhorias Planejadas
 
 - ✅ **Status Bar Item**: Mostrar o tempo atual do arquivo ou o status do monitoramento na barra de status do VS Code.
-- ❌ **Heartbeat**: Implementar "heartbeats" periódicos para uma contagem de tempo mais precisa.
+- ✅ **Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
 - ✅ **Interface de Visualização**: Adicionar painéis e gráficos para visualizar os dados de tempo coletados.
-- ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos.
-- ❌ **Tratamento de Erros**: Melhora o tratamento de erros de rede e outras exceções.
-- ❌ **Autenticação**: Planeja-se implementar um método de autenticação (como API Key) para permitir a sincronização segura dos dados com um servidor externo em versões futuras.
-- ✅ **Separação de responsabilidades**: O arquivo extension.ts contém toda a lógica, poderia ser dividido em módulos
-- ✅ **Melhor tratamento de erros**: Adicionar tratamento de exceções mais robusto (implementado safeRegisterCommand)
-- ✅ **Visualização de dados**: Implementar painéis organizados na pasta `ui/` para visualizar as estatísticas de tempo por projeto
-- ✅ **Status Bar interativa**: Melhorar a interação com o usuário através da barra de status
+- ✅ **Separação de responsabilidades**: Arquitetura modular com 7 módulos especializados
+- ✅ **Melhor tratamento de erros**: Tratamento robusto com async/await e safeRegisterCommand
+- ✅ **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos
+- ✅ **Status Bar interativa**: Feedback visual constante com atualização em tempo real
+- ✅ **Sincronização em Nuvem**: Push only com retry inteligente e auto-sync
+- ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos (CSV, JSON, Excel)
+- ❌ **Relatórios Personalizados**: Criar relatórios customizáveis por período e projeto
+- ❌ **Integração Git**: Correlacionar tempo de desenvolvimento com commits
 
 ## Notas de Lançamento
 
@@ -118,7 +246,8 @@ Terceira versão com refatoração completa e interface avançada:
 - Separação de responsabilidades em módulos específicos
 - Módulos especializados: configuração, banco de dados, status bar, estatísticas, rastreamento e comandos
 - Melhor organização do código com classes especializadas
-- Tratamento de erros aprimorado com async/await
+- **Sistema Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
+- **Tratamento de erros robusto**: safeRegisterCommand com async/await para operações assíncronas
 - Refatoração completa do arquivo extension.ts para usar arquitetura modular
 
 **Interface de Estatísticas Avançada:**
@@ -136,6 +265,7 @@ Terceira versão com refatoração completa e interface avançada:
 - Correção de bug crítico com elemento HTML ausente
 - Verificações de elementos DOM antes do acesso
 - Layout responsivo funcionando em diferentes tamanhos de tela
+- Status Bar com feedback visual constante em tempo real
 
 ### 0.1.0 - Beta (18/06/2025)
 

@@ -3,6 +3,7 @@ import * as nls from 'vscode-nls';
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
+import { randomUUID } from 'crypto';
 
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
@@ -12,6 +13,7 @@ export interface ActivityData {
   file: string | undefined;
   duration: number; // em segundos
   isIdle?: boolean;
+  device_name?: string; // Nome do dispositivo/computador
 }
 
 /**
@@ -47,13 +49,15 @@ export class DatabaseManager {
         this.db!.run(
           `CREATE TABLE IF NOT EXISTS time_entries (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              client_id TEXT UNIQUE,
               timestamp TEXT NOT NULL,
               project TEXT,
               file TEXT,
               duration_seconds INTEGER NOT NULL,
               is_idle INTEGER DEFAULT 0,
               synced INTEGER DEFAULT 0, -- 0 para não sincronizado, 1 para sincronizado
-              deleted_at TEXT DEFAULT NULL -- Soft delete: NULL = ativo, data = deletado
+              deleted_at TEXT DEFAULT NULL, -- Soft delete: NULL = ativo, data = deletado
+              device_name TEXT DEFAULT NULL -- Nome do dispositivo/computador
           )`,
           (tableErr: Error | null) => {
             if (tableErr) {
@@ -80,23 +84,96 @@ export class DatabaseManager {
                   console.log('✅ Coluna deleted_at adicionada com sucesso (migração aplicada)');
                 }
                 
-                // Criar tabela de histórico de exclusões
+                // Migração: Adicionar coluna device_name se não existir
                 this.db!.run(
-                  `CREATE TABLE IF NOT EXISTS deletion_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_name TEXT NOT NULL,
-                    deleted_at TEXT NOT NULL,
-                    records_count INTEGER NOT NULL,
-                    deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
-                    restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
-                  )`,
-                  (historyErr: Error | null) => {
-                    if (historyErr) {
-                      console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                  `ALTER TABLE time_entries ADD COLUMN device_name TEXT DEFAULT NULL`,
+                  (deviceErr: Error | null) => {
+                    if (deviceErr) {
+                      if (deviceErr.message.includes('duplicate column name')) {
+                        console.log('✅ Coluna device_name já existe (migração já aplicada)');
+                      } else {
+                        console.warn('⚠️ Aviso ao adicionar coluna device_name:', deviceErr.message);
+                      }
                     } else {
-                      console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                      console.log('✅ Coluna device_name adicionada com sucesso (migração aplicada)');
                     }
-                    resolve();
+
+                    // Migração: Adicionar coluna client_id se não existir
+                    this.db!.run(
+                      `ALTER TABLE time_entries ADD COLUMN client_id TEXT`,
+                      (clientIdErr: Error | null) => {
+                        if (clientIdErr) {
+                          if (clientIdErr.message.includes('duplicate column name')) {
+                            console.log('✅ Coluna client_id já existe (migração já aplicada)');
+                          } else {
+                            console.warn('⚠️ Aviso ao adicionar coluna client_id:', clientIdErr.message);
+                          }
+                        } else {
+                          console.log('✅ Coluna client_id adicionada com sucesso (migração aplicada)');
+                        }
+
+                        // Backfill: garante client_id para registros antigos
+                        this.db!.run(
+                          `UPDATE time_entries SET client_id = ('local-' || id) WHERE client_id IS NULL`,
+                          (backfillErr: Error | null) => {
+                            if (backfillErr) {
+                              console.warn('⚠️ Aviso no backfill de client_id:', backfillErr.message);
+                            } else {
+                              console.log('✅ Backfill de client_id concluído');
+                            }
+
+                            // Índice único para deduplicar inserts vindos do pull
+                            this.db!.run(
+                              `CREATE UNIQUE INDEX IF NOT EXISTS idx_time_entries_client_id_unique ON time_entries(client_id)`,
+                              (indexErr: Error | null) => {
+                                if (indexErr) {
+                                  console.warn('⚠️ Aviso ao criar índice único de client_id:', indexErr.message);
+                                } else {
+                                  console.log('✅ Índice único de client_id verificado/criado com sucesso');
+                                }
+                    
+                                // Criar tabela de histórico de exclusões
+                                this.db!.run(
+                                  `CREATE TABLE IF NOT EXISTS deletion_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_name TEXT NOT NULL,
+                        deleted_at TEXT NOT NULL,
+                        records_count INTEGER NOT NULL,
+                        deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
+                        restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
+                      )`,
+                                  (historyErr: Error | null) => {
+                                    if (historyErr) {
+                                      console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                                    } else {
+                                      console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                                    }
+                                    
+                                    // 🔄 FASE 2: Criar tabela de metadados de sincronização
+                                    this.db!.run(
+                                      `CREATE TABLE IF NOT EXISTS sync_metadata (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            key TEXT NOT NULL UNIQUE,
+                            value TEXT NOT NULL,
+                            updated_at TEXT NOT NULL
+                          )`,
+                                      (syncMetaErr: Error | null) => {
+                                        if (syncMetaErr) {
+                                          console.error('❌ Erro ao criar tabela sync_metadata:', syncMetaErr);
+                                        } else {
+                                          console.log('✅ Tabela sync_metadata verificada/criada com sucesso');
+                                        }
+                                        resolve();
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            );
+                          }
+                        );
+                      }
+                    );
                   }
                 );
               }
@@ -122,19 +199,22 @@ export class DatabaseManager {
     }
 
     console.log("Salvando dados localmente:", data);
-    const { timestamp, project, file, duration, isIdle } = data;
+    const { timestamp, project, file, duration, isIdle, device_name } = data;
+    const clientId = `local-${randomUUID()}`;
 
     const stmt = this.db.prepare(
-      "INSERT INTO time_entries (timestamp, project, file, duration_seconds, is_idle) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, device_name) VALUES (?, ?, ?, ?, ?, ?, ?)"
     );
     
     return new Promise((resolve, reject) => {
       stmt.run(
+        clientId,
         timestamp,
         project || "Arquivos Diversos",
         file || "unknown-file",
         duration,
         isIdle ? 1 : 0,
+        device_name || null,
         (error: Error | null) => {
           if (error) {
             console.error("Erro ao inserir dados no SQLite:", error);
@@ -569,4 +649,280 @@ export class DatabaseManager {
   isInitialized(): boolean {
     return this.db !== undefined;
   }
+
+  // ============================================
+  // 🔄 MÉTODOS DE SINCRONIZAÇÃO (FASE 2)
+  // ============================================
+
+  /**
+   * Busca entries locais não sincronizadas (synced = 0)
+   * 
+   * **Usado por:** SyncManager.pushEntries()
+   * **Limite:** 500 entries por vez (conforme spec backend)
+   * 
+   * @returns Array de time_entries não sincronizadas
+   * 
+   * @param limit - Limite de entries a buscar (padrão: 100)
+   * @example
+   * ```typescript
+   * const unsyncedEntries = await dbManager.getUnsyncedEntries(200);
+   * console.log(`${unsyncedEntries.length} entries para sincronizar`);
+   * ```
+   */
+  async getUnsyncedEntries(limit: number = 100): Promise<any[]> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.all(
+        `SELECT * FROM time_entries 
+         WHERE synced = 0 AND deleted_at IS NULL 
+         ORDER BY timestamp ASC 
+         LIMIT ?`,
+        [limit],
+        (err, rows) => {
+          if (err) {
+            console.error('❌ Erro ao buscar entries não sincronizadas:', err);
+            reject(err);
+          } else {
+            resolve(rows || []);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Retorna o total de entries no banco local (não deletadas)
+   * 
+   * **Usado por:** Status de sincronização
+   * 
+   * @returns Total de entries
+   * @example
+   * ```typescript
+   * const total = await dbManager.getTotalEntriesCount();
+   * console.log(`Total: ${total} entries`);
+   * ```
+   */
+  async getTotalEntriesCount(): Promise<number> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.get(
+        `SELECT COUNT(*) as count FROM time_entries WHERE deleted_at IS NULL`,
+        (err, row: any) => {
+          if (err) {
+            console.error('❌ Erro ao contar entries:', err);
+            reject(err);
+          } else {
+            resolve(row?.count || 0);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Marca entries como sincronizadas (synced = 1)
+   * 
+   * **Usado por:** SyncManager.pushEntries() após sucesso no servidor
+   * 
+   * @param entryIds - Array de IDs (campo 'id' do SQLite)
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.markAsSynced([1, 2, 3, 4, 5]);
+   * console.log('✅ 5 entries marcadas como sincronizadas');
+   * ```
+   */
+  async markAsSynced(entryIds: number[]): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    if (entryIds.length === 0) {
+      console.log('⚠️ Nenhum ID fornecido para markAsSynced');
+      return;
+    }
+
+    const placeholders = entryIds.map(() => '?').join(',');
+    const query = `UPDATE time_entries SET synced = 1 WHERE id IN (${placeholders})`;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, entryIds, (err) => {
+        if (err) {
+          console.error('❌ Erro ao marcar entries como sincronizadas:', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Insere entry já sincronizada (LEGADO: era usado por pull em v0.4.x)
+   * 
+  * **Status:** Não mais chamado - pull removido em v0.5.1. Mantido para compatibilidade de dedup local.
+   * **Importante:** Usa INSERT OR IGNORE para evitar duplicatas
+   * 
+   * @param entry - Objeto com dados da entry (formato backend)
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.insertSyncedEntry({
+   *   clientId: 'uuid-entry-1',
+   *   timestamp: '2025-11-22T10:00:00Z',
+   *   project: 'MyProject',
+   *   file: 'src/main.ts',
+   *   durationSeconds: 300,
+   *   isIdle: false,
+   *   deviceKey: 'uuid-device-2'
+   * });
+   * ```
+   */
+  async insertSyncedEntry(entry: {
+    clientId: string;
+    timestamp: string;
+    project: string;
+    file: string;
+    durationSeconds: number;
+    isIdle: boolean;
+    deviceKey?: string;
+  }): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    // Evita duplicatas por client_id e por assinatura da linha.
+    // Isso cobre dados antigos da cloud com client_id diferente mas conteúdo idêntico.
+    const query = `
+      INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, synced, device_name)
+      SELECT ?, ?, ?, ?, ?, ?, 1, ?
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM time_entries
+        WHERE client_id = ?
+           OR (
+             timestamp = ?
+             AND IFNULL(project, '') = IFNULL(?, '')
+             AND IFNULL(file, '') = IFNULL(?, '')
+             AND duration_seconds = ?
+             AND is_idle = ?
+             AND IFNULL(device_name, '') = IFNULL(?, '')
+           )
+      )
+    `;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(
+        query,
+        [
+          entry.clientId,
+          entry.timestamp,
+          entry.project,
+          entry.file,
+          entry.durationSeconds,
+          entry.isIdle ? 1 : 0,
+          entry.deviceKey || 'unknown',
+          entry.clientId,
+          entry.timestamp,
+          entry.project,
+          entry.file,
+          entry.durationSeconds,
+          entry.isIdle ? 1 : 0,
+          entry.deviceKey || 'unknown'
+        ],
+        (err) => {
+          if (err) {
+            console.error('❌ Erro ao inserir entry sincronizada:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Gerencia metadados de sincronização (key-value store)
+   * 
+   * **Usado para:** Armazenar last_pull_timestamp, last_push_timestamp, etc.
+   * **Tabela:** sync_metadata
+   * 
+   * @param key - Chave do metadado (ex: 'last_pull_timestamp')
+   * @returns Valor ou null se não existe
+   * 
+   * @example
+   * ```typescript
+   * const lastPull = await dbManager.getMetadata('last_pull_timestamp');
+   * if (lastPull) {
+   *   console.log('Última sincronização:', new Date(lastPull));
+   * }
+   * ```
+   */
+  async getMetadata(key: string): Promise<string | null> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.db!.get(
+        'SELECT value FROM sync_metadata WHERE key = ?',
+        [key],
+        (err, row: any) => {
+          if (err) {
+            console.error(`❌ Erro ao buscar metadata '${key}':`, err);
+            reject(err);
+          } else {
+            resolve(row?.value || null);
+          }
+        }
+      );
+    });
+  }
+
+  /**
+   * Define metadado de sincronização (INSERT ou UPDATE)
+   * 
+   * **Usado por:** SyncManager após pull bem-sucedido
+   * 
+   * @param key - Chave do metadado
+   * @param value - Valor a ser armazenado
+   * 
+   * @example
+   * ```typescript
+   * await dbManager.setMetadata('last_pull_timestamp', new Date().toISOString());
+   * console.log('✅ Timestamp de última sincronização atualizado');
+   * ```
+   */
+  async setMetadata(key: string, value: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database não inicializado');
+    }
+
+    const now = new Date().toISOString();
+    const query = `
+      INSERT INTO sync_metadata (key, value, updated_at) 
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+    `;
+
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, [key, value, now, value, now], (err) => {
+        if (err) {
+          console.error(`❌ Erro ao definir metadata '${key}':`, err);
+          reject(err);
+        } else {
+          console.log(`✅ Metadata '${key}' definido: ${value}`);
+          resolve();
+        }
+      });
+    });
+  }
 }
+

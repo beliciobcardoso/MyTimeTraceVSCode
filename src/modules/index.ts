@@ -5,3 +5,4 @@ export { timeTrace } from "./timeTrace";
 export { StatsManager } from "./stats";
 export { CommandManager } from "./commands";
 export { getConfig, UserConfig } from "./config";
+export { getDeviceName, getDeviceInfo } from "./deviceInfo";
