@@ -10,7 +10,7 @@ e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Alterado
 
 - Documentação oficial consolidada para sync unidirecional (push-only).
-- Nota de versão adicionada no README: "A partir da versão 0.5.0, o sync da extensão é unidirecional (ext -> cloud)".
+- Nota de versão adicionada no README: "A partir da versão 0.5.1, o sync da extensão é unidirecional (ext -> cloud)".
 - Plano técnico atualizado com fases 4 e 5 concluídas e fase 6 em andamento neste repositório.
 
 ## [0.5.0] - 2025-11-23

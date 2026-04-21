@@ -1,6 +1,6 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.5.0
+**Versão:** 0.5.1
 **Status:** Beta - Produção
 **Última Atualização:** 23 de novembro de 2025
 **Linguagem:** TypeScript + SQLite
@@ -94,7 +94,7 @@ MyTimeTraceVSCode/
 ├── 📁 docs/                          # 📖 Documentação (30+ arquivos)
 ├── 📁 images/                        # Assets visuais
 ├── 📁 UI/                            # Demos e protótipos
-├── package.json                      # Config npm (v0.5.0)
+├── package.json                      # Config npm (v0.5.1)
 ├── tsconfig.json                     # Config TypeScript
 ├── eslint.config.mjs                 # Config ESLint
 ├── CHANGELOG.md                      # Histórico de mudanças
@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS sync_metadata (
 
 **Migrações automáticas:**
 - `ALTER TABLE ... ADD COLUMN deleted_at` — compatibilidade com bancos antigos
-- `ALTER TABLE ... ADD COLUMN device_name` — introduzida na v0.5.0
+- `ALTER TABLE ... ADD COLUMN device_name` — introduzida na v0.5.1
 - Erros do tipo `duplicate column name` são ignorados silenciosamente
 
 **Métodos principais:**
@@ -611,7 +611,7 @@ var(--vscode-focusBorder)
 
 ## 🔮 Roadmap e Próximos Passos
 
-### ✅ Concluído (v0.5.0)
+### ✅ Concluído (v0.5.1)
 - Sincronização bidirecional com backend
 - Loop automático processando todas entries pendentes
 - Config dinâmica via `/sync/config`
@@ -670,6 +670,6 @@ code .
 
 ---
 
-**🎉 v0.5.0 — Sincronização em Nuvem pronta para produção!**
+**🎉 v0.5.1 — Sincronização em Nuvem pronta para produção!**
 
 *Documentação alinhada ao código em 23 de novembro de 2025.*
