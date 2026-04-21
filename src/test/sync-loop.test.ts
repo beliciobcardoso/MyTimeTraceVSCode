@@ -225,6 +225,76 @@ suite('🔄 Auto-Loop Sync Tests', () => {
     const remainingCount = await countUnsyncedEntries();
     assert.strictEqual(remainingCount, 0, 'Não deve sobrar entries não sincronizadas');
   });
+
+  /**
+   * Teste 6: insertSyncedEntry com mesmo clientId (LEGADO: era de pull bidirecional v0.4.x)
+   * Mantido para validação de dedup local, mas pull removido em v0.5.0
+   */
+  test('✅ insertSyncedEntry deve ignorar duplicata por clientId (legado)', async () => {
+    const duplicatedEntry = {
+      clientId: 'cloud-entry-dup-001',
+      timestamp: '2025-12-26T03:08:54.674Z',
+      project: 'MyTimeTraceCloud',
+      file: '/tmp/auth.ts',
+      durationSeconds: 8,
+      isIdle: false,
+      deviceKey: 'device-a'
+    };
+
+    await dbManager.insertSyncedEntry(duplicatedEntry);
+    await dbManager.insertSyncedEntry(duplicatedEntry);
+
+    const rows = await dbManager.query(
+      `SELECT COUNT(*) as total FROM time_entries WHERE client_id = ?`,
+      [duplicatedEntry.clientId]
+    );
+
+    assert.strictEqual(rows[0].total, 1, 'Deve manter apenas 1 linha para o mesmo clientId');
+  });
+
+  /**
+   * Teste 7: insertSyncedEntry com conteúdo igual (LEGADO: era de pull bidirecional v0.4.x)
+   * Mantido para validação de dedup local, mas pull removido em v0.5.0
+   */
+  test('✅ insertSyncedEntry deve ignorar duplicata por conteúdo (legado)', async () => {
+    const firstEntry = {
+      clientId: 'cloud-entry-a-001',
+      timestamp: '2025-12-26T03:08:54.674Z',
+      project: 'MyTimeTraceCloud',
+      file: '/tmp/auth.ts',
+      durationSeconds: 8,
+      isIdle: false,
+      deviceKey: 'device-a'
+    };
+
+    const secondEntrySameContent = {
+      ...firstEntry,
+      clientId: 'cloud-entry-b-001'
+    };
+
+    await dbManager.insertSyncedEntry(firstEntry);
+    await dbManager.insertSyncedEntry(secondEntrySameContent);
+
+    const rows = await dbManager.query(
+      `SELECT COUNT(*) as total FROM time_entries
+       WHERE timestamp = ?
+         AND IFNULL(project, '') = IFNULL(?, '')
+         AND IFNULL(file, '') = IFNULL(?, '')
+         AND duration_seconds = ?
+         AND is_idle = ?
+         AND IFNULL(device_name, '') = IFNULL(?, '')`,
+      [
+        firstEntry.timestamp,
+        firstEntry.project,
+        firstEntry.file,
+        firstEntry.durationSeconds,
+        firstEntry.isIdle ? 1 : 0,
+        firstEntry.deviceKey
+      ]
+    );
+
+    assert.strictEqual(rows[0].total, 1, 'Deve manter apenas 1 linha para conteúdo idêntico');
+  });
 });
 
 /**

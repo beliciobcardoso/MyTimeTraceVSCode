@@ -232,7 +232,7 @@ backend/
 | Sync Manager | ❌ Não implementado | 🔴 Alta |
 | POST /sync/register | ❌ Não implementado | 🔴 Alta |
 | POST /sync/push | ❌ Não implementado | 🟡 Média |
-| GET /sync/pull | ❌ Não implementado | 🟡 Média |
+| GET /sync/pull | ⚠️ Legado / deprecado | 🟡 Média |
 | Conflict Resolution | ❌ Não implementado | 🟡 Média |
 | Comandos de Sync | ❌ Não implementado | 🟢 Baixa |
 

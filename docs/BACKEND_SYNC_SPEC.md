@@ -24,7 +24,7 @@ Este documento define a especificação completa para o **backend Node.js/TypeSc
 - 🌍 **Multi-Usuário Global:** Suporta milhares de usuários independentes
 - 💻 **Multi-Dispositivo:** Cada usuário pode sincronizar dados de múltiplos PCs
 - 🔐 **Identificação Segura:** API_KEY (usuário) + device_key (dispositivo)
-- 🔄 **Sincronização Bidirecional:** Push (enviar) e Pull (receber) automáticos
+- 🔄 **Sincronização Push-first:** Push (enviar) é o fluxo oficial; Pull fica como histórico/deprecado
 - 🔒 **Isolamento de Dados:** Cada usuário vê apenas seus próprios dados
 
 ### Modelo de Dados
@@ -68,7 +68,7 @@ Criar um serviço backend que:
 
 ### Objetivos Específicos
 - ✅ **Multi-Tenant Architecture:** Isolamento completo de dados por usuário
-- ✅ **API REST:** 8 endpoints (signup, register, push, pull, status, entries, stats, delete)
+- ✅ **API REST:** endpoints ativos focados em push; pull tratado como histórico/deprecado
 - ✅ **Persistência PostgreSQL:** Schema otimizado com relacionamentos
 - ✅ **Sincronização Incremental:** Apenas dados novos/modificados
 - ✅ **Identificação Única:** API_KEY (usuário) + device_key (dispositivo)
@@ -551,7 +551,7 @@ X-API-Key: mtt_1a2b3c4d5e6f7g8h9i0j
 
 ---
 
-#### 3. **GET /sync/pull** - Obter Dados do Servidor
+#### 3. **GET /sync/pull** - Obter Dados do Servidor (LEGADO / DEPRECIADO)
 
 **Descrição:** Cliente baixa registros do servidor (outros dispositivos do mesmo usuário).
 
@@ -1433,7 +1433,7 @@ npm install --save @nestjs/throttler
 
 ### Fase 3: API Core (Dia 3-4)
 - [ ] Criar módulo `AuthModule` com POST /auth/register
-- [ ] Criar módulo `SyncModule` com POST /sync/push e GET /sync/pull
+- [ ] Criar módulo `SyncModule` com POST /sync/push e tratar GET /sync/pull como legado
 - [ ] Criar módulo `EntriesModule` com GET /entries
 - [ ] Criar módulo `StatsModule` com GET /stats/summary
 - [ ] Implementar DTOs com `class-validator` para validação automática
@@ -1948,7 +1948,7 @@ export async function activate(context: vscode.ExtensionContext) {
 ### Funcionalidades Mínimas (MVP)
 - ✅ API REST com 5 endpoints principais funcionando
 - ✅ Persistência em PostgreSQL com Prisma
-- ✅ Sincronização bidirecional (push/pull)
+- ✅ Sincronização push-first (pull apenas como legado)
 - ✅ Detecção de conflitos por timestamp
 - ✅ Validação automática de dados com class-validator
 - ✅ Testes unitários cobrindo todos os services
