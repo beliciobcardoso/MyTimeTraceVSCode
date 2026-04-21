@@ -11,7 +11,7 @@
 
 </div>
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **sincronização em nuvem**!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **envio em nuvem**!
 
 ## ✨ Funcionalidades
 
@@ -24,14 +24,16 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
 
 ### ☁️ Sincronização em Nuvem (NOVO v0.5.0)
-- **Sync Bidirecional**: Push/Pull automático entre dispositivos
+- **Sync Unidirecional**: Push automático da extensão para a cloud
 - **Configuração Dinâmica**: Backend controla `batchLimit`, `syncTimes`, `maxRetries` e `retryDelayMs`
 - **Loop Automático**: Processa TODAS entries pendentes em um único comando
 - **Retry Inteligente**: Até 5 tentativas com delay configurável (padrão: 10s)
 - **Persistência de Config**: Configs salvas localmente para uso offline
 - **Auto-Sync**: Sincronização automática em horários configuráveis
 - **Status Visual**: Ícone animado na status bar durante sincronização
-- **Multi-Dispositivo**: Sincronize entre Windows, Linux e macOS
+- **Multi-Dispositivo**: Cada device envia seu próprio histórico para a cloud
+
+> A partir da versão 0.5.0, o sync da extensão é unidirecional (ext -> cloud).
 
 ### 📊 Dashboard Moderno Unificado
 - **Interface Responsiva**: Layout grid 40/60 otimizado
@@ -229,7 +231,7 @@ As seguintes configurações já estão disponíveis:
 - ✅ **Melhor tratamento de erros**: Tratamento robusto com async/await e safeRegisterCommand
 - ✅ **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos
 - ✅ **Status Bar interativa**: Feedback visual constante com atualização em tempo real
-- ✅ **Sincronização em Nuvem**: Push/Pull bidirecional com retry inteligente e auto-sync
+- ✅ **Sincronização em Nuvem**: Push only com retry inteligente e auto-sync
 - ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos (CSV, JSON, Excel)
 - ❌ **Relatórios Personalizados**: Criar relatórios customizáveis por período e projeto
 - ❌ **Integração Git**: Correlacionar tempo de desenvolvimento com commits

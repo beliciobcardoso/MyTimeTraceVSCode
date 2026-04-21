@@ -9,12 +9,12 @@
  * URL base da API backend
  * 
  * **Ambientes:**
- * - Desenvolvimento: http://localhost:8989
+ * - Desenvolvimento: http://localhost:3000/api
  * - Produção: https://api.mytimetrace.com
  * 
  * @constant
  */
-export const API_BASE_URL = 'http://localhost:8989';
+export const API_BASE_URL = 'http://localhost:3000/api';
 
 /**
  * Timeout padrão para requisições HTTP (ms)

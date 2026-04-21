@@ -3,6 +3,7 @@ import * as nls from 'vscode-nls';
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
+import { randomUUID } from 'crypto';
 
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
@@ -48,6 +49,7 @@ export class DatabaseManager {
         this.db!.run(
           `CREATE TABLE IF NOT EXISTS time_entries (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              client_id TEXT UNIQUE,
               timestamp TEXT NOT NULL,
               project TEXT,
               file TEXT,
@@ -95,10 +97,44 @@ export class DatabaseManager {
                     } else {
                       console.log('✅ Coluna device_name adicionada com sucesso (migração aplicada)');
                     }
-                    
-                    // Criar tabela de histórico de exclusões
+
+                    // Migração: Adicionar coluna client_id se não existir
                     this.db!.run(
-                      `CREATE TABLE IF NOT EXISTS deletion_history (
+                      `ALTER TABLE time_entries ADD COLUMN client_id TEXT`,
+                      (clientIdErr: Error | null) => {
+                        if (clientIdErr) {
+                          if (clientIdErr.message.includes('duplicate column name')) {
+                            console.log('✅ Coluna client_id já existe (migração já aplicada)');
+                          } else {
+                            console.warn('⚠️ Aviso ao adicionar coluna client_id:', clientIdErr.message);
+                          }
+                        } else {
+                          console.log('✅ Coluna client_id adicionada com sucesso (migração aplicada)');
+                        }
+
+                        // Backfill: garante client_id para registros antigos
+                        this.db!.run(
+                          `UPDATE time_entries SET client_id = ('local-' || id) WHERE client_id IS NULL`,
+                          (backfillErr: Error | null) => {
+                            if (backfillErr) {
+                              console.warn('⚠️ Aviso no backfill de client_id:', backfillErr.message);
+                            } else {
+                              console.log('✅ Backfill de client_id concluído');
+                            }
+
+                            // Índice único para deduplicar inserts vindos do pull
+                            this.db!.run(
+                              `CREATE UNIQUE INDEX IF NOT EXISTS idx_time_entries_client_id_unique ON time_entries(client_id)`,
+                              (indexErr: Error | null) => {
+                                if (indexErr) {
+                                  console.warn('⚠️ Aviso ao criar índice único de client_id:', indexErr.message);
+                                } else {
+                                  console.log('✅ Índice único de client_id verificado/criado com sucesso');
+                                }
+                    
+                                // Criar tabela de histórico de exclusões
+                                this.db!.run(
+                                  `CREATE TABLE IF NOT EXISTS deletion_history (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         project_name TEXT NOT NULL,
                         deleted_at TEXT NOT NULL,
@@ -106,28 +142,34 @@ export class DatabaseManager {
                         deletion_type TEXT NOT NULL, -- 'soft' ou 'hard'
                         restored_at TEXT DEFAULT NULL -- NULL = não restaurado, data = restaurado
                       )`,
-                      (historyErr: Error | null) => {
-                        if (historyErr) {
-                          console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
-                        } else {
-                          console.log('✅ Tabela deletion_history verificada/criada com sucesso');
-                        }
-                        
-                        // 🔄 FASE 2: Criar tabela de metadados de sincronização
-                        this.db!.run(
-                          `CREATE TABLE IF NOT EXISTS sync_metadata (
+                                  (historyErr: Error | null) => {
+                                    if (historyErr) {
+                                      console.error('❌ Erro ao criar tabela deletion_history:', historyErr);
+                                    } else {
+                                      console.log('✅ Tabela deletion_history verificada/criada com sucesso');
+                                    }
+                                    
+                                    // 🔄 FASE 2: Criar tabela de metadados de sincronização
+                                    this.db!.run(
+                                      `CREATE TABLE IF NOT EXISTS sync_metadata (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             key TEXT NOT NULL UNIQUE,
                             value TEXT NOT NULL,
                             updated_at TEXT NOT NULL
                           )`,
-                          (syncMetaErr: Error | null) => {
-                            if (syncMetaErr) {
-                              console.error('❌ Erro ao criar tabela sync_metadata:', syncMetaErr);
-                            } else {
-                              console.log('✅ Tabela sync_metadata verificada/criada com sucesso');
-                            }
-                            resolve();
+                                      (syncMetaErr: Error | null) => {
+                                        if (syncMetaErr) {
+                                          console.error('❌ Erro ao criar tabela sync_metadata:', syncMetaErr);
+                                        } else {
+                                          console.log('✅ Tabela sync_metadata verificada/criada com sucesso');
+                                        }
+                                        resolve();
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            );
                           }
                         );
                       }
@@ -158,13 +200,15 @@ export class DatabaseManager {
 
     console.log("Salvando dados localmente:", data);
     const { timestamp, project, file, duration, isIdle, device_name } = data;
+    const clientId = `local-${randomUUID()}`;
 
     const stmt = this.db.prepare(
-      "INSERT INTO time_entries (timestamp, project, file, duration_seconds, is_idle, device_name) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, device_name) VALUES (?, ?, ?, ?, ?, ?, ?)"
     );
     
     return new Promise((resolve, reject) => {
       stmt.run(
+        clientId,
         timestamp,
         project || "Arquivos Diversos",
         file || "unknown-file",
@@ -720,9 +764,9 @@ export class DatabaseManager {
   }
 
   /**
-   * Insere entry já sincronizada (vinda do servidor via pull)
+   * Insere entry já sincronizada (LEGADO: era usado por pull em v0.4.x)
    * 
-   * **Usado por:** SyncManager.pullEntries()
+   * **Status:** Não mais chamado - pull removido em v0.5.0. Mantido para compatibilidade de dedup local.
    * **Importante:** Usa INSERT OR IGNORE para evitar duplicatas
    * 
    * @param entry - Objeto com dados da entry (formato backend)
@@ -753,17 +797,38 @@ export class DatabaseManager {
       throw new Error('Database não inicializado');
     }
 
-    // INSERT OR IGNORE para evitar duplicatas (caso entry já exista localmente)
+    // Evita duplicatas por client_id e por assinatura da linha.
+    // Isso cobre dados antigos da cloud com client_id diferente mas conteúdo idêntico.
     const query = `
-      INSERT OR IGNORE INTO time_entries 
-      (timestamp, project, file, duration_seconds, is_idle, synced, device_name)
-      VALUES (?, ?, ?, ?, ?, 1, ?)
+      INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, synced, device_name)
+      SELECT ?, ?, ?, ?, ?, ?, 1, ?
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM time_entries
+        WHERE client_id = ?
+           OR (
+             timestamp = ?
+             AND IFNULL(project, '') = IFNULL(?, '')
+             AND IFNULL(file, '') = IFNULL(?, '')
+             AND duration_seconds = ?
+             AND is_idle = ?
+             AND IFNULL(device_name, '') = IFNULL(?, '')
+           )
+      )
     `;
 
     return new Promise((resolve, reject) => {
       this.db!.run(
         query,
         [
+          entry.clientId,
+          entry.timestamp,
+          entry.project,
+          entry.file,
+          entry.durationSeconds,
+          entry.isIdle ? 1 : 0,
+          entry.deviceKey || 'unknown',
+          entry.clientId,
           entry.timestamp,
           entry.project,
           entry.file,

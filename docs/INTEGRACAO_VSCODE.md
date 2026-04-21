@@ -1,6 +1,6 @@
 # 🔗 Integração com VS Code Extension
 
-**Data:** 22 de novembro de 2025  
+**Data:** 21 de abril de 2026  
 **Backend:** MyTimeTraceCloud (Este Repositório)  
 **Extensão:** MyTimeTrace VS Code (Repositório Separado)
 
@@ -14,7 +14,7 @@
 - ✅ Backend API REST (NestJS + PostgreSQL)
 - ✅ Autenticação via API Key
 - ✅ Endpoints de sincronização (`/sync/*`)
-- ✅ Lógica de push/pull bidirecional
+- ✅ Lógica de push unidirecional (ext -> cloud)
 - ✅ Multi-tenant (multi-usuário)
 - ✅ Admin panel (frontend React)
 - ✅ Documentação Swagger (`/api/docs`)
@@ -36,8 +36,8 @@
 **O que precisa integrar com este backend:**
 - 🔄 Consumir endpoints `/sync/*`
 - 🔄 Gerenciar API Key (SecretStorage)
-- 🔄 Implementar push/pull automático
-- 🔄 Sincronizar com Cloud
+- 🔄 Implementar envio automático para Cloud
+- 🔄 Sincronizar apenas da extensão para a Cloud
 
 ---
 
@@ -104,6 +104,8 @@ Body: {
 ```
 
 ### **3. GET /sync/pull**
+> **LEGADO / REMOVIDO NO NOVO FLUXO DA EXTENSÃO**
+
 Busca entries de outros dispositivos (paginado).
 
 ```typescript
@@ -250,17 +252,15 @@ Headers: {
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│ 6. VS CODE PC B: Mesma API_KEY, outro device_key       │
-│    → GET /sync/pull?deviceKey=uuid-pc-b&limit=100     │
-│    → Recebe 100 entries de PC A                        │
-│    → Insere no SQLite local com synced = 1             │
+│ 6. VS CODE: reenvia somente o que está pendente       │
+│    → Não existe mais pull na extensão                  │
+│    → Dados locais seguem com synced = 1 após push      │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│ 7. RESULTADO: Ambos PCs têm os mesmos dados!           │
-│    → PC A: 100 entries (enviadas)                      │
-│    → PC B: 100 entries (recebidas de PC A)             │
-│    → Servidor: 100 entries (userId, deviceId=PC A)     │
+│ 7. RESULTADO: Cloud recebe o histórico local            │
+│    → Extensão: envia apenas o que faltava               │
+│    → Servidor: consolida os registros do device        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -277,7 +277,7 @@ Headers: {
 - 🔇 NENHUMA mensagem ao usuário (silencioso)
 
 ### 2️⃣ API Key configurada E válida
-- ✅ Sync funciona normalmente (push/pull)
+- ✅ Sync funciona normalmente (push only)
 - ✅ Auto-sync em horários específicos (ex: [08:00, 17:00])
 - 🔇 Sucesso = SILENCIOSO (sem notificação)
 
@@ -394,8 +394,7 @@ curl -X POST http://localhost:8989/api/sync/push \
   }'
 
 # Pull entries
-curl -X GET "http://localhost:8989/api/sync/pull?deviceKey=test-uuid&limit=10" \
-  -H "X-API-Key: mtt_abc123..."
+> A extensão não consome mais `GET /sync/pull` no novo fluxo.
 ```
 
 ---
@@ -413,4 +412,4 @@ curl -X GET "http://localhost:8989/api/sync/pull?deviceKey=test-uuid&limit=10" \
 
 ---
 
-**Última atualização:** 22 de novembro de 2025
+**Última atualização:** 21 de abril de 2026

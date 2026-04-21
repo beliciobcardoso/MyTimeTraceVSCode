@@ -1,5 +1,10 @@
 # 🔄 Sistema de Loop Automático de Sincronização
 
+⚠️ **STATUS: LEGADO (Deprecated desde v0.5.0)**  
+Este documento descreve a implementação anterior com pull bidirecional. A partir de v0.5.0, o sync é **unidirecional (push-only)**. Veja [PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md](PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md) para arquitetura atual.
+
+---
+
 ## Visão Geral
 
 Implementação de sincronização automática em loop que processa **todas** as entries pendentes em batches sequenciais de 100 entries, sem necessidade de múltiplas execuções manuais.
@@ -30,7 +35,7 @@ Implementação de sincronização automática em loop que processa **todas** as
 │ Loop Automático (while hasMoreEntries)        │
 ├─────────────────────────────────────────────────┤
 │ 1️⃣ pushEntries(apiKey) → retorna syncedCount   │
-│ 2️⃣ pullEntries(apiKey) → recebe de outros devs │
+│ 2️⃣ pullEntries(apiKey) → legado/não usado ⚠️  │
 │ 3️⃣ Verifica: syncedCount >= 100?              │
 │    ├─ SIM → hasMoreEntries = true (continua)  │
 │    └─ NÃO → hasMoreEntries = false (para)     │
@@ -53,7 +58,7 @@ private async performSync(): Promise<boolean> {
 }
 ```
 
-**Depois (Auto-Loop):**
+**Depois (Auto-Loop - LEGADO):**
 ```typescript
 private async performSync(): Promise<boolean> {
   let totalSynced = 0;
@@ -63,7 +68,7 @@ private async performSync(): Promise<boolean> {
   while (hasMoreEntries) {
     batchCount++;
     const syncedCount = await this.pushEntries(apiKey);
-    await this.pullEntries(apiKey);
+    // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.0
     
     totalSynced += syncedCount;
     hasMoreEntries = syncedCount >= 100; // Continua se batch cheio
@@ -134,7 +139,7 @@ hasMoreEntries = syncedCount >= 100;
 ```typescript
 const result = await this.retryManager.execute(async () => {
   const syncedCount = await this.pushEntries(apiKey);
-  await this.pullEntries(apiKey);
+  // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.0
   return syncedCount;
 });
 
@@ -197,25 +202,21 @@ Resultado Esperado:
 ✅ Retorno imediato
 ```
 
-## Performance e Limites
+## Performance e Limites (LEGADO)
 
-### Carga no Backend
+### Carga no Backend - Antiga (com pull bidirecional)
 
 | Entries Totais | Batches | Requests HTTP | Tempo Estimado* |
-|----------------|---------|---------------|-----------------|
-| 100 | 1 | 2 (push+pull) | ~2s |
-| 500 | 5 | 10 (5 push + 5 pull) | ~10s |
-| 1000 | 10 | 20 (10 push + 10 pull) | ~20s |
+|----------------|---------|---------------|------------------|
+| 100 | 1 | 1 (push only) | ~1s |
+| 500 | 5 | 5 (5 push) | ~5s |
+| 1000 | 10 | 10 (10 push) | ~10s |
 
-*Assumindo ~2s por batch (1s push + 1s pull)
+*Desde v0.5.0: apenas push-only, sem pull. Tempo reduzido 50%
 
 ### Otimizações Futuras
 
-1. **Paralelização de Pull:**
-   - Pull pode executar em paralelo com próximo Push
-   - Redução de 50% no tempo total
-
-2. **Batch Size Dinâmico:**
+1. **Batch Size Dinâmico:**
    - Aumentar para 200 se servidor suportar
    - Reduzir para 50 em conexões lentas
 
@@ -228,7 +229,7 @@ Resultado Esperado:
 ### Mudanças Backward Compatible
 
 ✅ **Comandos VSCode:** Nenhuma mudança na API pública  
-✅ **Backend:** Usa endpoints existentes (`/sync/push`, `/sync/pull`)  
+✅ **Backend:** Usa endpoints existentes (`/sync/push` ativo, `/sync/pull` legado)  
 ✅ **Database:** Mesma estrutura SQLite  
 ✅ **Configuração:** Nenhuma nova config necessária  
 
@@ -244,19 +245,16 @@ Resultado Esperado:
 🔄 Batch 1...
 📤 Push: Enviando 100 entries...
 ✅ Push: 100 entries sincronizadas
-📥 Pull: Nenhuma entry nova
-📊 Batch 1 completo. 100 entries sincronizadas. Continuando...
+� Batch 1 completo. 100 entries sincronizadas. Continuando...
 
 🔄 Batch 2...
 📤 Push: Enviando 100 entries...
 ✅ Push: 100 entries sincronizadas
-📥 Pull: Nenhuma entry nova
 📊 Batch 2 completo. 100 entries sincronizadas. Continuando...
 
 🔄 Batch 3...
 📤 Push: Enviando 50 entries...
 ✅ Push: 50 entries sincronizadas
-📥 Pull: Nenhuma entry nova
 
 ✅ Sincronização completa! Total: 250 entries em 3 batch(es)
 ```

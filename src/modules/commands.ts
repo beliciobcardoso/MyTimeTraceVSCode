@@ -225,7 +225,7 @@ export class CommandManager {
    * Registra comandos de operações de sincronização (Sync Now, Status)
    * 
    * **Comandos:**
-   * - syncNow: Sincronização manual (push + pull)
+    * - syncNow: Sincronização manual de envio (push)
    * - viewSyncStatus: Painel com status de sincronização
    * 
    * @param context - Contexto da extensão
@@ -268,7 +268,7 @@ export class CommandManager {
           title: 'MyTimeTrace',
           cancellable: false
         }, async (progress) => {
-          progress.report({ message: 'Sincronizando com Cloud...' });
+          progress.report({ message: 'Enviando dados para Cloud...' });
 
           const success = await syncManager.performSync();
 

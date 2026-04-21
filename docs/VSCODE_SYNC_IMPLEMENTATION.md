@@ -26,12 +26,12 @@
 
 ## 📋 Resumo Executivo
 
-Este documento detalha **exatamente** o que precisa ser implementado na extensão VS Code para sincronização bidirecional funcionar com o backend.
+Este documento detalha **exatamente** o que precisa ser implementado na extensão VS Code para sincronização funcionar com o backend no modo push-only.
 
 ### ✅ Backend MyTimeTraceCloud (Este Repositório)
 - ✅ Schema Prisma configurado (PostgreSQL 17)
 - ✅ Endpoints criados: `/sync/register`, `/sync/push`, `/sync/pull`, `/sync/status`
-- ✅ Sincronização bidirecional implementada
+- ✅ Sincronização push-first adotada como fluxo oficial
 - ✅ Dados pertencem ao usuário (não ao dispositivo)
 - ✅ Constraint UNIQUE previne duplicatas
 - ✅ Validação de API Key via ApiKeyGuard (middleware obrigatório)
@@ -57,7 +57,7 @@ Comportamentos por cenário:
    🔇 NENHUMA mensagem ao usuário (silencioso)
 
 2️⃣ API Key configurada E válida:
-   ✅ Sync funciona normalmente (push/pull)
+  ✅ Sync funciona normalmente (push only)
    ✅ Auto-sync em horários específicos (ex: [08:00, 17:00] = 2x/dia)
    🔇 Sucesso = SILENCIOSO (sem notificação)
    
@@ -75,11 +75,10 @@ IMPORTANTE: API Key é OPCIONAL, não obrigatória!
 ## 🎯 Objetivos da Implementação
 
 ### Objetivo Principal
-Permitir que a extensão VS Code sincronize `time_entries` de forma bidirecional:
+Permitir que a extensão VS Code sincronize `time_entries` de forma unidirecional:
 1. **Push:** Enviar entries locais (SQLite) → Servidor (PostgreSQL)
-2. **Pull:** Receber entries de outros PCs → SQLite local
-3. **Registro:** Registrar device no servidor
-4. **Status:** Verificar status de sincronização
+2. **Registro:** Registrar device no servidor
+3. **Status:** Verificar status de sincronização
 
 ### Fluxo Completo
 ```
@@ -116,8 +115,8 @@ Permitir que a extensão VS Code sincronize `time_entries` de forma bidirecional
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│ 6. VS CODE PC B: Mesma API_KEY, outro device_key       │
-│    → GET /sync/pull?deviceKey=uuid-pc-b&limit=100     │
+│ 6. VS CODE: reenvia apenas o que ficou pendente       │
+│    → Não há mais etapa de pull                         │
 │    → Recebe 100 entries de PC A                        │
 │    → Insere no SQLite local com synced = 1             │
 └─────────────────────────────────────────────────────────┘
@@ -395,12 +394,12 @@ interface PullResponse {
 }
 
 /**
- * SyncManager - Gerencia sincronização bidirecional
+ * SyncManager - Gerencia sincronização push-only
  * 
  * Responsabilidades:
  * - Registrar device no servidor
  * - Push: Enviar entries locais → servidor
- * - Pull: Receber entries de outros devices → local
+ * - Pull: legado / não usado no fluxo atual
  * - Auto-sync em background (5 em 5 min)
  * 
  * ⚠️ COMPORTAMENTO DE NOTIFICAÇÕES:
@@ -680,8 +679,7 @@ export class SyncManager {
   }
 
   /**
-   * Pull: Receber entries de outros devices → local
-   * GET /sync/pull
+   * Pull: legado / não usado no fluxo atual
    * 
    * ⚠️ COMPORTAMENTO:
    * - Tenta 5 vezes em caso de erro
@@ -1182,10 +1180,10 @@ SELECT * FROM time_entries WHERE device_name = 'from-other-device';
 ### Backend MyTimeTraceCloud (Este Repo) ✅ COMPLETO
 
 - [x] **Schema Prisma:** Models User, Device, TimeEntry, SyncLog, SyncConfig
-- [x] **Endpoints:** POST /sync/register, POST /sync/push, GET /sync/pull, GET /sync/status
-- [x] **DTOs:** TimeEntryDto, PushDto, PullQueryDto, PushResponseDto, etc
+- [x] **Endpoints:** POST /sync/register, POST /sync/push, GET /sync/status
+- [x] **DTOs:** TimeEntryDto, PushDto, PullQueryDto (legado), PushResponseDto, etc
 - [x] **Guards:** ApiKeyGuard para validação de API_KEY
-- [x] **Service:** SyncService com lógica de push/pull bidirecional
+- [x] **Service:** SyncService com lógica de push-only
 - [x] **Docs:** Swagger disponível em /api/docs
 - [x] **Config Admin:** GET/PUT /sync/config (superadmin)
 
@@ -1231,7 +1229,7 @@ Comportamento por cenário:
    🔇 NENHUMA mensagem ao usuário (silencioso)
 
 2️⃣ API Key configurada E válida:
-   ✅ Sync funciona (push/pull com retry)
+   ✅ Sync funciona (push-only com retry)
    ✅ Auto-sync a cada 5 minutos
    🔇 Sucesso = SILENCIOSO (sem notificação)
    🔔 Falha após 5 retries = Notifica usuário
@@ -1317,7 +1315,7 @@ Benefícios:
 ```typescript
 🔇 SILENCIOSO (sem notificação):
 - API Key nunca configurada
-- Sync com sucesso (push/pull OK)
+- Sync com sucesso (push-only OK)
 - Auto-sync rodando em background
 
 🔔 NOTIFICA USUÁRIO:

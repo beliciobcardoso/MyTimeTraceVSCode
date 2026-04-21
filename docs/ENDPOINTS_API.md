@@ -119,6 +119,8 @@ X-API-Key: mtt_xxxxx
 
 ### 3. GET /sync/pull
 
+> **LEGADO / DEPRECIADO**
+
 **Descrição:** Recebe entries de outros dispositivos do mesmo usuário (sincronização incremental).
 
 **Headers:**
@@ -345,7 +347,7 @@ export const SECRET_KEYS = {
 - **Retry automático:** 5 tentativas com delay de 10 segundos
 
 ### Limites:
-- **Batch size (push/pull):** 500 entries por request
+- **Batch size (push):** 500 entries por request
 - **Request timeout:** 30 segundos
 - **Cleanup automático:** Projetos deletados >30 dias são removidos a cada 24h
 

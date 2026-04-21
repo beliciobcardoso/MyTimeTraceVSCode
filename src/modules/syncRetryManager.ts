@@ -12,7 +12,7 @@ import * as vscode from 'vscode';
  * - Configurações dinâmicas obtidas do backend
  * 
  * **Fluxo:**
- * 1. Tenta executar operação (push/pull)
+ * 1. Tenta executar operação de sincronização
  * 2. Se falhar → aguarda delay e tenta novamente
  * 3. Repete até maxRetries
  * 4. Se todas falharem → notifica usuário

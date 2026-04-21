@@ -5,6 +5,14 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-04-21
+
+### Alterado
+
+- Documentação oficial consolidada para sync unidirecional (push-only).
+- Nota de versão adicionada no README: "A partir da versão 0.5.0, o sync da extensão é unidirecional (ext -> cloud)".
+- Plano técnico atualizado com fases 4 e 5 concluídas e fase 6 em andamento neste repositório.
+
 ## [0.5.0] - 2025-11-23
 
 ### Adicionado
@@ -49,10 +57,10 @@ e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Adicionado
 
-- **Sincronização com Cloud**: Sistema completo de sincronização bidirecional com backend
+- **Sincronização com Cloud**: Sistema completo de sincronização unidirecional (push-only) com backend
   - **ApiKeyManager**: Gerenciamento seguro de API Key via VS Code SecretStorage
   - **DeviceManager**: Identificação única de dispositivos com UUID v4
-  - **SyncManager**: Orquestração de push/pull automático e manual
+  - **SyncManager**: Orquestração de push automático e manual
   - **SyncRetryManager**: Sistema de retry com backoff exponencial (até 5 tentativas)
   - **Comandos de Sync**:
     - `MyTimeTrace: Set API Key` - Configurar chave de autenticação
@@ -67,7 +75,7 @@ e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
     - `syncInterval` - Intervalo de verificação em minutos (5-1440)
   - **Mensagens de Erro Melhoradas**: Botões de ação "Tentar Novamente" e "Ver Detalhes" com cópia para clipboard
   - **Suporte Multi-Tenant**: Isolamento por API Key + device_key
-  - **Batch Sync**: Limite de 500 entries por push/pull para otimização
+  - **Batch Sync**: Limite de 500 entries por push para otimização
 
 - **Rastreamento de Dispositivo**: Novo campo `device_name` na tabela `time_entries` para identificar o computador de origem
 - **Módulo deviceInfo**: Novo módulo `src/modules/deviceInfo.ts` para capturar informações do dispositivo usando `os.hostname()`

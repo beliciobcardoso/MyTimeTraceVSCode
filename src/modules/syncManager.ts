@@ -8,11 +8,10 @@ import { API_BASE_URL, SYNC_BATCH_LIMIT, SYNC_DEFAULT_TIMES } from '../config/co
 /**
  * 🔄 SyncManager
  * 
- * Orquestra toda a sincronização bidirecional entre cliente e servidor.
+ * Orquestra sincronização unidirecional entre extensão e servidor.
  * 
  * **Funcionalidades:**
  * - Push: Envia entries locais não sincronizadas para servidor
- * - Pull: Recebe entries de outros dispositivos do servidor
  * - Auto-sync: Sincronização automática em horários configurados
  * - Retry: Tentativas automáticas em caso de falha
  * - Config dinâmica: Busca configurações do servidor
@@ -20,7 +19,7 @@ import { API_BASE_URL, SYNC_BATCH_LIMIT, SYNC_DEFAULT_TIMES } from '../config/co
  * **Fluxo:**
  * 1. Initialize: Verifica API Key e agenda auto-sync
  * 2. Auto-sync: Timer verifica horários configurados
- * 3. performSync: Push + Pull sequenciais
+ * 3. performSync: Push em lotes até não haver mais dados pendentes
  * 4. Retry: SyncRetryManager tenta novamente em caso de falha
  * 
  * @see {@link https://backend.mytimetrace.com/api/sync/*}
@@ -199,13 +198,12 @@ export class SyncManager {
   }
   
   /**
-   * Executa sincronização completa (Push + Pull)
+    * Executa sincronização completa (somente Push)
    * 
    * **Fluxo:**
    * 1. Push: Envia entries locais não sincronizadas (batches de 100)
-   * 2. Pull: Recebe entries de outros dispositivos
-   * 3. Retry: Tenta novamente em caso de falha
-   * 4. Loop: Continua até não ter mais entries para sincronizar
+    * 2. Retry: Tenta novamente em caso de falha
+    * 3. Loop: Continua até não ter mais entries para sincronizar
    * 
    * **Comportamento:**
    * - Sucesso: Silencioso (sem notificação)
@@ -238,7 +236,7 @@ export class SyncManager {
     if (this.statusBarManager?.setSyncStatus) {
       this.statusBarManager.setSyncStatus(true);
     }
-    console.log('🔄 Iniciando sincronização completa...');
+    console.log('🔄 Iniciando sincronização de envio...');
     
     try {
       let totalSynced = 0;
@@ -253,7 +251,6 @@ export class SyncManager {
         // Executa com retry automático
         const result = await this.retryManager.execute(async () => {
           const syncResult = await this.pushEntries(apiKey);
-          await this.pullEntries(apiKey);
           return syncResult;
         });
         
@@ -272,7 +269,7 @@ export class SyncManager {
         }
       }
       
-      console.log(`✅ Sincronização completa! Total: ${totalSynced} entries em ${batchCount} batch(es)`);
+      console.log(`✅ Sincronização de envio completa! Total: ${totalSynced} entries em ${batchCount} batch(es)`);
       return true;
     } finally {
       this.isSyncing = false;
@@ -308,7 +305,7 @@ export class SyncManager {
       return { syncedCount: 0, conflictsCount: 0 };
     }
     
-    console.log(`📤 Push: Enviando ${SYNC_BATCH_LIMIT} entries...`);
+    console.log(`📤 Push: Enviando até ${this.batchLimit} entries...`);
     
     const response = await fetch(`${API_BASE_URL}/sync/push`, {
       method: 'POST',
@@ -319,7 +316,7 @@ export class SyncManager {
       body: JSON.stringify({
         deviceKey,
         entries: unsyncedEntries.map(entry => ({
-          clientId: `local-${entry.id}`,
+          clientId: entry.client_id || `local-${entry.id}`,
           timestamp: entry.timestamp,
           project: entry.project || 'Unknown',
           file: entry.file || 'Unknown',
@@ -360,79 +357,6 @@ export class SyncManager {
       syncedCount: unsyncedEntries.length,
       conflictsCount: conflictsCount
     };
-  }
-  
-  /**
-   * Pull: Recebe entries de outros dispositivos do servidor
-   * 
-   * **Endpoint:** GET /sync/pull?deviceKey=xxx&since=xxx&limit=500
-   * **Paginação:** 500 entries por vez
-   * 
-   * **Fluxo:**
-   * 1. Busca última sincronização (last_pull_timestamp)
-   * 2. Request entries após essa data
-   * 3. Insere no SQLite com synced=1
-   * 4. Atualiza last_pull_timestamp
-   * 
-   * @param apiKey - API Key do usuário
-   * @throws Error se pull falhar
-   */
-  private async pullEntries(apiKey: string): Promise<void> {
-    const deviceKey = await this.deviceManager.getOrCreateDeviceKey();
-    
-    // Busca última sincronização
-    const lastPull = await this.dbManager.getMetadata('last_pull_timestamp');
-    const since = lastPull || new Date(0).toISOString(); // Epoch se nunca sincronizou
-    
-    console.log(`📥 Pull: Buscando entries desde ${since}...`);
-    
-    const response = await fetch(
-      `${API_BASE_URL}/sync/pull?deviceKey=${deviceKey}&since=${encodeURIComponent(since)}&limit=${this.batchLimit}`,
-      {
-        method: 'GET',
-        headers: {
-          'X-API-Key': apiKey
-        }
-      }
-    );
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Pull failed: HTTP ${response.status} - ${errorText}`);
-    }
-    
-    const result: any = await response.json();
-    
-    if (result.entries.length === 0) {
-      console.log('✅ Pull: Nenhuma entry nova de outros dispositivos');
-      await this.dbManager.setMetadata('last_pull_timestamp', new Date().toISOString());
-      return;
-    }
-    
-    console.log(`📥 Pull: Recebendo ${result.entries.length} entries...`);
-    
-    // Insere entries no banco local (já marcadas como synced=1)
-    for (const entry of result.entries) {
-      try {
-        await this.dbManager.insertSyncedEntry({
-          clientId: entry.clientId,
-          timestamp: entry.timestamp,
-          project: entry.project,
-          file: entry.file,
-          durationSeconds: entry.durationSeconds,
-          isIdle: entry.isIdle,
-          deviceKey: entry.deviceKey
-        });
-      } catch (error) {
-        // INSERT OR IGNORE pode falhar silenciosamente se entry já existe
-        console.warn(`⚠️ Entry ${entry.clientId} já existe localmente, ignorando`);
-      }
-    }
-    
-    // Atualiza timestamp de última sincronização
-    await this.dbManager.setMetadata('last_pull_timestamp', result.syncedAt);
-    
-    console.log(`✅ Pull: ${result.entries.length} entries recebidas e armazenadas`);
   }
   
   /**
