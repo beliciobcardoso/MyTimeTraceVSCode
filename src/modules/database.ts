@@ -766,7 +766,7 @@ export class DatabaseManager {
   /**
    * Insere entry já sincronizada (LEGADO: era usado por pull em v0.4.x)
    * 
-   * **Status:** Não mais chamado - pull removido em v0.5.0. Mantido para compatibilidade de dedup local.
+  * **Status:** Não mais chamado - pull removido em v0.5.1. Mantido para compatibilidade de dedup local.
    * **Importante:** Usa INSERT OR IGNORE para evitar duplicatas
    * 
    * @param entry - Objeto com dados da entry (formato backend)

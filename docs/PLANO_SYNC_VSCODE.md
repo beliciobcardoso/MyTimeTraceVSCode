@@ -1,7 +1,7 @@
 # 📋 Plano de Ação - Implementação de Sincronização (Extensão VS Code)
 
-⚠️ **STATUS: LEGADO (Deprecated desde v0.5.0)**  
-Este é o planejamento original com sincronização bidirecional (push + pull). A partir de v0.5.0, o sync é **unidirecional (push-only)**. Veja [PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md](PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md) para o plano atual.
+⚠️ **STATUS: LEGADO (Deprecated desde v0.5.1)**  
+Este é o planejamento original com sincronização bidirecional (push + pull). A partir de v0.5.1, o sync é **unidirecional (push-only)**. Veja [PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md](PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md) para o plano atual.
 
 **Data:** 22 de novembro de 2025  
 **Versão Atual:** v0.3.1 (HISTÓRICO)  
@@ -36,7 +36,7 @@ Este é o planejamento original com sincronização bidirecional (push + pull). 
 - **Endpoints Disponíveis:**
   - `POST /sync/register` - Registrar dispositivo
   - `POST /sync/push` - Enviar entries locais
-  - `GET /sync/pull` - Receber entries de outros PCs (legado, removido em v0.5.0)
+  - `GET /sync/pull` - Receber entries de outros PCs (legado, removido em v0.5.1)
   - `GET /sync/status` - Status de sincronização
   - `GET/PUT /sync/config` - Configurações (superadmin)
 
@@ -52,7 +52,7 @@ Este é o planejamento original com sincronização bidirecional (push + pull). 
    - Gerenciar API Key via SecretStorage
    - Comandos: Set, View, Revoke API Key
 
-2. **Sincronização Bidirecional (LEGADO - Removida em v0.5.0)**
+2. **Sincronização Bidirecional (LEGADO - Removida em v0.5.1)**
    - Push: Enviar entries locais → servidor ✅ mantido
    - Pull: Receber entries de outros PCs → local ❌ removido
    - Auto-sync em horários configurados
@@ -121,7 +121,7 @@ src/modules/
 │    ├── Push: Envia entries com synced=0                │
 │    │   → POST /sync/push { entries: [...] }            │
 │    │   → Marca como synced=1 no SQLite                 │
-│    └── Pull: REMOVIDO em v0.5.0 ❌                     │
+│    └── Pull: REMOVIDO em v0.5.1 ❌                     │
 │        → GET /sync/pull LEGADO / não mais usado        │
 └──────────────────────────────────────────────────────────┘
                            ↓
@@ -635,7 +635,7 @@ export class SyncManager {
 **Checklist:**
 - [ ] Criar arquivo `syncManager.ts`
 - [x] Implementar push/pull de entries (legado)
-- [x] Remover pull em v0.5.0
+- [x] Remover pull em v0.5.1
 - [ ] Implementar auto-sync com timer
 - [ ] Integrar com retryManager
 - [ ] Escrever testes unitários
@@ -1084,7 +1084,7 @@ describe('SyncManager', () => {
    - [ ] PC A: Gerar 50 entries
    - [ ] PC A: Sync manual (push)
    - [ ] PC B: Configurar mesma API Key
-   - [x] PC B: Sync manual (pull) - REMOVIDO em v0.5.0
+  - [x] PC B: Sync manual (pull) - REMOVIDO em v0.5.1
    - [ ] PC B: Verificar 50 entries recebidas
 
 3. **Cenário 3: Falha de Rede**

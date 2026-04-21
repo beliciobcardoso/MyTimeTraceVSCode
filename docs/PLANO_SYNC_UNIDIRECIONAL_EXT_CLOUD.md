@@ -29,7 +29,7 @@ O pull será removido de forma definitiva do fluxo da extensão.
 
 Manter no material técnico apenas uma nota histórica:
 
-- pull removido na versão X.Y.Z;
+- pull removido na versão 0.5.1;
 - motivo: simplificação do fluxo e redução de falha;
 - novo contrato oficial: somente upload (ext -> cloud).
 
@@ -222,7 +222,7 @@ Adicionar log estruturado no push:
 
 ### Nota obrigatória
 
-"A partir da versão X.Y.Z, o sync da extensão é unidirecional (ext -> cloud)."
+"A partir da versão 0.5.1, o sync da extensão é unidirecional (ext -> cloud)."
 
 ---
 
