@@ -1897,7 +1897,7 @@ export async function activate(context: vscode.ExtensionContext) {
     "@nestjs/throttler": "^5.1.1",
     "@prisma/client": "^5.7.0",
     "class-validator": "^0.14.0",
-    "class-transformer": "^0.5.1",
+    "class-transformer": "^0.5.2",
     "helmet": "^7.1.0",
     "rxjs": "^7.8.1"
   },

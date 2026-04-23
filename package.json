@@ -4,7 +4,7 @@
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados.",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"

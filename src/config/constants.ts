@@ -30,9 +30,9 @@ export const SYNC_BATCH_LIMIT = 200;
  * Horários padrão para auto-sync (HH:MM)
  * 
  * **Configurável via API:** /sync/config
- * **Padrão:** 2x por dia (manhã e tarde)
+ * **Padrão:** 3x por dia (manhã, meio-dia e tarde)
  */
-export const SYNC_DEFAULT_TIMES = ['08:00', '17:00'];
+export const SYNC_DEFAULT_TIMES = ['08:00', '12:00', '17:00'];
 
 /**
  * Chaves do SecretStorage

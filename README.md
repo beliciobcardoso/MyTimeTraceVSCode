@@ -1,4 +1,4 @@
-# My Time Trace VSCode (v0.5.1)
+# My Time Trace VSCode (v0.5.2)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
@@ -7,7 +7,7 @@
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
-[![Version](https://img.shields.io/badge/Version-0.5.1-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.5.2-blue?style=flat-square)]()
 
 </div>
 
@@ -23,7 +23,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
 
-### ☁️ Sincronização em Nuvem (NOVO v0.5.1)
+### ☁️ Sincronização em Nuvem (NOVO v0.5.2)
 - **Sync Unidirecional**: Push automático da extensão para a cloud
 - **Configuração Dinâmica**: Backend controla `batchLimit`, `syncTimes`, `maxRetries` e `retryDelayMs`
 - **Loop Automático**: Processa TODAS entries pendentes em um único comando
@@ -33,7 +33,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Status Visual**: Ícone animado na status bar durante sincronização
 - **Multi-Dispositivo**: Cada device envia seu próprio histórico para a cloud
 
-> A partir da versão 0.5.1, o sync da extensão é unidirecional (ext -> cloud).
+> A partir da versão 0.5.2, o sync da extensão é unidirecional (ext -> cloud).
 
 ### 📊 Dashboard Moderno Unificado
 - **Interface Responsiva**: Layout grid 40/60 otimizado
@@ -189,14 +189,14 @@ Após gerar o pacote, você pode instalá-lo de **três maneiras**:
 
 ```bash
 # Para o VS Code normal
-code --install-extension my-time-trace-vscode-0.5.1.vsix
+code --install-extension my-time-trace-vscode-0.5.2.vsix
 ```
 
 #### Opção 3: Pelo Terminal (VS Code Insiders)
 
 ```bash
 # Para o VS Code Insiders
-code-insiders --install-extension my-time-trace-vscode-0.5.1.vsix
+code-insiders --install-extension my-time-trace-vscode-0.5.2.vsix
 ```
 
 > **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).

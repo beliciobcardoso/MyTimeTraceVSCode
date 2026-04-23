@@ -5,12 +5,12 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.1] - 2026-04-21
+## [0.5.2] - 2026-04-21
 
 ### Alterado
 
 - Documentação oficial consolidada para sync unidirecional (push-only).
-- Nota de versão adicionada no README: "A partir da versão 0.5.1, o sync da extensão é unidirecional (ext -> cloud)".
+- Nota de versão adicionada no README: "A partir da versão 0.5.2, o sync da extensão é unidirecional (ext -> cloud)".
 - Plano técnico atualizado com fases 4 e 5 concluídas e fase 6 em andamento neste repositório.
 
 ## [0.5.0] - 2025-11-23
@@ -69,7 +69,7 @@ e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
     - `MyTimeTrace: Sync Now` - Sincronização manual com progress notification
     - `MyTimeTrace: View Sync Status` - Painel webview com status de todos os dispositivos
   - **Indicador Visual**: Ícone animado `$(sync~spin)` na status bar durante sincronização ativa
-  - **Auto-Sync**: Sincronização automática em horários configuráveis (padrão: 08:00 e 17:00)
+  - **Auto-Sync**: Sincronização automática em horários configuráveis (padrão: 08:00, 12:00 e 17:00)
   - **Configurações**:
     - `syncEnabled` - Habilitar/desabilitar sincronização automática
     - `syncInterval` - Intervalo de verificação em minutos (5-1440)
