@@ -1,7 +1,7 @@
 # 🔄 Sistema de Loop Automático de Sincronização
 
-⚠️ **STATUS: LEGADO (Deprecated desde v0.5.1)**  
-Este documento descreve a implementação anterior com pull bidirecional. A partir de v0.5.1, o sync é **unidirecional (push-only)**. Veja [PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md](PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md) para arquitetura atual.
+⚠️ **STATUS: LEGADO (Deprecated desde v0.5.2)**  
+Este documento descreve a implementação anterior com pull bidirecional. A partir de v0.5.2, o sync é **unidirecional (push-only)**. Veja [PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md](PLANO_SYNC_UNIDIRECIONAL_EXT_CLOUD.md) para arquitetura atual.
 
 ---
 
@@ -68,7 +68,7 @@ private async performSync(): Promise<boolean> {
   while (hasMoreEntries) {
     batchCount++;
     const syncedCount = await this.pushEntries(apiKey);
-    // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.1
+    // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.2
     
     totalSynced += syncedCount;
     hasMoreEntries = syncedCount >= 100; // Continua se batch cheio
@@ -139,7 +139,7 @@ hasMoreEntries = syncedCount >= 100;
 ```typescript
 const result = await this.retryManager.execute(async () => {
   const syncedCount = await this.pushEntries(apiKey);
-  // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.1
+  // await this.pullEntries(apiKey); // ❌ REMOVIDO - legado desde v0.5.2
   return syncedCount;
 });
 
@@ -212,7 +212,7 @@ Resultado Esperado:
 | 500 | 5 | 5 (5 push) | ~5s |
 | 1000 | 10 | 10 (10 push) | ~10s |
 
-*Desde v0.5.1: apenas push-only, sem pull. Tempo reduzido 50%
+*Desde v0.5.2: apenas push-only, sem pull. Tempo reduzido 50%
 
 ### Otimizações Futuras
 

@@ -178,7 +178,7 @@ Headers: { "X-API-Key": "mtt_superadmin..." }
 {
   "maxRetries": 5,
   "retryDelayMs": 10000,
-  "syncTimes": ["08:00", "17:00"]
+  "syncTimes": ["08:00", "12:00", "17:00"]
 }
 
 // PUT - Atualizar config
@@ -278,7 +278,7 @@ Headers: {
 
 ### 2️⃣ API Key configurada E válida
 - ✅ Sync funciona normalmente (push only)
-- ✅ Auto-sync em horários específicos (ex: [08:00, 17:00])
+- ✅ Auto-sync em horários específicos (ex: [08:00, 12:00, 17:00])
 - 🔇 Sucesso = SILENCIOSO (sem notificação)
 
 ### 3️⃣ API Key configurada MAS inválida
@@ -301,6 +301,7 @@ Headers: {
 - `syncTimes`: Array de horários HH:MM
 - Exemplos:
   - `["08:00"]` → 1x/dia
+  - `["08:00", "12:00", "17:00"]` → 3x/dia
   - `["08:00", "17:00"]` → 2x/dia
   - `["08:00", "12:00", "17:00", "22:00"]` → 4x/dia
 

@@ -222,7 +222,7 @@ X-API-Key: mtt_xxxxx
 **Response (200 OK):**
 ```json
 {
-  "syncTimes": ["08:00", "17:00"],
+  "syncTimes": ["08:00", "12:00", "17:00"],
   "maxRetries": 5,
   "retryDelayMs": 10000
 }
@@ -342,7 +342,7 @@ export const SECRET_KEYS = {
 ## 📝 Notas de Implementação
 
 ### Sincronização Automática:
-- **Horários padrão:** 08:00 e 17:00 (configurável via `/sync/config`)
+- **Horários padrão:** 08:00, 12:00 e 17:00 (configurável via `/sync/config`)
 - **Intervalo de verificação:** 1 minuto
 - **Retry automático:** 5 tentativas com delay de 10 segundos
 

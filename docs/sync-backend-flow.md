@@ -357,7 +357,7 @@ x-api-key: mtt_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 {
   "apiVersion": "1.0",
   "maxEntriesPerPush": 1000,
-  "syncTimes": ["08:00", "17:00"],
+  "syncTimes": ["08:00", "12:00", "17:00"],
   "batchLimit": 200,
   "maxRetries": 5,
   "retryDelayMs": 10000

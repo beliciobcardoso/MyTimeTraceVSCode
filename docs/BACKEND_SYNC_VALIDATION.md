@@ -152,7 +152,7 @@ return response;
 async getConfig() {
   return {
     batchLimit: 100,              // ⚠️ DEVE ser igual na extensão
-    syncTimes: ['08:00', '17:00'], // Horários de auto-sync
+    syncTimes: ['08:00', '12:00', '17:00'], // Horários de auto-sync
     maxRetries: 5,                 // Tentativas em caso de falha
     retryDelayMs: 10000            // Delay entre tentativas (ms)
   };

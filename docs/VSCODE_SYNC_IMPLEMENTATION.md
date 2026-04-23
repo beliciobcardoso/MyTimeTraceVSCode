@@ -415,10 +415,12 @@ export class SyncManager {
   private readonly RETRY_DELAY = 10000; // 10 segundos entre tentativas
   
   // Horários de auto-sync (dinâmico via backend)
-  // Padrão: 1x por dia às 08:00
+  // Padrão: 3x por dia (08:00, 12:00, 17:00)
   // Exemplos: [08:00] = 1x/dia | [08:00, 17:00] = 2x/dia | [08:00, 12:00, 17:00, 22:00] = 4x/dia
   private SYNC_TIMES: Array<{ hour: number; minute: number }> = [
-    { hour: 8, minute: 0 },   // Padrão: apenas 08:00
+    { hour: 8, minute: 0 },
+    { hour: 12, minute: 0 },
+    { hour: 17, minute: 0 },
   ];
 
   constructor(
@@ -1296,8 +1298,8 @@ Outros erros (rede, timeout) → Retry com delay de 10s
 ```typescript
 Horários padrão:
 - 08:00 (manhã)
-- 14:00 (tarde)
-- 20:00 (noite)
+- 12:00 (meio-dia)
+- 17:00 (tarde)
 
 Configuração:
 - Verificação a cada 1 minuto
@@ -1417,7 +1419,7 @@ model SyncConfig {
   
   // Configurações de Auto-Sync (array de horários em formato ["HH:MM", "HH:MM", ...])
   // Exemplos: ["08:00"] = 1x/dia | ["08:00", "17:00"] = 2x/dia | ["08:00", "12:00", "17:00", "22:00"] = 4x/dia
-  syncTimes       Json     @default("[\"08:00\"]") @map("sync_times") @db.JsonB
+  syncTimes       Json     @default("[\"08:00\",\"12:00\",\"17:00\"]") @map("sync_times") @db.JsonB
   
   // Metadados
   updatedBy       String?  @map("updated_by") @db.Uuid
@@ -1513,12 +1515,12 @@ async getConfig(): Promise<SyncConfigDto> {
   let config = await this.prisma.syncConfig.findFirst();
   
   if (!config) {
-    // Criar config padrão se não existir (1 sync por dia às 08:00)
+    // Criar config padrão se não existir (3 syncs por dia)
     config = await this.prisma.syncConfig.create({
       data: {
         maxRetries: 5,
         retryDelayMs: 10000,
-        syncTimes: ['08:00'], // Padrão: 1x/dia
+        syncTimes: ['08:00', '12:00', '17:00'], // Padrão: 3x/dia
       },
     });
   }
@@ -1641,7 +1643,7 @@ export default function AdminSyncConfigPage() {
   const [config, setConfig] = useState({
     maxRetries: 5,
     retryDelayMs: 10000,
-    syncTimes: ['08:00'], // Array dinâmico
+    syncTimes: ['08:00', '12:00', '17:00'], // Array dinâmico
   });
 
   useEffect(() => {

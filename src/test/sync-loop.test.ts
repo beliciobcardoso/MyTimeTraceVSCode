@@ -228,7 +228,7 @@ suite('🔄 Auto-Loop Sync Tests', () => {
 
   /**
    * Teste 6: insertSyncedEntry com mesmo clientId (LEGADO: era de pull bidirecional v0.4.x)
-  * Mantido para validação de dedup local, mas pull removido em v0.5.1
+  * Mantido para validação de dedup local, mas pull removido em v0.5.2
    */
   test('✅ insertSyncedEntry deve ignorar duplicata por clientId (legado)', async () => {
     const duplicatedEntry = {
@@ -254,7 +254,7 @@ suite('🔄 Auto-Loop Sync Tests', () => {
 
   /**
    * Teste 7: insertSyncedEntry com conteúdo igual (LEGADO: era de pull bidirecional v0.4.x)
-  * Mantido para validação de dedup local, mas pull removido em v0.5.1
+  * Mantido para validação de dedup local, mas pull removido em v0.5.2
    */
   test('✅ insertSyncedEntry deve ignorar duplicata por conteúdo (legado)', async () => {
     const firstEntry = {
