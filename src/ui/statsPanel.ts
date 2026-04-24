@@ -886,6 +886,7 @@ export class StatsPanel {
         // Variáveis globais para o tooltip e segmentos do gráfico
         let chartSegments = [];
         let tooltip = null;
+        let tooltipVisible = false;
 
         // Função para criar o elemento tooltip
         function createTooltip() {
@@ -904,8 +905,10 @@ export class StatsPanel {
             z-index: 1000;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transform: translateY(3px) scale(0.99);
+            transition: opacity 0.12s ease, transform 0.14s ease;
             white-space: nowrap;
+            will-change: opacity, transform;
           \`;
           document.body.appendChild(tooltip);
           return tooltip;
@@ -923,13 +926,28 @@ export class StatsPanel {
           
           tooltipEl.style.left = x + 10 + 'px';
           tooltipEl.style.top = y - 35 + 'px';
+
+          if (!tooltipVisible) {
+            tooltipEl.style.opacity = '0';
+            tooltipEl.style.transform = 'translateY(3px) scale(0.99)';
+            requestAnimationFrame(() => {
+              tooltipEl.style.opacity = '1';
+              tooltipEl.style.transform = 'translateY(0) scale(1)';
+            });
+            tooltipVisible = true;
+            return;
+          }
+
           tooltipEl.style.opacity = '1';
+          tooltipEl.style.transform = 'translateY(0) scale(1)';
         }
 
         // Função para esconder tooltip
         function hideTooltip() {
           if (tooltip) {
             tooltip.style.opacity = '0';
+            tooltip.style.transform = 'translateY(2px) scale(0.995)';
+            tooltipVisible = false;
           }
         }
 
@@ -948,8 +966,6 @@ export class StatsPanel {
           let angle = Math.atan2(dy, dx);
           // Normalizar para [0, 2π]
           if (angle < 0) angle += 2 * Math.PI;
-          // Ajustar para começar do topo (-π/2)
-          angle = (angle + Math.PI / 2) % (2 * Math.PI);
           
           // Verificar se está dentro do ângulo do segmento
           let startAngle = segment.startAngle;

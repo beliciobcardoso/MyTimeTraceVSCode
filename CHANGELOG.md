@@ -5,6 +5,20 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-04-23
+
+### Alterado
+
+- URL de produção da API atualizada para `https://mytimetrace.com.br/api`.
+- Release alinhada com o novo endpoint de produção.
+
+## [0.5.3] - 2026-04-23
+
+### Corrigido
+
+- Tooltip do gráfico donut ajustado para respeitar a fatia correta no hover.
+- Animação do tooltip suavizada sem alterar a lógica de seleção.
+
 ## [0.5.2] - 2026-04-21
 
 ### Alterado

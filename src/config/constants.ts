@@ -10,11 +10,11 @@
  * 
  * **Ambientes:**
  * - Desenvolvimento: http://localhost:3000/api
- * - Produção: https://api.mytimetrace.com
+ * - Produção: https://mytimetrace.com.br/api
  * 
  * @constant
  */
-export const API_BASE_URL = 'http://localhost:3000/api';
+export const API_BASE_URL = 'https://mytimetrace.com.br/api';
 
 /**
  * Timeout padrão para requisições HTTP (ms)
