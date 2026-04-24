@@ -31,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Logs de ativação
   console.log("=======================================");
   console.log(localize('extension.activated', 'Extension "my-time-trace-vscode" activated!'));
-  console.log("Versão: 0.5.2");
+  console.log("Versão: 0.5.3");
   console.log("Data/Hora: " + new Date().toISOString());
   console.log("=======================================");
 

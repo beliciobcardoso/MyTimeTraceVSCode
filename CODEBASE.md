@@ -1,6 +1,6 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.5.2
+**Versão:** 0.5.3
 **Status:** Beta - Produção
 **Última Atualização:** 23 de novembro de 2025
 **Linguagem:** TypeScript + SQLite
@@ -94,7 +94,7 @@ MyTimeTraceVSCode/
 ├── 📁 docs/                          # 📖 Documentação (30+ arquivos)
 ├── 📁 images/                        # Assets visuais
 ├── 📁 UI/                            # Demos e protótipos
-├── package.json                      # Config npm (v0.5.2)
+├── package.json                      # Config npm (v0.5.3)
 ├── tsconfig.json                     # Config TypeScript
 ├── eslint.config.mjs                 # Config ESLint
 ├── CHANGELOG.md                      # Histórico de mudanças
