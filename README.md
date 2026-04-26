@@ -13,6 +13,8 @@
 
 Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **envio em nuvem**!
 
+✅ **Disponível no VS Code Marketplace:** https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode
+
 ## ✨ Funcionalidades
 
 ### 🕐 Monitoramento Inteligente
@@ -141,7 +143,19 @@ Para documentação detalhada, consulte a pasta [`docs/`](./docs/):
 
 ## 📦 Instalação
 
-No momento, esta extensão está em desenvolvimento e não está disponível no VS Code Marketplace. Para instalá-la:
+Você pode instalar de duas formas: via **Marketplace** (recomendado) ou via **VSIX local** para desenvolvimento.
+
+### Opção 1 (Recomendado): Instalar pelo Marketplace
+
+```bash
+ext install BelicioBCardoso.my-time-trace-vscode
+```
+
+Ou acesse diretamente:
+
+https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode
+
+### Opção 2: Instalação local via VSIX (desenvolvimento)
 
 ### Passo 1: Preparar o Ambiente
 
@@ -221,13 +235,15 @@ As seguintes configurações já estão disponíveis:
 - `myTimeTraceVSCode.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
 - `myTimeTraceVSCode.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
 - `myTimeTraceVSCode.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
+- `myTimeTraceVSCode.syncEnabled`: Ativa/desativa a sincronização automática em nuvem (requer API Key). Padrão: ativado.
+- `myTimeTraceVSCode.syncInterval`: Intervalo de verificação do auto-sync em minutos. Padrão: 60 (mín: 5, máx: 1440).
 
 ## Melhorias Planejadas
 
 - ✅ **Status Bar Item**: Mostrar o tempo atual do arquivo ou o status do monitoramento na barra de status do VS Code.
 - ✅ **Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
 - ✅ **Interface de Visualização**: Adicionar painéis e gráficos para visualizar os dados de tempo coletados.
-- ✅ **Separação de responsabilidades**: Arquitetura modular com 7 módulos especializados
+- ✅ **Separação de responsabilidades**: Arquitetura modular com módulos especializados
 - ✅ **Melhor tratamento de erros**: Tratamento robusto com async/await e safeRegisterCommand
 - ✅ **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos
 - ✅ **Status Bar interativa**: Feedback visual constante com atualização em tempo real
@@ -355,20 +371,19 @@ Para executar os testes:
 ```bash
 # Executar todos os testes
 npm test
-
-# Verificar cobertura de testes  
-npm run test:coverage
 ```
+
+Para cobertura detalhada, consulte o relatório em `docs/COVERAGE_REPORT.md`.
 
 📖 **Mais informações:** Consulte a [documentação completa](./docs/) para guias detalhados de desenvolvimento, design e arquitetura.
 
 ## Qualidade e Confiabilidade
 
 ### 🧪 Testes Automatizados
-A extensão possui uma **excelente cobertura de testes** com **15 testes automatizados** que garantem a qualidade e confiabilidade:
+A extensão possui uma **excelente cobertura de testes** com **21 testes automatizados** que garantem a qualidade e confiabilidade:
 
-- ✅ **15 testes passando** (100% de sucesso)
-- ✅ **~90% de cobertura** das funcionalidades críticas
+- ✅ **21 testes passando**
+- ✅ **88% de cobertura** das funcionalidades críticas
 - ✅ **Testes abrangentes** incluindo:
   - Ativação/desativação da extensão
   - Rastreamento de tempo e detecção de idle
