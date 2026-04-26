@@ -3,15 +3,15 @@
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
 
-[![Status](https://img.shields.io/badge/Status-Beta-orange?style=flat-square)]()
+[![Status](https://img.shields.io/badge/Status-Published-green?style=flat-square)]()
 [![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=flat-square)]()
 [![Version](https://img.shields.io/badge/Version-0.5.4-blue?style=flat-square)]()
 
 </div>
 
-Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **envio em nuvem**!
+Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gasto em cada arquivo e projeto, permitindo que você acompanhe suas atividades de desenvolvimento com um dashboard moderno, filtros avançados e **envio em nuvem**. A versão publicada no Marketplace já está disponível para instalação direta.
 
 ✅ **Disponível no VS Code Marketplace:** https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode
 
@@ -49,7 +49,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Status Bar Interativa**: Feedback visual constante
 - **Formatação Inteligente**: Caminhos de arquivo legíveis
 - **Tema Adaptativo**: Suporte a dark/light mode
-- **Performance Otimizada**: Redução de ~600 linhas de código unnecessary
+- **Performance Otimizada**: Redução de ~600 linhas de código desnecessárias
 - **Cores Consistentes**: Mesma cor para cada projeto independente de filtros
 
 ## Como Funciona
@@ -76,7 +76,7 @@ A extensão utiliza uma **arquitetura modular enterprise** com separação clara
 
 ### 💾 Armazenamento de Dados
 
-Os dados são persistidos localmente em um banco **SQLite** seguro:
+Os dados são persistidos localmente em um banco **SQLite** seguro e ficam sob o armazenamento global do VS Code, o que facilita backup, inspeção e limpeza quando necessário:
 
 **Linux:**
 ```
@@ -155,7 +155,7 @@ Ou acesse diretamente:
 
 https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode
 
-### Opção 2: Instalação local via VSIX (desenvolvimento)
+### Opção 2 (Desenvolvimento): Instalação local via VSIX
 
 ### Passo 1: Preparar o Ambiente
 
@@ -232,25 +232,77 @@ Após recarregar, você deve ver:
 
 As seguintes configurações já estão disponíveis:
 
-- `myTimeTraceVSCode.idleTimeout`: Define o tempo (em minutos) para considerar o usuário como inativo. Padrão: 5 minutos.
-- `myTimeTraceVSCode.autoStart`: Ativa/desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
+- `myTimeTraceVSCode.idleTimeout`: Define o tempo, em minutos, para considerar o usuário como inativo. Padrão: 5 minutos.
+- `myTimeTraceVSCode.autoStart`: Ativa ou desativa o início automático do monitoramento quando o VS Code é iniciado. Padrão: ativado.
 - `myTimeTraceVSCode.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
-- `myTimeTraceVSCode.syncEnabled`: Ativa/desativa a sincronização automática em nuvem (requer API Key). Padrão: ativado.
-- `myTimeTraceVSCode.syncInterval`: Intervalo de verificação do auto-sync em minutos. Padrão: 60 (mín: 5, máx: 1440).
+- `myTimeTraceVSCode.syncEnabled`: Ativa ou desativa a sincronização automática em nuvem. Requer API Key. Padrão: ativado.
+- `myTimeTraceVSCode.syncInterval`: Intervalo de verificação do auto-sync, em minutos. Padrão: 60, com mínimo de 5 e máximo de 1440.
 
-## Melhorias Planejadas
+## Recursos e Próximos Passos
 
-- ✅ **Status Bar Item**: Mostrar o tempo atual do arquivo ou o status do monitoramento na barra de status do VS Code.
-- ✅ **Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real
-- ✅ **Interface de Visualização**: Adicionar painéis e gráficos para visualizar os dados de tempo coletados.
-- ✅ **Separação de responsabilidades**: Arquitetura modular com módulos especializados
-- ✅ **Melhor tratamento de erros**: Tratamento robusto com async/await e safeRegisterCommand
-- ✅ **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos
-- ✅ **Status Bar interativa**: Feedback visual constante com atualização em tempo real
-- ✅ **Sincronização em Nuvem**: Push only com retry inteligente e auto-sync
-- ❌ **Exportação de Dados**: Permitir a exportação dos dados em diferentes formatos (CSV, JSON, Excel)
-- ❌ **Relatórios Personalizados**: Criar relatórios customizáveis por período e projeto
-- ❌ **Integração Git**: Correlacionar tempo de desenvolvimento com commits
+### ✅ Recursos já entregues
+
+- **Status Bar Item**: Mostra o tempo atual do arquivo e o estado do monitoramento na barra de status do VS Code.
+- **Heartbeat**: Timer de 1 segundo para contagem precisa e atualização em tempo real.
+- **Interface de Visualização**: Painéis e gráficos para analisar os dados de tempo coletados.
+- **Separação de responsabilidades**: Arquitetura modular com módulos especializados.
+- **Tratamento de erros**: Fluxos com `async/await` e registro seguro de comandos.
+- **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos.
+- **Status Bar interativa**: Feedback visual constante com atualização em tempo real.
+- **Sincronização em Nuvem**: push-only com retry inteligente e auto-sync.
+
+### ⏭️ Próximos passos considerados
+
+- **Exportação de Dados**: Exportar os dados em formatos como CSV, JSON e Excel.
+- **Relatórios Personalizados**: Criar relatórios customizáveis por período e projeto.
+- **Integração Git**: Correlacionar tempo de desenvolvimento com commits.
+
+## Desenvolvimento
+
+Se você quiser contribuir, esta é a trilha recomendada para trabalhar no projeto localmente com segurança e sem perder o contexto da base atual.
+
+### Ambiente de Desenvolvimento
+
+```bash
+# Instalar dependências
+npm install
+
+# Compilar a extensão em modo de desenvolvimento
+npm run compile
+
+# Compilar e observar mudanças durante o desenvolvimento
+npm run watch
+```
+
+### Execução e Validação Local
+
+1. Pressione F5 no VS Code para abrir uma nova janela com a extensão carregada.
+2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo.
+3. Para testar manualmente, use os comandos da paleta do VS Code e valide o fluxo de tracking, dashboard e sync.
+4. Para verificação de qualidade, rode os testes com `npm test`.
+
+### Empacotamento para Teste Local
+
+```bash
+# Gera o arquivo .vsix
+vsce package
+```
+
+Esse comando gera um arquivo como `my-time-trace-vscode-X.X.X.vsix`, que pode ser instalado localmente em outra máquina ou ambiente de teste.
+
+### Como Contribuir
+
+1. Faça um fork deste repositório.
+2. Crie uma branch para sua alteração: `git checkout -b minha-feature`.
+3. Faça os commits da sua mudança com mensagens objetivas.
+4. Execute `npm run compile` e `npm test` antes de abrir o PR.
+5. Envie a branch e abra um Pull Request.
+
+### Observações para Contribuição
+
+- O código está organizado em módulos; prefira alterar a responsabilidade correta em vez de concentrar lógica em `extension.ts`.
+- Toda persistência deve continuar passando por `DatabaseManager`.
+- Se a mudança afetar UI, revise também os documentos de `docs/DASHBOARD_MODERNO.md` e `docs/UI_COMPONENTS.md`.
 
 ## Notas de Lançamento
 
@@ -306,16 +358,6 @@ Lançamento inicial com funcionalidades básicas:
 - Rastreamento por projeto
 - Status Bar mostrando o arquivo atual e tempo gasto
 
-## Como Contribuir
-
-Contribuições são bem-vindas! Se você tem alguma sugestão ou encontrou um bug:
-
-1. Faça um fork deste repositório
-2. Crie uma branch com sua feature ou correção (`git checkout -b minha-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona uma nova feature'`)
-4. Push para a branch (`git push origin minha-feature`)
-5. Abra um Pull Request
-
 ## Tecnologias Utilizadas
 
 - TypeScript
@@ -345,37 +387,6 @@ MyTimeTraceVSCode/
 Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
 
 ---
-
-## Desenvolvimento
-
-Para iniciar o desenvolvimento:
-
-```bash
-# Instalar dependências
-npm install
-
-# Compilar a extensão em modo de desenvolvimento
-npm run compile
-
-# Compilar e observar mudanças
-npm run watch
-```
-
-Para testar a extensão:
-
-1. Pressione F5 no VS Code para iniciar uma nova janela com a extensão carregada
-2. A extensão deve iniciar automaticamente e começar a monitorar seu tempo
-
-Para executar os testes:
-
-```bash
-# Executar todos os testes
-npm test
-```
-
-Para cobertura detalhada, consulte o relatório em `docs/COVERAGE_REPORT.md`.
-
-📖 **Mais informações:** Consulte a [documentação completa](./docs/) para guias detalhados de desenvolvimento, design e arquitetura.
 
 ## Qualidade e Confiabilidade
 
