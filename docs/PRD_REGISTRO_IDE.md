@@ -57,7 +57,14 @@ Mostrar ícone ou texto da IDE atual para o usuário saber qual está usando.
 Quando exportar ou sincronizar dados, incluir qual IDE gerou cada registro.
 
 ### RF06 - Versão da IDE
-Capturar versão (ex: 1.95.2 para VS Code, insiders para Code - Insiders).
+Capturar versão da IDE com estratégia diferenciada por tipo:
+
+| IDE | Fonte da versão | Observação |
+|-----|----------------|------------|
+| VS Code / Code - Insiders | `vscode.version` (API nativa) | Retorna versão exata |
+| Cursor / Windsurf / Google Antigravity | Process info ou `package.json` do executável | `vscode.version` retorna a versão do VS Code base, não do fork |
+
+Para forks, `vscode.version` **não** é a versão correta (ex: retorna `1.95.2` em vez de `0.45.2` do Cursor). A versão do fork deve ser lida do `package.json` da instalação ou via process info. Se não for possível, registrar a versão VS Code base com sufixo indicativo.
 
 ## Requisitos Não Funcionais
 - Detecção deve ser imediata, sem delay.
@@ -87,50 +94,58 @@ Capturar versão (ex: 1.95.2 para VS Code, insiders para Code - Insiders).
 ## Fluxo Esperado
 ```mermaid
 flowchart TD
-  A[Extensão ativa] --> B[Ler env variables VSCode]
+  A[Extensão ativa] --> B[Ler globalStorageUri.fsPath]
   B --> C{IDE detectada?}
   C -- Sim --> D[Registra no banco]
-  C -- Não --> E[Tenta fallback]
-  E --> F{Fallback sucesso?}
+  C -- Não --> E[Fallback 1: env vars]
+  E --> F{IDE detectada?}
   F -- Sim --> D
-  F -- Não --> G[IDE: unknown]
-  D --> H[Atualiza status bar]
-  G --> H
-  H --> I[Logs de debug]
+  F -- Não --> G[Fallback 2: process info]
+  G --> H{IDE detectada?}
+  H -- Sim --> D
+  H -- Não --> I[IDE: unknown]
+  D --> J[Atualiza status bar]
+  I --> J
+  J --> K[Logs de debug]
 ```
 
 ## Estratégia De Detecção
 
-### Método 1 - Environment Variables (Preferido)
-- `VSCODE_PID` - Sempre presente em VS Code
-- `VSCODE_VERSION` - Versão do VS Code
-- `VSCODE_RELEASE` - insiders ou stable
-- `VSCODE_CLI` - Presente se aberto via CLI
+### Método 1 - globalStorageUri (Preferido)
+- Ler `context.globalStorageUri.fsPath` — o caminho muda por IDE e OS.
+- Extrair o nome da pasta do aplicativo do caminho:
+  - `…/Code/User/globalStorage/…` → **VS Code**
+  - `…/Code - Insiders/User/globalStorage/…` → **Code - Insiders**
+  - `…/Cursor/User/globalStorage/…` → **Cursor**
+  - `…/Windsurf/User/globalStorage/…` → **Windsurf**
+  - `…/Google Antigravity/User/globalStorage/…` → **Google Antigravity**
+- Vantagem: disponível diretamente no `ExtensionContext`, sem dependência de OS ou processo.
 
-### Método 2 - Process Info
+### Método 2 - Environment Variables (Fallback 1)
+- Usável apenas para diferenciar VS Code stable de Insiders quando Método 1 falhar.
+- `VSCODE_RELEASE` — `stable` ou `insiders`
+- `VSCODE_VERSION` — versão numérica
+- ⚠️ Não diferencia Cursor, Windsurf e outros forks (todos definem essas variáveis).
+
+### Método 3 - Process Info (Fallback 2)
 - Ler nome do processo pai: `code`, `cursor`, `windsurf`
-- Ler path do executável para extrair nome
-
-### Método 3 - Package.json / Extension Context
-- Verificar context.extensionPath
-- Analisar pasta de instalação
-
-### Método 4 - User Agent Header
-- Em sincronização: enviar IDE na requisição
+- Ler path do executável para extrair nome e versão do fork
 
 ## Premissas Técnicas
-- VS Code fornece `process.env.VSCODE_VERSION` confiável.
-- Detecção por process name funciona em todas plataformas.
+- `context.globalStorageUri.fsPath` contém o nome da IDE no caminho em todos os ambientes padrão (Windows, macOS, Linux).
+- `process.env.VSCODE_VERSION` é confiável para identificar VS Code/Insiders, mas não diferencia forks — usável apenas como fallback.
+- Detecção por process name funciona em todas as plataformas, mas requer permissões de processo.
 - **Tabela `time_entries` já existe** e aceita novo campo sem impacto.
 - Migração apenas adiciona coluna sem default (NULL para dados antigos).
 - Dados históricos não perdem integridade (NULL indica desconhecido).
 - Sincronização já prepara headers customizados.
 
 ## Dependências Prováveis
-- Módulo `deviceInfo.ts` (expandir com detecção de IDE).
-- Módulo `database.ts` (migração: adicionar coluna em time_entries).
+- Módulo `deviceInfo.ts` (adicionar funções `getIdeName()` e `getIdeVersion()`).
+- Módulo `deviceManager.ts` (expor `getIdeName()` / `getIdeVersion()` como wrappers, seguindo o padrão de `getDeviceName()` / `getDeviceInfo()`).
+- Módulo `database.ts` (migração: adicionar coluna `ide_name` em `time_entries`; atualizar interface `ActivityData` e método `saveActivityData()` para incluir `ide_name`).
 - Módulo `statusBar.ts` (exibir IDE atual).
-- Módulo `syncManager.ts` (enviar IDE ao backend).
+- Módulo `syncManager.ts` (enviar IDE ao backend via header customizado na requisição).
 - Módulo `stats.ts` (filtrar por IDE nos relatórios).
 
 ## Estrutura De Dados
@@ -169,14 +184,18 @@ CREATE TABLE ide_sessions (
 ```
 Colunas existentes:
   - id
-  - file_name
-  - project_name
-  - time_spent
+  - client_id
   - timestamp
-  ... (outras colunas)
+  - project
+  - file
+  - duration_seconds
+  - is_idle
+  - synced
+  - deleted_at
+  - device_name
 
 Coluna nova:
-  + ide_name TEXT DEFAULT 'VS Code'  -- Nome da IDE que gerou o registro
+  + ide_name TEXT  -- Nome da IDE que gerou o registro (NULL para dados anteriores à migração)
 ```
 
 ## Métricas De Sucesso
@@ -192,7 +211,7 @@ Coluna nova:
 - ✅ Cursor detectado e registrado.
 - ✅ Windsurf detectado se instalado.
 - ✅ Google Antigravity detectado se instalado.
-- ✅ Versão exata da IDE capturada.
+- ✅ Versão da IDE capturada (exata para VS Code/Insiders via `vscode.version`; melhor esforço para forks via process info — fallback para versão VS Code base com sufixo).
 - ✅ IDE exibida no status bar.
 - ✅ Teste detecta corretamente em ambiente simulado.
 - ✅ Histórico de troca de IDE registrado.
@@ -231,11 +250,12 @@ Coluna nova:
 - Suporte a IDEs não-VS Code (Vim, Emacs, JetBrains)?
 
 ## Riscos
-- IDE pode não expor env variables confiáveis.
-- Fork de VS Code customizados difíceis de detectar.
-- Nome da IDE pode variar entre versões.
-- Detecção pode falhar em ambientes containerizados.
-- Dados legados sem IDE causam inconsistência.
+- Caminho do `globalStorageUri` pode ser inesperado em portable mode, WSL, container ou symlinks — quebra o Método 1.
+- `vscode.version` em forks retorna versão do VS Code base, não do fork — versão reportada pode ser imprecisa.
+- Fork de VS Code com pasta de nome customizado difícil de detectar pelo path.
+- Nome da pasta da IDE pode variar entre versões ou localizações do OS.
+- Detecção pode falhar em ambientes containerizados (todos os métodos).
+- Dados legados sem IDE causam inconsistência em relatórios e filtros.
 
 ## Exemplos De Output
 
@@ -267,10 +287,13 @@ Filter by IDE:
 ```
 
 ## Checklist De Implementação
-- [ ] Expandir `deviceInfo.ts` com funções de detecção de IDE
-- [ ] Criar teste em `deviceManager.test.ts` para validar detecção
+- [ ] Adicionar `getIdeName()` e `getIdeVersion()` em `deviceInfo.ts` via `globalStorageUri.fsPath`
+- [ ] Implementar lógica de captura de versão: `vscode.version` para VS Code/Insiders; process info ou `package.json` do executável para forks
+- [ ] Expor `getIdeName()` / `getIdeVersion()` em `deviceManager.ts` como wrappers (padrão existente)
+- [ ] Adicionar testes de detecção de IDE em `deviceManager.test.ts`
 - [ ] **Criar migração SQL:** Adicionar coluna `ide_name` (NULL) a `time_entries`
-- [ ] Implementar armazenamento no `database.ts`
+- [ ] Atualizar interface `ActivityData` em `database.ts` para incluir `ide_name?: string`
+- [ ] Atualizar `saveActivityData()` e o INSERT em `database.ts` para persistir `ide_name`
 - [ ] Atualizar `statusBar.ts` para exibir IDE detectada
 - [ ] Integrar com `stats.ts` para filtros por IDE
 - [ ] Atualizar `syncManager.ts` para enviar IDE ao backend
