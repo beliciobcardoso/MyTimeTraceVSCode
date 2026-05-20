@@ -1,150 +1,374 @@
-# 📦 PRD - Backup Automatizado com Agendamento do Usuário
+# PRD - Backup Automatizado com Agendamento do Usuário
 
 ## Visão Geral
-Criar um recurso de backup automatizado para preservar os dados do MyTimeTrace VS Code com agendamento definido pelo usuário. O foco é reduzir risco de perda de dados, dar controle de horário e manter o fluxo simples dentro da extensão.
+
+Criar um recurso de backup automatizado para preservar os dados do MyTimeTrace VS Code com agendamento definido pelo usuário. O foco é reduzir risco de perda de dados, dar controle total de horário e local, e manter o fluxo simples dentro da extensão.
 
 ## Problema
+
 Hoje, o usuário depende de rotinas manuais para proteger os dados locais. Isso aumenta risco de perda por falha do sistema, troca de máquina, corrupção do banco ou erro humano.
 
 ## Objetivos
+
 - Garantir backup recorrente dos dados críticos.
-- Permitir que o usuário defina frequência e horário.
+- Permitir que o usuário defina frequência, horário e local de destino.
 - Reduzir impacto no uso normal da extensão.
 - Dar visibilidade clara do último backup, próximo backup e falhas.
 
 ## Não Objetivos
-- Sincronia em tempo real.
-- Backup em nuvem como requisito inicial.
-- Restauração automática sem ação do usuário.
+
+- Backup em nuvem como requisito. A extensão é open source: usuários podem optar por não usar a plataforma em nuvem e precisam de uma alternativa local confiável.
+- Sincronização em tempo real.
+- Restauração automática do banco sem ação explícita do usuário. O sistema nunca substitui os dados atuais por um backup sem que o usuário solicite.
 - Versionamento avançado de histórico no MVP.
 
 ## Público-Alvo
+
 - Usuários que usam a extensão em rotina diária.
 - Pessoas que dependem dos dados de rastreio para relatório ou cobrança.
 - Times que querem evitar perda de base local.
+- Usuários open source que não utilizam a plataforma em nuvem.
+
+## Contexto: Backup Local vs Sync em Nuvem
+
+O projeto já possui sincronização de dados com a plataforma em nuvem (`SyncManager`). O backup local e o sync são **sistemas completamente separados e independentes**: possuem schedulers distintos, configurações distintas e não interferem um no outro em nenhuma circunstância.
+
+| | Sync em Nuvem | Backup Local |
+|---|---|---|
+| **Protege contra** | Perda no dispositivo único | Corrupção do banco, falha de rede, troca de máquina |
+| **Configurado por** | Servidor (dinâmico) | VS Code settings (local, pelo usuário) |
+| **Requer conta** | Sim | Não |
+| **Destino** | Plataforma MyTimeTrace | Pasta local definida pelo usuário |
+| **Scheduler** | `SyncManager` (horários do servidor) | `BackupManager` (intervalo local) |
 
 ## Escopo Do MVP
+
 ### Funcionalidades
-- Agendar backup por dia, hora e intervalo.
-- Permitir escolha de frequência: diário, semanal ou custom.
-- Permitir ajuste de horário pelo usuário.
-- Executar backup em segundo plano.
+
+- Agendar backup por intervalo livre: a cada hora, a cada 4 horas, etc.
+- Permitir que o usuário defina o número máximo de backups retidos (ex: 2 a 100).
+- Permitir que o usuário defina a pasta de destino.
+- Executar backup em segundo plano usando SQLite Backup API.
 - Guardar log do último backup e do próximo agendado.
 - Exibir alerta só em falha ou ação pedida.
+- Backup só roda com o VS Code aberto (sem daemon externo).
 
-### Tipos De Backup
-- Banco SQLite local.
-- Configs do usuário ligadas ao backup.
-- Metadados úteis para resta.
+### Arquivo de Backup
+
+- **Fonte**: arquivo `time_tracker.sqlite` (banco único da extensão).
+- **Destino**: pasta definida pelo usuário nas configurações.
+- **Nomenclatura**: `time_tracker_YYYY-MM-DD_HH-mm-ss.sqlite`
+- **Organização**: cada backup é um arquivo individual na pasta de destino.
+- **Retenção**: o usuário define quantos backups manter. Ao atingir o limite, o backup mais antigo é removido automaticamente.
+
+### Localização do Banco de Dados Original
+
+O arquivo `time_tracker.sqlite` fica em uma pasta gerenciada automaticamente pelo VS Code. O usuário não precisa saber o caminho para usar o backup — a extensão localiza o arquivo sozinha. A tabela abaixo serve apenas como referência para quem quiser inspecionar o arquivo manualmente.
+
+**VS Code**
+
+| Sistema | Caminho completo |
+|---|---|
+| Windows | `C:\Users\SeuNome\AppData\Roaming\Code\User\globalStorage\BelicioBCardoso.my-time-trace-vscode\time_tracker.sqlite` |
+| macOS | `~/Library/Application Support/Code/User/globalStorage/BelicioBCardoso.my-time-trace-vscode/time_tracker.sqlite` |
+| Linux | `~/.config/Code/User/globalStorage/BelicioBCardoso.my-time-trace-vscode/time_tracker.sqlite` |
+
+**Outros editores baseados no VS Code** (Cursor, VS Code Insiders, Windsurf)
+
+A estrutura é idêntica. Apenas o nome da pasta do aplicativo muda:
+
+| Editor | Pasta do aplicativo |
+|---|---|
+| VS Code Insiders | `Code - Insiders` |
+| Cursor | `Cursor` |
+| Windsurf | `Windsurf` |
+
+Exemplo no macOS com Cursor: `~/Library/Application Support/Cursor/User/globalStorage/BelicioBCardoso.my-time-trace-vscode/time_tracker.sqlite`
 
 ## Requisitos Funcionais
+
 ### RF01 - Configurar agendamento
-O usuário deve poder definir quando o backup roda e em qual ritmo.
+
+O usuário deve poder definir o intervalo de execução do backup nas configurações do VS Code (local settings). Exemplos: a cada 1 hora, a cada 4 horas, a cada 24 horas. O agendamento é independente do sync com o servidor — os dois sistemas não se comunicam e não se interferem.
 
 ### RF02 - Executar backup
-A extensão deve gerar cópia segura dos dados sem travar a UI.
 
-### RF03 - Ajustar agenda
-O usuário deve poder trocar hora, dias e fuso local a qualquer momento.
+A extensão deve copiar o arquivo `time_tracker.sqlite` usando a **SQLite Backup API** (`VACUUM INTO` ou equivalente via `sqlite3_backup_*`), garantindo integridade mesmo com o banco em uso. O backup não pode travar a UI.
+
+### RF03 - Ajustar configuração
+
+O usuário deve poder alterar a qualquer momento:
+- Intervalo de execução.
+- Número máximo de backups retidos.
+- Pasta de destino.
+
+Todas as configurações ficam em `settings.json` (VS Code local settings).
 
 ### RF04 - Ver status
-A UI deve mostrar status do último backup, do próximo e de erros.
+
+A UI deve mostrar:
+- Data e hora do último backup concluído.
+- Data e hora do próximo backup agendado.
+- Estado atual: ativo, pausado ou falha.
+- Erros com mensagem útil.
 
 ### RF05 - Retentar falha
-Se o backup falhar, o sistema deve tentar de novo em janela curta e registrar o erro.
+
+Se o backup falhar, o sistema deve tentar novamente em janela curta, seguindo o padrão do `SyncRetryManager` existente. Um `BackupRetryManager` será criado com a mesma arquitetura: número de tentativas e delay configuráveis. O erro é registrado em log e exibido ao usuário após falha total.
+
+### RF06 - Política de retenção
+
+Ao concluir um backup com sucesso:
+1. Listar todos os backups existentes na pasta de destino.
+2. Se o número de arquivos exceder o limite configurado, remover o(s) mais antigo(s).
+3. Registrar remoção em log.
+
+O número mínimo de backups retidos é **3**. A extensão não permite configurar um valor menor para garantir que sempre haja pelo menos uma cópia de segurança anterior disponível.
+
+### RF08 - Configuração inicial guiada (wizard)
+
+Na primeira vez que o backup é ativado, ou quando nenhuma configuração estiver definida, a extensão conduz o usuário por um wizard passo a passo:
+
+1. **Pasta de destino** — abre o file picker nativo do VS Code para o usuário escolher ou criar a pasta onde os backups serão salvos.
+2. **Intervalo de execução** — exibe um Quick Pick com opções predefinidas: `1h`, `4h`, `8h`, `12h`, `24h` e `Personalizado`. Se escolher personalizado, um Input Box solicita o valor em horas.
+3. **Retenção máxima** — Input Box para o usuário informar quantos backups manter (mínimo 3). Exibe o valor padrão (10) como sugestão.
+4. **Resumo e confirmação** — exibe as escolhas feitas e pergunta se deseja ativar o backup agora. Ao confirmar, a configuração é salva no `settings.json` e o primeiro backup é executado imediatamente.
+
+O wizard também pode ser acessado a qualquer momento pelo comando `MyTimeTrace: Configurar Backup`, permitindo reconfiguração completa.
+
+### RF07 - Backup manual
+
+O usuário deve poder acionar um backup imediato via comando da extensão, independente do agendamento. O comando **`MyTimeTrace: Fazer Backup Agora`** fica sempre disponível na paleta de comandos do VS Code, mesmo com o backup automático pausado.
 
 ## Requisitos Não Funcionais
+
 - Não bloquear o uso da extensão.
+- Usar SQLite Backup API para garantir cópia segura com banco aberto.
+- Backup só executa com o VS Code aberto (sem daemon externo).
 - Ter baixo custo de CPU e disco.
 - Ter logs claros para debug.
 - Ser seguro contra sobrescrita sem aviso.
-- Ser compatível com Windows, macOS e Linux.
+- Ser compatível com Windows, macOS e Linux (usar `path.join()` para caminhos).
 
 ## UX / UI
-### Entradas Do Usuário
-- Frequência: diário, semanal, custom.
-- Hora de execução.
-- Dias da semana, se houver agenda semanal.
-- Pasta de destino do backup.
+
+### Configurações do Usuário (VS Code Settings)
+
+```json
+{
+  "myTimeTraceVSCode.backup.enabled": true,
+  "myTimeTraceVSCode.backup.intervalHours": 4,
+  "myTimeTraceVSCode.backup.maxBackups": 10,
+  "myTimeTraceVSCode.backup.destinationPath": ""
+}
+```
+
+- `enabled`: ativa ou pausa o backup automático.
+- `intervalHours`: intervalo entre backups em horas (mínimo: 1).
+- `maxBackups`: número máximo de backups retidos na pasta (mínimo: 3, padrão: 10).
+- `destinationPath`: caminho absoluto da pasta onde os backups serão salvos. **Recomendado usar o wizard** (`MyTimeTrace: Configurar Backup`) para definir esse valor, pois ele abre o seletor de pasta do sistema e evita erros de digitação. Se preenchido manualmente, use o caminho completo conforme o seu sistema operacional:
+
+  | Sistema | Exemplo de caminho válido |
+  |---|---|
+  | Windows | `C:\Users\SeuNome\Documents\MyTimeTrace\Backups` |
+  | macOS | `/Users/SeuNome/Documents/MyTimeTrace/Backups` |
+  | Linux | `/home/SeuNome/documentos/mytimetrace/backups` |
+
+  **Orientações para leigos:**
+  - Crie uma pasta dedicada para os backups. Não use a área de trabalho nem pastas de sistema (`C:\Windows`, `/usr`, `/etc`).
+  - O caminho deve começar com a letra do disco no Windows (`C:\`) ou com `/` no macOS e Linux.
+  - Use barras invertidas `\` no Windows e barras normais `/` no macOS e Linux.
+  - A pasta precisa existir antes de salvar a configuração, ou a extensão tentará criá-la automaticamente.
+  - Se a pasta estiver em um pendrive ou HD externo, o backup pausará automaticamente quando o dispositivo for desconectado.
 
 ### Saídas Na UI
+
 - Badge ou card com estado: ativo, pausado, falha.
 - Data e hora do último backup.
 - Data e hora do próximo backup.
 - Botão de backup manual.
-- Botão de restaurar, se o módulo existir no escopo final.
+- Botão de abrir pasta de destino.
+
+### Comandos da Extensão
+
+Todos os comandos ficam disponíveis na paleta de comandos do VS Code (`Ctrl+Shift+P`).
+
+| Comando | Descrição | Fase |
+|---|---|---|
+| `MyTimeTrace: Fazer Backup Agora` | Executa um backup imediato, independente do agendamento | 1 |
+| `MyTimeTrace: Pausar Backup Automático` | Pausa o agendamento automático (equivale a `backup.enabled = false`) | 2 |
+| `MyTimeTrace: Retomar Backup Automático` | Retoma o agendamento pausado (equivale a `backup.enabled = true`) | 2 |
+| `MyTimeTrace: Abrir Pasta de Backup` | Abre no explorador de arquivos do sistema a pasta de destino configurada | 1 |
+| `MyTimeTrace: Configurar Backup no GitHub` | Inicia o fluxo assistido de configuração do backup offsite no GitHub | 4 |
+| `MyTimeTrace: Editar Configurações de Backup` | Abre diretamente a seção de backup nas configurações do VS Code (`settings.json`) | 1 |
+| `MyTimeTrace: Configurar Backup` | Inicia o wizard guiado de configuração inicial (pasta, intervalo, retenção). Pode ser usado também para reconfigurar | 1 |
 
 ## Regras De Produto
+
 - Backup não deve rodar com a UI travada.
-- O agendamento deve respeitar o fuso local do usuário.
-- O usuário pode pausar e retomar o backup.
-- Se a pasta alvo sumir, a extensão deve avisar e parar o ciclo.
-- Em falha, preservar o backup anterior.
+- O backup só executa enquanto o VS Code estiver aberto. Não há daemon externo.
+- O backup é completamente independente do sync em nuvem: desativar o sync não afeta o backup, e vice-versa.
+- Na inicialização, se o intervalo já tiver sido ultrapassado, o backup roda imediatamente antes de aguardar o próximo ciclo.
+- O usuário pode pausar e retomar o backup via setting `backup.enabled`.
+- Se a pasta de destino não existir ou não for acessível, a extensão avisa e pausa o ciclo.
+- Em falha, preservar todos os backups anteriores.
+- Ao atingir o limite de retenção, remover o mais antigo antes de criar o novo.
+- O número mínimo de backups retidos é 3. A extensão não aceita valor menor.
+
+## Lógica de Inicialização
+
+Ao iniciar o VS Code, o `BackupManager` executa a seguinte verificação antes de qualquer agendamento:
+
+```
+1. backup.enabled = true?
+   └── Não → encerra, não agenda nada
+
+2. destinationPath configurado?
+   └── Não → solicita pasta ao usuário
+
+3. Existe algum backup anterior?
+   ├── Não → executa backup imediatamente (primeiro backup)
+   └── Sim → lê timestamp do último backup em sync_metadata
+               └── (agora - último backup) > intervalHours?
+                   ├── Sim → executa backup imediatamente (backup perdido durante o tempo que o VS Code ficou fechado)
+                   └── Não → agenda próximo backup para (último backup + intervalHours)
+```
+
+Essa lógica garante que um backup nunca seja pulado silenciosamente: se o VS Code ficou fechado durante o horário em que o backup deveria ter rodado, ele é executado assim que o VS Code abre.
 
 ## Fluxo Esperado
+
 ```mermaid
 flowchart TD
-  A[Usuário salva agenda] --> B[Scheduler grava config]
-  B --> C{Hora chegou?}
-  C -- Não --> B
-  C -- Sim --> D[Executa backup]
-  D --> E{Sucesso?}
-  E -- Sim --> F[Atualiza status]
-  E -- Não --> G[Registra erro]
-  G --> H[Reagenda retry]
+  A[VS Code abre] --> B{backup.enabled?}
+  B -- Não --> Z[Encerra]
+  B -- Sim --> C{Existe backup anterior?}
+  C -- Não → primeiro uso --> E
+  C -- Sim --> D{Tempo desde último backup > intervalo?}
+  D -- Sim → backup perdido --> E
+  D -- Não --> F[Agenda próximo backup]
+  F --> G{Intervalo atingido?}
+  G -- Não --> G
+  G -- Sim --> E
+  E[Executa backup via SQLite Backup API]
+  E --> H{Sucesso?}
+  H -- Sim --> I[Salva arquivo time_tracker_YYYY-MM-DD_HH-mm-ss.sqlite]
+  I --> J[Aplica política de retenção]
+  J --> K[Atualiza status na UI]
+  K --> F
+  H -- Não --> L[BackupRetryManager tenta novamente]
+  L --> M{Tentativas esgotadas?}
+  M -- Não --> E
+  M -- Sim --> N[Registra erro e avisa usuário]
+  N --> F
 ```
 
 ## Premissas Técnicas
-- O módulo pode reaproveitar a base de persistência atual.
-- O agendador deve rodar de forma assíncrona.
-- O backup deve ser incremental se viável, mas o MVP pode usar cópia plena.
-- O sistema precisa guardar estado do agendador entre reinícios.
+
+- O `BackupManager` e o `SyncManager` são módulos completamente independentes. Não compartilham scheduler, não se comunicam e não interferem um no outro.
+- O `sync_metadata` (key-value store SQLite) será usado para persistir o timestamp do último backup e o estado do agendador entre reinícios.
+- Na inicialização, o `BackupManager` verifica se o intervalo já foi ultrapassado e executa o backup imediatamente se necessário, evitando backups perdidos.
+- O agendador usa `setInterval` nativo, sem dependência externa de cron.
+- A cópia do banco usa **SQLite Backup API** (`VACUUM INTO 'destino.sqlite'` ou `sqlite3_backup_*`) para garantir integridade mesmo com o banco em uso.
+- O `BackupRetryManager` seguirá a mesma arquitetura do `SyncRetryManager` existente.
+- Configurações de backup ficam em VS Code local settings (`settings.json`), completamente independentes das configurações de sync vindas do servidor.
+- O backup só roda com o VS Code aberto. Não há daemon ou processo externo.
 
 ## Dependências Prováveis
-- Módulo de banco local.
-- Config de usuário.
-- Serviço de agendamento.
-- Logs e status bar.
+
+- `DatabaseManager` existente (acesso ao SQLite e ao `sync_metadata`).
+- VS Code settings API (para leitura de configurações do usuário).
+- `BackupRetryManager` (novo, baseado no `SyncRetryManager`).
+- StatusBar e painéis de UI existentes (para exibir status).
 
 ## Métricas De Sucesso
+
 - % de backups concluídos com êxito.
 - Tempo médio por backup.
-- Nº de falhas por semana.
-- Nº de usuários que usam agenda ativa.
-- Nº de backups manuais vs auto.
+- Número de falhas por semana.
+- Número de usuários com backup ativo.
+- Número de backups manuais vs automáticos.
 
 ## Critérios De Aceite
-- O usuário consegue definir um horário e ver ele salvo.
+
+- O usuário consegue definir intervalo, limite de retenção e pasta de destino.
 - O backup roda sem travar a extensão.
-- O status muda após cada execução.
+- O arquivo gerado tem nome no formato `time_tracker_YYYY-MM-DD_HH-mm-ss.sqlite` e é uma cópia válida do banco.
+- O status atualiza após cada execução.
 - Falhas geram log e aviso útil.
-- O backup manual funciona como plano B.
+- O backup manual funciona como alternativa ao agendamento.
+- Ao atingir o limite de retenção, o backup mais antigo é removido automaticamente.
+- Cópia feita via SQLite Backup API é íntegra mesmo com banco em uso.
 
 ## Riscos
-- Arquivo em uso no momento da cópia.
-- Erro de permissão na pasta alvo.
-- Agenda perdida após restart.
-- Diferença de fuso entre sistema e config.
-- Crescimento alto do volume de backup.
+
+- Pasta de destino removida ou sem permissão durante o ciclo.
+- Agenda perdida após restart (mitigado com `sync_metadata`).
+- Diferença de fuso entre sistema e config (usar horário do sistema local).
+- Crescimento alto do volume de backup (mitigado pela política de retenção).
+- Arquivo `.sqlite` corrompido se copiado sem Backup API (mitigado pelo uso da API correta).
 
 ## Fases Sugeridas
+
 ### Fase 1
-- Agendamento básico.
-- Backup manual.
-- Status simples.
+
+- Configurações via VS Code settings.
+- Backup manual com SQLite Backup API.
+- Status simples (último backup, próximo backup).
+- Retenção básica (apagar mais antigo ao atingir limite).
 
 ### Fase 2
-- Retry.
-- Pausa e retomada.
-- Melhor log.
+
+- Agendamento automático por intervalo.
+- Verificação de backup perdido na inicialização.
+- `BackupRetryManager` com retry em falha.
+- Pausa e retomada via `backup.enabled`.
+- Restauração de backup: o usuário seleciona um arquivo da pasta de destino e a extensão o aplica como banco ativo.
+- Log detalhado de operações.
 
 ### Fase 3
-- Política de retenção.
-- Compressão.
-- Exportação extra.
 
-## Perguntas Em Aberto
-- O backup será só local ou também em nuvem?
-- O usuário pode definir mais de um horário por dia?
-- Qual política de retenção deve valer no MVP?
-- Restauração entra já na primeira versão?
+- Compressão dos arquivos de backup (ex: `.sqlite.gz`).
+- Exportação para outros formatos (CSV, JSON).
+- Notificação de backup bem-sucedido (opcional, configurável).
+
+### Fase 4
+
+Backup offsite opcional no GitHub, totalmente automatizado após configuração inicial guiada pelo usuário.
+
+#### Ativação (opt-in)
+
+A extensão oferece a opção via notificação após cada backup local concluído com sucesso, enquanto o backup no GitHub não estiver configurado e o usuário não tiver marcado "Não perguntar novamente". A notificação apresenta duas ações: **"Configurar backup no GitHub"** e **"Não perguntar novamente"**.
+
+- Se o usuário clicar em "Não perguntar novamente", a notificação nunca mais é exibida e a flag é persistida nas configurações locais.
+- Independente da escolha, o comando **`MyTimeTrace: Configurar Backup no GitHub`** fica sempre disponível na paleta de comandos do VS Code. O usuário pode iniciar o fluxo de configuração a qualquer momento por ali.
+- Nada acontece sem consentimento explícito.
+
+#### Fluxo de configuração inicial (assistido)
+
+Ao aceitar, a extensão conduz o usuário passo a passo:
+
+1. **Token PAT** — a extensão explica o que é um Personal Access Token, aponta o link de geração nas configurações do GitHub e solicita o token. O escopo mínimo necessário é `repo` (acesso a repositórios privados).
+2. **Nome do repositório** — o usuário informa o nome desejado. A extensão deixa claro que o repositório **precisa ser privado** e explica o risco de um repositório público conter dados de rastreamento pessoal.
+3. **Criação do repositório** — a extensão cria o repositório privado via API do GitHub automaticamente, sem que o usuário precise acessar o site.
+4. **Confirmação** — a extensão exibe um resumo da configuração e confirma que está pronta para operar.
+
+Após a configuração, o usuário não precisa fazer mais nada.
+
+#### Operação automática (pós-configuração)
+
+- A cada backup local concluído com sucesso, a extensão faz commit e push do arquivo para o repositório privado automaticamente.
+- A mensagem de commit segue o padrão: `backup: time_tracker_YYYY-MM-DD_HH-mm-ss.sqlite`.
+- O token PAT fica armazenado no VS Code Secret Storage (mesmo mecanismo da API Key atual), nunca em texto plano.
+- A política de retenção local continua valendo normalmente; o GitHub mantém o histórico completo via Git.
+- Em caso de falha no push, o backup local já está seguro — o erro é registrado em log e avisado ao usuário, mas não cancela nem desfaz o backup local.
+
+## Decisões Registradas
+
+| Decisão | Definição |
+|---|---|
+| Intervalos por dia | Um único intervalo fixo em horas (ex: a cada 4h). Sem múltiplos horários configurados manualmente. |
+| Restauração de backup | Entra na Fase 2. |
+| Mínimo de retenção | 3 backups. A extensão não aceita valor menor. |
+| Backup e sync | Sistemas completamente independentes. O sync do servidor não interfere no backup local em nenhuma hipótese. |
+| Backup perdido | Se o VS Code ficou fechado durante o horário de backup, o backup roda imediatamente ao abrir o VS Code. |
