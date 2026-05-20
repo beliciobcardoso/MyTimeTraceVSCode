@@ -8,16 +8,18 @@ Hoje, o MyTimeTrace não consegue diferenciar qual IDE está rodando a extensão
 
 ## Objetivos
 - Detectar e registrar qual IDE está em uso automaticamente.
-- Sincronizar info da IDE com dados de rastreamento de tempo.
-- Permitir filtros e relatórios por IDE no dashboard.
+- Sincronizar info da IDE com dados de rastreamento de tempo (o backend agrega dados de múltiplos bancos isolados por IDE).
 - Suportar detecção de versão (ex: Code - Insiders vs Code estável).
-- Manter registro histórico de mudanças de IDE.
+- Permitir correlação por IDE no backend (cada banco local é isolado por IDE — filtros fazem sentido apenas no lado do servidor).
 
 ## Não Objetivos
 - Forçar uso de uma IDE específica.
 - Bloquear extensão em determinadas IDEs.
 - Análise de performance por IDE na fase inicial.
 - Suporte a IDEs diferentes de VS Code e derivadas.
+- Filtros locais por IDE (cada IDE possui banco isolado — todos os registros locais já são da mesma IDE).
+- Alertas de troca de IDE dentro da extensão (sem contexto cross-IDE no banco local).
+- Histórico de mudanças de IDE no banco local (Fase 2 — requer tabela `ide_sessions` no backend).
 
 ## Público-Alvo
 - Desenvolvedores que usam múltiplas IDEs.
@@ -29,9 +31,7 @@ Hoje, o MyTimeTrace não consegue diferenciar qual IDE está rodando a extensão
 - Detectar nome da IDE na inicialização da extensão.
 - Registrar no banco local qual IDE está em uso.
 - Exibir IDE atual na status bar.
-- Incluir IDE nos dados exportados.
-- Sincronizar IDE com backend (se houver sincronização).
-- Alerta se houve troca de IDE.
+- Incluir IDE nos dados exportados/sincronizados (para correlação no backend).
 
 ### IDEs Suportadas
 - VS Code (stable)
@@ -46,9 +46,6 @@ A extensão deve identificar qual IDE está executando na primeira ativação.
 
 ### RF02 - Armazenar nome da IDE
 Guardar nome da IDE no banco local com timestamp.
-
-### RF03 - Rastrear mudanças de IDE
-Se o usuário trocar de IDE, registrar nova entrada no histórico.
 
 ### RF04 - Exibir IDE no status bar
 Mostrar ícone ou texto da IDE atual para o usuário saber qual está usando.
@@ -80,16 +77,16 @@ Para forks, `vscode.version` **não** é a versão correta (ex: retorna `1.95.2`
 
 ### Saídas Na UI
 - Status bar: exibir emoji + nome da IDE (ex: 🚀 Cursor v0.45.2).
-- Dashboard: filtro por IDE em painel dedicado.
 - Tooltip ao passar mouse: versão completa da IDE.
 - Logs: registrar qual IDE foi detectada ao iniciar.
+- Dashboard (backend): correlação por IDE nos dados sincronizados — fora do escopo da extensão.
 
 ## Regras De Produto
 - Detectar IDE uma vez por sessão, na inicialização.
-- Se IDE mudar entre sessões, registrar como novo evento.
-- Versão da IDE deve ser atualizada a cada novo start.
+- Versão da IDE deve ser capturada a cada novo start.
 - Informação de IDE é imutável após registro (apenas timestamps).
 - Sempre registrar timestamp da detecção para auditoria.
+- Cada IDE possui banco de dados local isolado — não há contexto cross-IDE na extensão.
 
 ## Fluxo Esperado
 ```mermaid
@@ -145,8 +142,7 @@ flowchart TD
 - Módulo `deviceManager.ts` (expor `getIdeName()` / `getIdeVersion()` como wrappers, seguindo o padrão de `getDeviceName()` / `getDeviceInfo()`).
 - Módulo `database.ts` (migração: adicionar coluna `ide_name` em `time_entries`; atualizar interface `ActivityData` e método `saveActivityData()` para incluir `ide_name`).
 - Módulo `statusBar.ts` (exibir IDE atual).
-- Módulo `syncManager.ts` (enviar IDE ao backend via header customizado na requisição).
-- Módulo `stats.ts` (filtrar por IDE nos relatórios).
+- Módulo `syncManager.ts` (enviar `ide_name` e `ide_version` ao backend no payload de cada entrada — o backend agrega dados de múltiplos bancos isolados).
 
 ## Estrutura De Dados
 
@@ -214,7 +210,6 @@ Coluna nova:
 - ✅ Versão da IDE capturada (exata para VS Code/Insiders via `vscode.version`; melhor esforço para forks via process info — fallback para versão VS Code base com sufixo).
 - ✅ IDE exibida no status bar.
 - ✅ Teste detecta corretamente em ambiente simulado.
-- ✅ Histórico de troca de IDE registrado.
 - ✅ Sem impacto de performance.
 
 ## Fases Sugeridas
@@ -226,11 +221,10 @@ Coluna nova:
 - Exibir IDE atual no status bar.
 - Testes básicos de detecção em ambiente real.
 
-### Fase 2: Histórico e Análise (2-3 dias)
-- Tabela dedicada `ide_sessions`.
-- Rastrear troca de IDE entre sessões.
-- Filtro por IDE no dashboard.
-- Relatório de uso por IDE.
+### Fase 2: Histórico e Análise no Backend (2-3 dias)
+- Tabela dedicada `ide_sessions` no backend (não no banco local da extensão).
+- Correlação de uso por IDE nos dados sincronizados.
+- Relatório de uso por IDE no dashboard do servidor.
 
 ### Fase 3: Sincronização (1-2 dias)
 - Enviar IDE ao backend.
@@ -255,7 +249,7 @@ Coluna nova:
 - Fork de VS Code com pasta de nome customizado difícil de detectar pelo path.
 - Nome da pasta da IDE pode variar entre versões ou localizações do OS.
 - Detecção pode falhar em ambientes containerizados (todos os métodos).
-- Dados legados sem IDE causam inconsistência em relatórios e filtros.
+- Dados legados sem IDE (`ide_name = NULL`) reduzem precisão da correlação por IDE no backend.
 
 ## Exemplos De Output
 
@@ -263,15 +257,6 @@ Coluna nova:
 ```
 🚀 Cursor (v0.45.2) | ⏱️ 2h 34m
 VS Code Insiders (v1.95.2-insiders) | ⏱️ 45m
-```
-
-### Dashboard
-```
-Filter by IDE:
-[ ] VS Code (2345 entries)
-[ ] Code - Insiders (156 entries)
-[ ] Cursor (567 entries)
-[ ] Windsurf (89 entries)
 ```
 
 ### Sync Payload
@@ -295,7 +280,6 @@ Filter by IDE:
 - [ ] Atualizar interface `ActivityData` em `database.ts` para incluir `ide_name?: string`
 - [ ] Atualizar `saveActivityData()` e o INSERT em `database.ts` para persistir `ide_name`
 - [ ] Atualizar `statusBar.ts` para exibir IDE detectada
-- [ ] Integrar com `stats.ts` para filtros por IDE
 - [ ] Atualizar `syncManager.ts` para enviar IDE ao backend
 - [ ] Testar migração em ambiente com dados existentes
 - [ ] Testar detecção em múltiplas IDEs
