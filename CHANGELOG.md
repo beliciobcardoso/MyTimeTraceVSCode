@@ -5,6 +5,37 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2026-05-20
+
+### Adicionado
+
+- **Detecção Automática de IDE**: A extensão agora identifica em qual IDE está rodando
+  - IDEs suportadas: VS Code, Code - Insiders, Cursor, Windsurf, Google Antigravity
+  - Três camadas de fallback: `globalStorageUri.fsPath` → variáveis de ambiente → `process.execPath`
+  - Funções exportadas: `getIdeName(path)`, `getIdeVersion(ideName)` em `deviceInfo.ts`
+
+- **Indicador de IDE na Status Bar**: Novo item `$(code) <nome> (v<versão>)` exibido ao lado do contador de tempo
+
+- **Campo `ide_name` no Banco de Dados**: Coluna `ide_name TEXT` adicionada à tabela `time_entries`
+  - Migração automática e idempotente aplicada ao inicializar o banco
+  - Campo `ide_name?: string` adicionado à interface `ActivityData`
+
+- **`ide_name` e `ide_version` no Payload de Sync**: Campos incluídos condicionalmente no push para o backend (apenas quando `ide_name` não é nulo)
+
+### Alterado
+
+- **`deviceInfo.ts`**: Adicionadas `getIdeName()`, `getIdeVersion()`, `_detectIdeFromEnv()` e `_detectIdeFromProcess()`
+- **`deviceManager.ts`**: Métodos `getIdeName()` e `getIdeVersion()` com cache (`_ideName`, `_ideVersion`)
+- **`timeTrace.ts`**: Construtor aceita callback `getIdeName: () => string` para desacoplamento da detecção
+- **`statusBar.ts`**: Adicionado `ideStatusBarItem` (prioridade 999) com método `setIdeInfo()`
+- **`extension.ts`**: Inicializa detecção de IDE logo após criação do `DeviceManager`
+- **`package.json`**: Adicionado `"category": "MyTimeTrace"` nos comandos `syncNow` e `viewSyncStatus`
+
+### Corrigido
+
+- **Timeouts nos testes do SyncRetryManager**: Testes que usavam `clock.tickAsync()` com `Promise`-chain agora stubam o método privado `delay` diretamente, eliminando dependência do fake timer
+- **Categorias ausentes nos comandos de sync**: `syncNow` e `viewSyncStatus` sem `category` não apareciam agrupados na Command Palette
+
 ## [0.5.4] - 2026-04-23
 
 ### Alterado

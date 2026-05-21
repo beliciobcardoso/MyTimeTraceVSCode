@@ -14,6 +14,7 @@ export interface ActivityData {
   duration: number; // em segundos
   isIdle?: boolean;
   device_name?: string; // Nome do dispositivo/computador
+  ide_name?: string;    // Nome da IDE que gerou o registro
 }
 
 /**
@@ -163,7 +164,23 @@ export class DatabaseManager {
                                         } else {
                                           console.log('✅ Tabela sync_metadata verificada/criada com sucesso');
                                         }
-                                        resolve();
+
+                                        // Migração: Adicionar coluna ide_name se não existir
+                                        this.db!.run(
+                                          `ALTER TABLE time_entries ADD COLUMN ide_name TEXT`,
+                                          (ideNameErr: Error | null) => {
+                                            if (ideNameErr) {
+                                              if (ideNameErr.message.includes('duplicate column name')) {
+                                                console.log('✅ Coluna ide_name já existe (migração já aplicada)');
+                                              } else {
+                                                console.warn('⚠️ Aviso ao adicionar coluna ide_name:', ideNameErr.message);
+                                              }
+                                            } else {
+                                              console.log('✅ Coluna ide_name adicionada com sucesso (migração aplicada)');
+                                            }
+                                            resolve();
+                                          }
+                                        );
                                       }
                                     );
                                   }
@@ -199,13 +216,13 @@ export class DatabaseManager {
     }
 
     console.log("Salvando dados localmente:", data);
-    const { timestamp, project, file, duration, isIdle, device_name } = data;
+    const { timestamp, project, file, duration, isIdle, device_name, ide_name } = data;
     const clientId = `local-${randomUUID()}`;
 
     const stmt = this.db.prepare(
-      "INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, device_name) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO time_entries (client_id, timestamp, project, file, duration_seconds, is_idle, device_name, ide_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     );
-    
+
     return new Promise((resolve, reject) => {
       stmt.run(
         clientId,
@@ -215,6 +232,7 @@ export class DatabaseManager {
         duration,
         isIdle ? 1 : 0,
         device_name || null,
+        ide_name || null,
         (error: Error | null) => {
           if (error) {
             console.error("Erro ao inserir dados no SQLite:", error);

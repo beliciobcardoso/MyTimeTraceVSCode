@@ -24,6 +24,10 @@ let deviceManager: DeviceManager;
 let syncManager: SyncManager;
 let cleanupInterval: NodeJS.Timeout | undefined; // Timer para cleanup automático
 
+// IDE detectada na ativação — reutilizada durante toda a sessão
+let currentIdeName: string = 'unknown';
+let currentIdeVersion: string = 'unknown';
+
 // Ativação da extensão
 export async function activate(context: vscode.ExtensionContext) {
   globalContext = context;
@@ -43,12 +47,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Inicializa os gerenciadores
     statusBarManager = new StatusBarManager();
-    myTimeTrace = new timeTrace(dbManager, statusBarManager);
+    myTimeTrace = new timeTrace(dbManager, statusBarManager, () => currentIdeName);
     statsManager = new StatsManager(dbManager, context);
     
     // Inicializa gerenciadores de sincronização
     apiKeyManager = new ApiKeyManager(context);
     deviceManager = new DeviceManager(context);
+
+    // Detecta IDE na ativação e armazena para reuso na sessão
+    currentIdeName = deviceManager.getIdeName();
+    currentIdeVersion = deviceManager.getIdeVersion();
+    console.log(`🖥️ IDE detectada: ${currentIdeName} v${currentIdeVersion}`);
+
     syncManager = new SyncManager(
       apiKeyManager,
       deviceManager,
@@ -56,8 +66,9 @@ export async function activate(context: vscode.ExtensionContext) {
       statusBarManager
     );
 
-    // Cria e configura o status bar
+    // Cria e configura o status bar (exibe IDE detectada)
     statusBarManager.create();
+    statusBarManager.setIdeInfo(currentIdeName, currentIdeVersion);
 
     // Registra os comandos
     const commands = CommandManager.registerCommands(

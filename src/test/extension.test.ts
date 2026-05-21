@@ -2569,10 +2569,97 @@ suite("Extension Test Suite", function () {
       console.log("   - getDeviceInfo(): OK ✅");
       console.log("   - Consistência: OK ✅");
       console.log("   - Integração DB: OK ✅");
-      
+
     } catch (error) {
       console.error("❌ Erro no teste de DeviceInfo:", error);
       throw error;
+    }
+  });
+
+  // ─── Teste 6.3: Migração ide_name é idempotente ─────────────────────────────
+  test("Migração ide_name é idempotente (ALTER TABLE tolerante a coluna existente)", async function () {
+    this.timeout(10000);
+
+    const testDbDir = path.join(require("os").tmpdir(), `test-ide-migration-${Date.now()}`);
+    const dbManager = new DatabaseManager();
+
+    try {
+      // Primeira inicialização: cria coluna ide_name
+      await dbManager.initialize(testDbDir);
+      console.log("✅ Primeira inicialização com ide_name OK");
+
+      // Fecha e reabre: ALTER TABLE deve ser silencioso (duplicate column name ignorado)
+      await dbManager.close();
+      const dbManager2 = new DatabaseManager();
+      await assert.doesNotReject(
+        dbManager2.initialize(testDbDir),
+        "Segunda inicialização não deve lançar erro mesmo com coluna já existente"
+      );
+      console.log("✅ Segunda inicialização idempotente OK");
+
+      // Verifica que registros antigos (sem ide_name) têm NULL
+      const rows = await dbManager2.query(
+        "SELECT ide_name FROM time_entries WHERE id = (SELECT MAX(id) FROM time_entries) LIMIT 1"
+      );
+      // Tabela pode estar vazia; o importante é não lançar erro
+      if (rows.length > 0) {
+        assert.strictEqual(rows[0].ide_name, null, "Dados históricos devem ter ide_name = NULL");
+      }
+
+      await dbManager2.close();
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  // ─── Teste 6.4: saveActivityData persiste ide_name corretamente ─────────────
+  test("saveActivityData persiste ide_name no banco de dados", async function () {
+    this.timeout(10000);
+
+    const testDbDir = path.join(require("os").tmpdir(), `test-ide-save-${Date.now()}`);
+    const dbManager = new DatabaseManager();
+
+    try {
+      await dbManager.initialize(testDbDir);
+
+      await dbManager.saveActivityData({
+        timestamp: new Date().toISOString(),
+        project: "TestProject",
+        file: "test.ts",
+        duration: 60,
+        device_name: "test-device",
+        ide_name: "Cursor",
+      });
+
+      const rows = await dbManager.query(
+        "SELECT ide_name, device_name, project FROM time_entries WHERE project = 'TestProject'"
+      );
+
+      assert.strictEqual(rows.length, 1, "Deve ter exatamente 1 registro salvo");
+      assert.strictEqual(rows[0].ide_name, "Cursor", "ide_name deve ser 'Cursor'");
+      assert.strictEqual(rows[0].device_name, "test-device", "device_name deve ser preservado");
+
+      // Verifica que registro sem ide_name salva NULL (retrocompatibilidade)
+      await dbManager.saveActivityData({
+        timestamp: new Date().toISOString(),
+        project: "TestProjectLegacy",
+        file: "legacy.ts",
+        duration: 30,
+      });
+
+      const legacyRows = await dbManager.query(
+        "SELECT ide_name FROM time_entries WHERE project = 'TestProjectLegacy'"
+      );
+      assert.strictEqual(legacyRows.length, 1);
+      assert.strictEqual(legacyRows[0].ide_name, null, "Registro sem ide_name deve ter NULL");
+
+      await dbManager.close();
+    } finally {
+      if (fs.existsSync(testDbDir)) {
+        fs.rmSync(testDbDir, { recursive: true, force: true });
+      }
     }
   });
 });
