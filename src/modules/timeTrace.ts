@@ -17,11 +17,15 @@ export class timeTrace {
   private projectRoot: string | undefined;
   private timeSpentOnFile: number = 0; // Em milissegundos
   private isTracking: boolean = false;
+  private getIdeName: () => string;
 
   constructor(
     private dbManager: DatabaseManager,
-    private statusBarManager: StatusBarManager
-  ) {}
+    private statusBarManager: StatusBarManager,
+    getIdeName: () => string = () => 'unknown'
+  ) {
+    this.getIdeName = getIdeName;
+  }
 
   /**
    * Salva tempo em arquivo atual e reseta contador
@@ -34,6 +38,7 @@ export class timeTrace {
         file: this.currentFile,
         duration: Math.round(this.timeSpentOnFile / 1000), // Convertendo ms para segundos
         device_name: getDeviceName(),
+        ide_name: this.getIdeName(),
       };
       await this.dbManager.saveActivityData(data);
     }
@@ -106,6 +111,7 @@ export class timeTrace {
               duration: Math.round((now - (this.lastActiveTime + this.timeSpentOnFile)) / 1000),
               isIdle: true,
               device_name: getDeviceName(),
+              ide_name: this.getIdeName(),
             });
 
           this.currentFile = undefined; // Limpa o arquivo atual, pois está inativo

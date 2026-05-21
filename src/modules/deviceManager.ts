@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
-import { getDeviceInfo, getDeviceName } from './deviceInfo';
+import { getDeviceInfo, getDeviceName, getIdeName, getIdeVersion } from './deviceInfo';
 import { API_BASE_URL, SECRET_KEYS } from '../config/constants';
 
 /**
@@ -24,9 +24,33 @@ import { API_BASE_URL, SECRET_KEYS } from '../config/constants';
  */
 export class DeviceManager {
   private context: vscode.ExtensionContext;
-  
+  private _ideName: string | null = null;
+  private _ideVersion: string | null = null;
+
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+  }
+
+  /**
+   * Retorna o nome da IDE detectada na sessão atual.
+   * O resultado é calculado uma vez e cacheado para reuso.
+   */
+  getIdeName(): string {
+    if (this._ideName === null) {
+      this._ideName = getIdeName(this.context.globalStorageUri.fsPath);
+    }
+    return this._ideName;
+  }
+
+  /**
+   * Retorna a versão da IDE detectada na sessão atual.
+   * O resultado é calculado uma vez e cacheado para reuso.
+   */
+  getIdeVersion(): string {
+    if (this._ideVersion === null) {
+      this._ideVersion = getIdeVersion(this.getIdeName());
+    }
+    return this._ideVersion;
   }
   
   /**

@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import { DeviceManager } from '../modules/deviceManager';
 import * as deviceInfo from '../modules/deviceInfo';
+import { getIdeName, getIdeVersion, _detectIdeFromEnv, _detectIdeFromProcess } from '../modules/deviceInfo';
 
 /**
  * 🧪 Testes Unitários - DeviceManager
@@ -318,5 +319,224 @@ suite('DeviceManager Tests', () => {
 
       assert.strictEqual(result, null);
     });
+  });
+});
+
+// ─── Testes para getIdeName() (deviceInfo) ────────────────────────────────────
+
+suite('getIdeName() — detecção via globalStorageUri', () => {
+  test('Detecta VS Code via path', () => {
+    const result = getIdeName('/home/user/.config/Code/User/globalStorage/ext');
+    assert.strictEqual(result, 'VS Code');
+  });
+
+  test('Detecta Code - Insiders via path', () => {
+    const result = getIdeName('/home/user/.config/Code - Insiders/User/globalStorage/ext');
+    assert.strictEqual(result, 'Code - Insiders');
+  });
+
+  test('Detecta Cursor via path', () => {
+    const result = getIdeName('/home/user/.config/Cursor/User/globalStorage/ext');
+    assert.strictEqual(result, 'Cursor');
+  });
+
+  test('Detecta Windsurf via path', () => {
+    const result = getIdeName('/home/user/.config/Windsurf/User/globalStorage/ext');
+    assert.strictEqual(result, 'Windsurf');
+  });
+
+  test('Detecta Google Antigravity via path', () => {
+    const result = getIdeName('/home/user/.config/Google Antigravity/User/globalStorage/ext');
+    assert.strictEqual(result, 'Google Antigravity');
+  });
+});
+
+suite('getIdeName() — fallback env vars', () => {
+  let originalRelease: string | undefined;
+  let originalExecPath: string;
+
+  setup(() => {
+    originalRelease = process.env.VSCODE_RELEASE;
+    originalExecPath = process.execPath;
+  });
+
+  teardown(() => {
+    if (originalRelease === undefined) {
+      delete process.env.VSCODE_RELEASE;
+    } else {
+      process.env.VSCODE_RELEASE = originalRelease;
+    }
+    Object.defineProperty(process, 'execPath', { value: originalExecPath, configurable: true });
+  });
+
+  test('Retorna VS Code quando VSCODE_RELEASE=stable e sem fork no execPath', () => {
+    process.env.VSCODE_RELEASE = 'stable';
+    Object.defineProperty(process, 'execPath', { value: '/usr/bin/code', configurable: true });
+
+    const result = _detectIdeFromEnv();
+    assert.strictEqual(result, 'VS Code');
+  });
+
+  test('Retorna null quando VSCODE_RELEASE=stable mas execPath indica Cursor', () => {
+    process.env.VSCODE_RELEASE = 'stable';
+    Object.defineProperty(process, 'execPath', { value: '/usr/bin/cursor', configurable: true });
+
+    const result = _detectIdeFromEnv();
+    assert.strictEqual(result, null);
+  });
+
+  test('Retorna null quando VSCODE_RELEASE não definido', () => {
+    delete process.env.VSCODE_RELEASE;
+    const result = _detectIdeFromEnv();
+    assert.strictEqual(result, null);
+  });
+});
+
+suite('getIdeName() — fallback process info', () => {
+  let originalExecPath: string;
+
+  setup(() => {
+    originalExecPath = process.execPath;
+  });
+
+  teardown(() => {
+    Object.defineProperty(process, 'execPath', { value: originalExecPath, configurable: true });
+  });
+
+  test('Detecta Cursor via execPath', () => {
+    Object.defineProperty(process, 'execPath', { value: '/usr/local/bin/cursor', configurable: true });
+    assert.strictEqual(_detectIdeFromProcess(), 'Cursor');
+  });
+
+  test('Detecta Windsurf via execPath', () => {
+    Object.defineProperty(process, 'execPath', { value: '/opt/windsurf/windsurf', configurable: true });
+    assert.strictEqual(_detectIdeFromProcess(), 'Windsurf');
+  });
+
+  test('Retorna null quando execPath não corresponde a IDE conhecida', () => {
+    Object.defineProperty(process, 'execPath', { value: '/usr/bin/node', configurable: true });
+    assert.strictEqual(_detectIdeFromProcess(), null);
+  });
+});
+
+suite('getIdeName() — retorno unknown', () => {
+  let originalRelease: string | undefined;
+  let originalExecPath: string;
+
+  setup(() => {
+    originalRelease = process.env.VSCODE_RELEASE;
+    originalExecPath = process.execPath;
+    delete process.env.VSCODE_RELEASE;
+    Object.defineProperty(process, 'execPath', { value: '/usr/bin/node', configurable: true });
+  });
+
+  teardown(() => {
+    if (originalRelease === undefined) {
+      delete process.env.VSCODE_RELEASE;
+    } else {
+      process.env.VSCODE_RELEASE = originalRelease;
+    }
+    Object.defineProperty(process, 'execPath', { value: originalExecPath, configurable: true });
+  });
+
+  test('Retorna "unknown" quando todos os métodos falham', () => {
+    const result = getIdeName('/some/unknown/path/globalStorage/something');
+    assert.strictEqual(result, 'unknown');
+  });
+
+  test('Não lança exceção ao retornar unknown', () => {
+    assert.doesNotThrow(() => {
+      getIdeName('/some/unknown/path');
+    });
+  });
+});
+
+// ─── Testes para getIdeVersion() (deviceInfo) ────────────────────────────────
+
+suite('getIdeVersion()', () => {
+  test('Retorna vscode.version para VS Code', () => {
+    const version = getIdeVersion('VS Code');
+    assert.strictEqual(typeof version, 'string');
+    assert.ok(version.length > 0);
+    // vscode.version está disponível no contexto de teste
+    assert.strictEqual(version, vscode.version);
+  });
+
+  test('Retorna vscode.version para Code - Insiders', () => {
+    const version = getIdeVersion('Code - Insiders');
+    assert.strictEqual(version, vscode.version);
+  });
+
+  test('Retorna "unknown" para ideName "unknown"', () => {
+    const version = getIdeVersion('unknown');
+    assert.strictEqual(version, 'unknown');
+  });
+
+  test('Para fork sem package.json acessível, retorna vscode.version + "-base"', () => {
+    // Em ambiente de teste, o execPath não aponta para instalação de fork real
+    // então package.json não será encontrado → fallback esperado
+    const version = getIdeVersion('Cursor');
+    assert.ok(
+      version === `${vscode.version}-base` || /^\d+\.\d+\.\d+/.test(version),
+      `Versão deveria ser "{vscode.version}-base" ou versão semver real, obtido: ${version}`
+    );
+  });
+});
+
+// ─── Testes para DeviceManager.getIdeName() / getIdeVersion() (wrappers) ─────
+
+suite('DeviceManager — getIdeName() e getIdeVersion()', () => {
+  let context: vscode.ExtensionContext;
+  let secretsStub: any;
+  let getIdeNameStub: sinon.SinonStub;
+  let getIdeVersionStub: sinon.SinonStub;
+  let dm: DeviceManager;
+
+  setup(() => {
+    secretsStub = {
+      store: sinon.stub().resolves(),
+      get: sinon.stub().resolves(undefined),
+      delete: sinon.stub().resolves()
+    };
+
+    context = {
+      secrets: secretsStub,
+      globalStorageUri: { fsPath: '/home/user/.config/Cursor/User/globalStorage/ext' }
+    } as any;
+
+    getIdeNameStub = sinon.stub(deviceInfo, 'getIdeName').returns('Cursor');
+    getIdeVersionStub = sinon.stub(deviceInfo, 'getIdeVersion').returns('0.45.2');
+
+    dm = new DeviceManager(context);
+  });
+
+  teardown(() => {
+    sinon.restore();
+  });
+
+  test('getIdeName() delega para deviceInfo.getIdeName com o fsPath correto', () => {
+    const name = dm.getIdeName();
+    assert.strictEqual(name, 'Cursor');
+    assert.ok(getIdeNameStub.calledOnce);
+    assert.strictEqual(getIdeNameStub.firstCall.args[0], '/home/user/.config/Cursor/User/globalStorage/ext');
+  });
+
+  test('getIdeName() armazena resultado em cache (não chama deviceInfo na 2ª vez)', () => {
+    dm.getIdeName();
+    dm.getIdeName();
+    assert.strictEqual(getIdeNameStub.callCount, 1);
+  });
+
+  test('getIdeVersion() delega para deviceInfo.getIdeVersion com o nome correto', () => {
+    const version = dm.getIdeVersion();
+    assert.strictEqual(version, '0.45.2');
+    assert.ok(getIdeVersionStub.calledOnce);
+    assert.strictEqual(getIdeVersionStub.firstCall.args[0], 'Cursor');
+  });
+
+  test('getIdeVersion() armazena resultado em cache', () => {
+    dm.getIdeVersion();
+    dm.getIdeVersion();
+    assert.strictEqual(getIdeVersionStub.callCount, 1);
   });
 });

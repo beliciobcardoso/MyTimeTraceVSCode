@@ -4,13 +4,13 @@
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados.",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"
   },
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": ">=1.100.0"
   },
   "license": "MIT",
   "homepage": "https://github.com/beliciobcardoso/MyTimeTraceVSCode",
@@ -65,11 +65,13 @@
       {
         "command": "my-time-trace-vscode.syncNow",
         "title": "%my-time-trace-vscode.syncNow.title%",
+        "category": "MyTimeTrace",
         "icon": "$(sync)"
       },
       {
         "command": "my-time-trace-vscode.viewSyncStatus",
         "title": "%my-time-trace-vscode.viewSyncStatus.title%",
+        "category": "MyTimeTrace",
         "icon": "$(dashboard)"
       }
     ],

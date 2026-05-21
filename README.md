@@ -1,13 +1,12 @@
-# My Time Trace VSCode (v0.5.4)
+# My Time Trace VSCode (v0.5.5)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
 
 [![Status](https://img.shields.io/badge/Status-Published-green?style=flat-square)]()
-[![Coverage](https://img.shields.io/badge/Coverage-88%25-brightgreen?style=flat-square)]()
-[![Tests](https://img.shields.io/badge/Tests-21%20passing-brightgreen?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-109%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=flat-square)]()
-[![Version](https://img.shields.io/badge/Version-0.5.4-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.5.5-blue?style=flat-square)]()
 
 </div>
 
@@ -23,6 +22,7 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Organização por Projeto**: Agrupa dados por workspace/projeto
 - **Persistência Local**: Armazena dados em SQLite seguro
 - **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento
+- **Detecção de IDE**: Identifica automaticamente qual IDE está em uso (VS Code, Cursor, Windsurf, etc.) e exibe na status bar
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
 
 ### ☁️ Sincronização em Nuvem (NOVO v0.5.3)
@@ -55,12 +55,27 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 ## Como Funciona
 
 1. A extensão começa a monitorar automaticamente quando o VS Code é iniciado
-2. Registra o tempo que você passa em cada arquivo
-3. Detecta quando você muda de arquivos ou projetos
-4. Registra períodos de inatividade para melhorar a precisão dos dados
-5. Armazena todos os dados localmente para acesso posterior
-6. Oferece visualização unificada com filtros interativos para análise detalhada
-7. Permite exclusão segura de projetos com histórico completo de restauração
+2. **Detecta automaticamente qual IDE está em uso** (VS Code, Cursor, Windsurf, Code - Insiders, Google Antigravity) e exibe na status bar
+3. Registra o tempo que você passa em cada arquivo
+4. Detecta quando você muda de arquivos ou projetos
+5. Registra períodos de inatividade para melhorar a precisão dos dados
+6. Armazena todos os dados localmente (incluindo qual IDE gerou cada registro)
+7. Oferece visualização unificada com filtros interativos para análise detalhada
+8. Permite exclusão segura de projetos com histórico completo de restauração
+
+## 🖥️ IDEs Suportadas
+
+A detecção de IDE usa três camadas de fallback:
+
+| IDE | Detecção Primária | Versão Capturada |
+|-----|------------------|-----------------|
+| VS Code | `globalStorageUri.fsPath` | `vscode.version` (API nativa) |
+| Code - Insiders | `globalStorageUri.fsPath` | `vscode.version` (API nativa) |
+| Cursor | `globalStorageUri.fsPath` | `package.json` da instalação |
+| Windsurf | `globalStorageUri.fsPath` | `package.json` da instalação |
+| Google Antigravity | `globalStorageUri.fsPath` | `package.json` da instalação |
+
+Se a detecção via path falhar, a extensão tenta variáveis de ambiente e process info antes de registrar `"unknown"` — sem travar a extensão em nenhum caso.
 
 ## 🔬 Fisiologia da Extensão
 
@@ -111,6 +126,7 @@ Substitua `Code` por `Code - Insiders` nos caminhos acima.
 | `synced` | INTEGER | 1 = sincronizado na nuvem, 0 = local |
 | `deleted_at` | TEXT | Timestamp do soft delete (NULL = ativo) |
 | `device_name` | TEXT | Nome do dispositivo/computador |
+| `ide_name` | TEXT | IDE detectada (VS Code, Cursor, Windsurf…) |
 
 **Tabela `deletion_history`** - Histórico de exclusões e restaurações:
 - Registro completo de soft/hard deletes
@@ -129,7 +145,7 @@ Substitua `Code` por `Code - Insiders` nos caminhos acima.
 
 ## Requisitos
 
-- Visual Studio Code 1.100.0 ou superior
+- Visual Studio Code 1.100.0 ou superior (ou qualquer fork compatível: Cursor, Windsurf, Google Antigravity 2.x+)
 
 ## 📖 Documentação
 
@@ -138,8 +154,9 @@ Para documentação detalhada, consulte a pasta [`docs/`](./docs/):
 - 🎨 **[Identidade Visual](./docs/IDENTIDADE_VISUAL.md)** - Logo, cores e design system
 - 📊 **[Dashboard Moderno](./docs/DASHBOARD_MODERNO.md)** - Interface responsiva e funcionalidades
 - 🧩 **[Componentes UI](./docs/UI_COMPONENTS.md)** - Documentação dos componentes de interface
-- ✅ **[Relatório de Cobertura](./docs/COVERAGE_REPORT.md)** - Métricas de qualidade e testes (88%)
+- ✅ **[Relatório de Cobertura](./docs/COVERAGE_REPORT.md)** - Métricas de qualidade e testes
 - 🚀 **[Guia de Desenvolvimento](./docs/vsc-extension-quickstart.md)** - Setup e desenvolvimento
+- 📦 **[Publicação no Open VSX](./docs/PUBLICACAO_OPEN_VSX.md)** - Como publicar para Antigravity e forks
 
 ## 📦 Instalação
 
@@ -203,14 +220,14 @@ Após gerar o pacote, você pode instalá-lo de **três maneiras**:
 
 ```bash
 # Para o VS Code normal
-code --install-extension my-time-trace-vscode-0.5.4.vsix
+code --install-extension my-time-trace-vscode-0.5.5.vsix
 ```
 
 #### Opção 3: Pelo Terminal (VS Code Insiders)
 
 ```bash
 # Para o VS Code Insiders
-code-insiders --install-extension my-time-trace-vscode-0.5.4.vsix
+code-insiders --install-extension my-time-trace-vscode-0.5.5.vsix
 ```
 
 > **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).
@@ -237,6 +254,34 @@ As seguintes configurações já estão disponíveis:
 - `myTimeTraceVSCode.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
 - `myTimeTraceVSCode.syncEnabled`: Ativa ou desativa a sincronização automática em nuvem. Requer API Key. Padrão: ativado.
 - `myTimeTraceVSCode.syncInterval`: Intervalo de verificação do auto-sync, em minutos. Padrão: 60, com mínimo de 5 e máximo de 1440.
+
+## 🔑 Passo a passo: API Key e Sync Manual
+
+Use este fluxo para configurar a chave e sincronizar na hora.
+
+### 1) Configurar a API Key
+
+1. Abra a Command Palette (`Ctrl+Shift+P` no Linux/Windows ou `Cmd+Shift+P` no macOS).
+2. Busque por **My Time Trace: Set Api Key**.
+3. Se sua interface estiver em pt-BR, o nome pode aparecer como **My Time Trace: Configurar Chave API**.
+4. Cole sua API Key e confirme.
+
+### 2) Sincronizar agora
+
+1. Abra novamente a Command Palette.
+2. Busque por **My Time Trace: Sync Now**.
+3. Se sua interface estiver em pt-BR, o nome pode aparecer como **My Time Trace: Sincronizar Agora**.
+4. Execute o comando para enviar as entries pendentes para a nuvem.
+
+### 3) Validar se funcionou
+
+1. Execute **My Time Trace: View Sync Status** (ou **My Time Trace: Ver Status de Sincronização**).
+2. Confira no status se as entries foram sincronizadas.
+
+### Problemas comuns
+
+- **API Key inválida ou ausente**: revise a chave com **Set Api Key**.
+- **Nada para sincronizar**: significa que não há entries pendentes no momento.
 
 ## Recursos e Próximos Passos
 
@@ -305,6 +350,14 @@ Esse comando gera um arquivo como `my-time-trace-vscode-X.X.X.vsix`, que pode se
 - Se a mudança afetar UI, revise também os documentos de `docs/DASHBOARD_MODERNO.md` e `docs/UI_COMPONENTS.md`.
 
 ## Notas de Lançamento
+
+### 0.5.5 (20/05/2026)
+
+- **Detecção automática de IDE**: identifica VS Code, Code - Insiders, Cursor, Windsurf e Google Antigravity com três camadas de fallback (path → env → process)
+- **Indicador de IDE na status bar**: novo item `$(code) <nome> (v<versão>)` exibido ao lado do contador de tempo
+- **Campo `ide_name` no banco e no sync**: cada registro de tempo agora armazena e envia a IDE de origem
+- **Compatibilidade com Antigravity 2.x**: engine atualizada para `>=1.100.0`
+- **Correções de testes**: timeouts do SyncRetryManager resolvidos; categorias dos comandos de sync corrigidas
 
 ### 0.2.0 - Beta (28/06/2025)
 
@@ -391,17 +444,16 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para m
 ## Qualidade e Confiabilidade
 
 ### 🧪 Testes Automatizados
-A extensão possui uma **excelente cobertura de testes** com **21 testes automatizados** que garantem a qualidade e confiabilidade:
+A extensão possui **109 testes automatizados** que garantem a qualidade e confiabilidade:
 
-- ✅ **21 testes passando**
-- ✅ **88% de cobertura** das funcionalidades críticas
+- ✅ **109 testes passando**
 - ✅ **Testes abrangentes** incluindo:
   - Ativação/desativação da extensão
   - Rastreamento de tempo e detecção de idle
   - Persistência de dados no SQLite
+  - Detecção de IDE (getIdeName, getIdeVersion, fallbacks)
   - Interface do status bar em tempo real
-  - Painel de estatísticas com filtros
-  - Tratamento de erros e edge cases
+  - Retry automático de sincronização
   - Integração entre módulos
 
 ### 🏗️ Arquitetura Modular

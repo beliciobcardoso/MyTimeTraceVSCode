@@ -10,10 +10,11 @@ const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
  */
 export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;
+  private ideStatusBarItem: vscode.StatusBarItem | undefined;
   private isSyncing: boolean = false;
 
   /**
-   * Cria e configura o status bar item
+   * Cria e configura os itens da status bar
    */
   create(): void {
     if (!this.statusBarItem) {
@@ -25,11 +26,38 @@ export class StatusBarManager {
       this.statusBarItem.tooltip = localize('statusBar.tooltip', 'Click to see time statistics');
     }
 
+    if (!this.ideStatusBarItem) {
+      this.ideStatusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        999 // Imediatamente após o item de tempo
+      );
+    }
+
     const userConfig = getConfig();
     if (userConfig.showInStatusBar) {
       this.statusBarItem.show();
+      this.ideStatusBarItem.show();
     } else {
       this.statusBarItem.hide();
+      this.ideStatusBarItem.hide();
+    }
+  }
+
+  /**
+   * Define as informações de IDE exibidas na status bar.
+   * Deve ser chamado logo após `create()` durante a ativação.
+   */
+  setIdeInfo(ideName: string, ideVersion: string): void {
+    if (!this.ideStatusBarItem) {
+      return;
+    }
+
+    if (ideName === 'unknown') {
+      this.ideStatusBarItem.text = localize('statusBar.unknownIde', 'IDE: desconhecida');
+      this.ideStatusBarItem.tooltip = localize('statusBar.unknownIdeTooltip', 'IDE not detected');
+    } else {
+      this.ideStatusBarItem.text = `$(code) ${ideName} (v${ideVersion})`;
+      this.ideStatusBarItem.tooltip = `${ideName} ${ideVersion}`;
     }
   }
 
@@ -88,13 +116,18 @@ export class StatusBarManager {
   }
 
   /**
-   * Libera os recursos do status bar item
+   * Libera os recursos dos status bar items
    */
   dispose(): void {
     if (this.statusBarItem) {
       this.statusBarItem.dispose();
       this.statusBarItem = undefined;
       console.log("StatusBarItem limpo.");
+    }
+    if (this.ideStatusBarItem) {
+      this.ideStatusBarItem.dispose();
+      this.ideStatusBarItem = undefined;
+      console.log("IdeStatusBarItem limpo.");
     }
   }
 }

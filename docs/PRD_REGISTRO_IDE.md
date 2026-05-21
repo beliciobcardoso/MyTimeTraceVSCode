@@ -272,16 +272,16 @@ VS Code Insiders (v1.95.2-insiders) | ⏱️ 45m
 ```
 
 ## Checklist De Implementação
-- [ ] Adicionar `getIdeName()` e `getIdeVersion()` em `deviceInfo.ts` via `globalStorageUri.fsPath`
-- [ ] Implementar lógica de captura de versão: `vscode.version` para VS Code/Insiders; process info ou `package.json` do executável para forks
-- [ ] Expor `getIdeName()` / `getIdeVersion()` em `deviceManager.ts` como wrappers (padrão existente)
-- [ ] Adicionar testes de detecção de IDE em `deviceManager.test.ts`
-- [ ] **Criar migração SQL:** Adicionar coluna `ide_name` (NULL) a `time_entries`
-- [ ] Atualizar interface `ActivityData` em `database.ts` para incluir `ide_name?: string`
-- [ ] Atualizar `saveActivityData()` e o INSERT em `database.ts` para persistir `ide_name`
-- [ ] Atualizar `statusBar.ts` para exibir IDE detectada
-- [ ] Atualizar `syncManager.ts` para enviar IDE ao backend
-- [ ] Testar migração em ambiente com dados existentes
-- [ ] Testar detecção em múltiplas IDEs
-- [ ] Validar backward compatibility com dados antigos (NULL)
-- [ ] Atualizar documentação em docs/
+- [x] Adicionar `getIdeName()` e `getIdeVersion()` em `deviceInfo.ts` via `globalStorageUri.fsPath`
+- [x] Implementar lógica de captura de versão: `vscode.version` para VS Code/Insiders; process info ou `package.json` do executável para forks
+- [x] Expor `getIdeName()` / `getIdeVersion()` em `deviceManager.ts` como wrappers (padrão existente)
+- [x] Adicionar testes de detecção de IDE em `deviceManager.test.ts`
+- [x] **Criar migração SQL:** Adicionar coluna `ide_name` (NULL) a `time_entries`
+- [x] Atualizar interface `ActivityData` em `database.ts` para incluir `ide_name?: string`
+- [x] Atualizar `saveActivityData()` e o INSERT em `database.ts` para persistir `ide_name`
+- [x] Atualizar `statusBar.ts` para exibir IDE detectada
+- [x] Atualizar `syncManager.ts` para enviar IDE ao backend
+- [ ] Testar migração em ambiente com dados existentes (validação manual — Tarefa 7.3)
+- [ ] Testar detecção em múltiplas IDEs (validação manual — Tarefas 7.1/7.2)
+- [ ] Validar backward compatibility com dados antigos (NULL) (validação manual — Tarefa 7.3)
+- [x] Atualizar documentação em docs/

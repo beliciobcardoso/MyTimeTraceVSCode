@@ -307,6 +307,8 @@ export class SyncManager {
     
     console.log(`📤 Push: Enviando até ${this.batchLimit} entries...`);
     
+    const ideVersion = this.deviceManager.getIdeVersion();
+
     const response = await fetch(`${API_BASE_URL}/sync/push`, {
       method: 'POST',
       headers: {
@@ -315,14 +317,22 @@ export class SyncManager {
       },
       body: JSON.stringify({
         deviceKey,
-        entries: unsyncedEntries.map(entry => ({
-          clientId: entry.client_id || `local-${entry.id}`,
-          timestamp: entry.timestamp,
-          project: entry.project || 'Unknown',
-          file: entry.file || 'Unknown',
-          durationSeconds: entry.duration_seconds,
-          isIdle: entry.is_idle === 1
-        }))
+        entries: unsyncedEntries.map(entry => {
+          const base: Record<string, unknown> = {
+            clientId: entry.client_id || `local-${entry.id}`,
+            timestamp: entry.timestamp,
+            project: entry.project || 'Unknown',
+            file: entry.file || 'Unknown',
+            durationSeconds: entry.duration_seconds,
+            isIdle: entry.is_idle === 1
+          };
+          // Inclui ide_name/ide_version apenas para registros novos (não históricos)
+          if (entry.ide_name !== null && entry.ide_name !== undefined) {
+            base.ide_name = entry.ide_name;
+            base.ide_version = ideVersion;
+          }
+          return base;
+        })
       })
     });
     
