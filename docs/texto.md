@@ -7,9 +7,7 @@ Aqui está uma versão aprimorada do seu texto. Mantive o seu objetivo principal
 > "O documento @docs/PRD_BACKUP_AUTOMATIZADO.md está coerente com o cenário atual do projeto? Identificam algum gap ou inconsistência na sequência das fases, cronogramas e entregas? Peço que olhem para o projeto atual com um olhar bem crítico. O objetivo é adotar uma análise que nos permita aproveitar o que já existe, mitigar erros clássicos (ou bobos) e identificar recursos subutilizados que possam ter passado batidos."
 
 ---
-
-**Opção 2: Um pouco mais formal (Ideal para e-mails ou documentações)**
-
+/ope
 > "Gostaria de validar se o arquivo @docs/PRD_BACKUP_AUTOMATIZADO.md está alinhado com o estado atual do projeto. Existem gaps mapeados? A sequência das fases e o cronograma estão corretos? Solicito uma análise crítica focada na arquitetura atual do sistema para reaproveitarmos componentes existentes, mitigar falhas comuns de implementação e identificar recursos disponíveis que não estão sendo totalmente aproveitados nesta fase de planejamento."
 
 ---
