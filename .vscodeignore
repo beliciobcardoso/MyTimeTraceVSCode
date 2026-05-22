@@ -34,6 +34,3 @@ out/test/
 
 # Artefatos de pacote
 my-time-trace-vscode-*.vsix
-
-# Dependências (resolvidas automaticamente pelo VS Code em runtime)
-node_modules/

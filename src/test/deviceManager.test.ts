@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { DeviceManager } from '../modules/deviceManager';
 import * as deviceInfo from '../modules/deviceInfo';
 import { getIdeName, getIdeVersion, _detectIdeFromEnv, _detectIdeFromProcess } from '../modules/deviceInfo';
+import { API_BASE_URL } from '../config/constants';
 
 /**
  * 🧪 Testes Unitários - DeviceManager
@@ -186,7 +187,7 @@ suite('DeviceManager Tests', () => {
       assert.strictEqual(fetchStub.calledOnce, true);
 
       const fetchArgs = fetchStub.firstCall.args;
-      assert.strictEqual(fetchArgs[0], 'http://localhost:8989/api/sync/register');
+      assert.strictEqual(fetchArgs[0], `${API_BASE_URL}/sync/register`);
       
       const requestOptions = fetchArgs[1];
       assert.strictEqual(requestOptions.method, 'POST');

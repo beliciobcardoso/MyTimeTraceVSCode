@@ -1,12 +1,12 @@
-# My Time Trace VSCode (v0.5.5)
+# My Time Trace VSCode (v0.6.0)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
 
 [![Status](https://img.shields.io/badge/Status-Published-green?style=flat-square)]()
-[![Tests](https://img.shields.io/badge/Tests-109%20passing-brightgreen?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-139%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=flat-square)]()
-[![Version](https://img.shields.io/badge/Version-0.5.5-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.6.0-blue?style=flat-square)]()
 
 </div>
 
@@ -24,6 +24,17 @@ Uma extensão para o Visual Studio Code que monitora automaticamente o tempo gas
 - **Identificação de Dispositivo**: Registra nome do computador para cada rastreamento
 - **Detecção de IDE**: Identifica automaticamente qual IDE está em uso (VS Code, Cursor, Windsurf, etc.) e exibe na status bar
 - **Sistema de Exclusão com Histórico**: Soft delete, hard delete automático (>30 dias), e restauração
+
+### 🗄️ Backup Automático Local (NOVO v0.6.0)
+- **Cópia Segura via VACUUM INTO**: backup com verificação de integridade dupla (origem e destino)
+- **Arquivo Temporário com Rename Atômico**: `.sqlite.tmp` → `.sqlite` sem risco de arquivo corrompido
+- **Verificação de Espaço em Disco**: impede backup se não houver espaço suficiente
+- **Wizard de Configuração Interativo**: 4 passos guiados (pasta de destino, intervalo, retenção, confirmação)
+- **Agendamento Automático**: configurável de 1h a 24h, com verificação de backup perdido ao retomar o VS Code
+- **Painel WebView de Gerenciamento**: tabela com badge `● atual`, exclusão individual e em lote, restauração com 1 clique
+- **FileSystemWatcher**: painel atualiza automaticamente ao adicionar/remover backups externamente
+- **Política de Retenção**: remove os mais antigos automaticamente mantendo mínimo de 3
+- **7 novos comandos** e **6 novas settings** `myTimeTraceVSCode.backup.*` com `scope: machine`u
 
 ### ☁️ Sincronização em Nuvem (NOVO v0.5.3)
 - **Sync Unidirecional**: Push automático da extensão para a cloud
@@ -220,14 +231,14 @@ Após gerar o pacote, você pode instalá-lo de **três maneiras**:
 
 ```bash
 # Para o VS Code normal
-code --install-extension my-time-trace-vscode-0.5.5.vsix
+code --install-extension my-time-trace-vscode-0.6.0.vsix
 ```
 
 #### Opção 3: Pelo Terminal (VS Code Insiders)
 
 ```bash
 # Para o VS Code Insiders
-code-insiders --install-extension my-time-trace-vscode-0.5.5.vsix
+code-insiders --install-extension my-time-trace-vscode-0.6.0.vsix
 ```
 
 > **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).
@@ -254,6 +265,15 @@ As seguintes configurações já estão disponíveis:
 - `myTimeTraceVSCode.showInStatusBar`: Controla a exibição do tempo atual na barra de status. Padrão: ativado.
 - `myTimeTraceVSCode.syncEnabled`: Ativa ou desativa a sincronização automática em nuvem. Requer API Key. Padrão: ativado.
 - `myTimeTraceVSCode.syncInterval`: Intervalo de verificação do auto-sync, em minutos. Padrão: 60, com mínimo de 5 e máximo de 1440.
+
+**Backup Automático** (`scope: machine` — não sincronizam entre dispositivos):
+
+- `myTimeTraceVSCode.backup.enabled`: Ativa ou desativa o backup automático local. Padrão: desativado.
+- `myTimeTraceVSCode.backup.destinationPath`: Caminho absoluto da pasta de destino dos backups. Deve ser local (evite pastas de nuvem).
+- `myTimeTraceVSCode.backup.intervalHours`: Intervalo entre backups automáticos, em horas. Padrão: 24, mínimo: 1.
+- `myTimeTraceVSCode.backup.maxBackups`: Quantidade máxima de arquivos de backup mantidos. Padrão: 7, mínimo: 3.
+- `myTimeTraceVSCode.backup.notifyOnSuccess`: Exibe notificação ao concluir um backup com sucesso. Padrão: desativado.
+- `myTimeTraceVSCode.backup.showInStatusBar`: Exibe indicador de backup na barra de status. Padrão: desativado.
 
 ## 🔑 Passo a passo: API Key e Sync Manual
 
@@ -295,6 +315,7 @@ Use este fluxo para configurar a chave e sincronizar na hora.
 - **Visualização de dados**: Dashboard unificado com filtros e gráficos interativos.
 - **Status Bar interativa**: Feedback visual constante com atualização em tempo real.
 - **Sincronização em Nuvem**: push-only com retry inteligente e auto-sync.
+- **Backup Automático Local**: cópia segura via `VACUUM INTO`, wizard de configuração, painel WebView de gerenciamento, agendamento automático e restauração com 1 clique.
 
 ### ⏭️ Próximos passos considerados
 
@@ -317,6 +338,32 @@ npm run compile
 
 # Compilar e observar mudanças durante o desenvolvimento
 npm run watch
+```
+
+### 🌐 Configuração de Ambiente (.env)
+
+A URL da API é controlada pela variável `API_BASE_URL`. O repositório inclui um `.env.example` como ponto de partida:
+
+```bash
+cp .env.example .env
+```
+
+| Situação | `API_BASE_URL` usada | Como |
+|---|---|---|
+| Sem `.env` (clone limpo) | `http://localhost:3000/api` | Fallback em `constants.ts` |
+| `.env` presente (desenvolvimento) | Valor definido no `.env` | Carregado por `env-loader.ts` via `dotenv` |
+| VSIX publicado | URL de produção | `.env` bundled no pacote |
+
+> **Nota:** o arquivo `.env` está no `.gitignore` — nunca é enviado ao GitHub. Isso é intencional para projetos open source: a URL de produção fica apenas na máquina do publicador.
+
+**Para publicar com a URL de produção**, crie um `.env` local antes de empacotar:
+
+```bash
+# Criar .env com a URL de produção (não vai para o git)
+echo "API_BASE_URL=https://sua-api.com/api" > .env
+
+# Empacotar
+npm run package
 ```
 
 ### Execução e Validação Local
@@ -350,6 +397,17 @@ Esse comando gera um arquivo como `my-time-trace-vscode-X.X.X.vsix`, que pode se
 - Se a mudança afetar UI, revise também os documentos de `docs/DASHBOARD_MODERNO.md` e `docs/UI_COMPONENTS.md`.
 
 ## Notas de Lançamento
+
+### 0.6.0 (21/05/2026)
+
+- **Sistema de Backup Automático Local**: cópia segura via `VACUUM INTO` com verificação de integridade dupla, arquivo temporário `.tmp` com rename atômico e verificação de espaço em disco
+- **Wizard de Configuração Interativo**: 4 passos guiados (pasta de destino, intervalo, retenção, confirmação) com detecção de pastas de nuvem/rede e abort total no `Esc`
+- **Painel WebView `BackupPanel`**: tabela de backups ordenada por data, exclusão individual e em lote, badge `● atual`, `FileSystemWatcher` para atualização em tempo real e botão de restauração
+- **Agendamento Automático**: `setTimeout` + `setInterval` com verificação de backup perdido no startup e ao recuperar foco, reagendamento com debounce ao alterar configurações
+- **7 novos comandos**: Fazer Backup Agora, Configurar Backup, Gerenciar Backups, Abrir Pasta de Backup, Editar Configurações de Backup, Pausar e Retomar Backup Automático
+- **6 novas settings** `myTimeTraceVSCode.backup.*` com `scope: machine` (não sincronizam entre dispositivos)
+- **Output Channel**: todas as operações registradas em `View → Output → MyTimeTrace`
+- **i18n completo**: `localize()` em todo o código TypeScript e chaves `%key%` em `package.nls.json` / `package.nls.pt-br.json`
 
 ### 0.5.5 (20/05/2026)
 
@@ -444,9 +502,9 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para m
 ## Qualidade e Confiabilidade
 
 ### 🧪 Testes Automatizados
-A extensão possui **109 testes automatizados** que garantem a qualidade e confiabilidade:
+A extensão possui **139 testes automatizados** que garantem a qualidade e confiabilidade:
 
-- ✅ **109 testes passando**
+- ✅ **139 testes passando**
 - ✅ **Testes abrangentes** incluindo:
   - Ativação/desativação da extensão
   - Rastreamento de tempo e detecção de idle
@@ -454,6 +512,7 @@ A extensão possui **109 testes automatizados** que garantem a qualidade e confi
   - Detecção de IDE (getIdeName, getIdeVersion, fallbacks)
   - Interface do status bar em tempo real
   - Retry automático de sincronização
+  - Backup automático (BackupManager, BackupPanel, BackupRetryManager)
   - Integração entre módulos
 
 ### 🏗️ Arquitetura Modular

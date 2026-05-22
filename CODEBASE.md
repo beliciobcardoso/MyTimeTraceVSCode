@@ -1,11 +1,11 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.5.5
+**Versão:** 0.6.0
 **Status:** 🌟 PRODUÇÃO PRONTA
-**Última Atualização:** 20 de maio de 2026
+**Última Atualização:** 21 de maio de 2026
 **Linguagem:** TypeScript 5.8.3 (Strict Mode)
 **Database:** SQLite 5.1.6
-**Cobertura de Testes:** 109 testes automatizados passando
+**Cobertura de Testes:** 140 testes automatizados passando
 **LOC (Linhas de Código):** ~4.100 em src/
 
 ---
@@ -42,8 +42,8 @@
 - ✅ **Soft Delete** — Exclusão reversível com TTL de 30 dias e histórico de auditoria
 - ✅ **Identificação de Dispositivo** — UUID v4 gerado na primeira ativação + hostname do SO
 - ✅ **Detecção Automática de IDE** — Identifica VS Code, Cursor, Windsurf, Code-Insiders, Google Antigravity com 3 camadas de fallback
-- ✅ **Arquitetura Modular Enterprise** — 12 módulos especializados com separação clara de concerns
-- ✅ **109 Testes Automatizados** — 6 suítes passando, usando Mocha + Sinon
+- ✅ **Arquitetura Modular Enterprise** — 15 módulos especializados com separação clara de concerns
+- ✅ **140 Testes Automatizados** — 9 suítes passando, usando Mocha + Sinon
 
 ---
 
@@ -93,7 +93,7 @@
 MyTimeTraceVSCode/
 ├── 📁 src/                                 # Código fonte principal
 │   ├── extension.ts                        # 🚪 Ponto de entrada (activate/deactivate) [~233 LOC]
-│   ├── 📁 modules/                         # 🧩 12 módulos especializados
+│   ├── 📁 modules/                         # 🧩 15 módulos especializados
 │   │   ├── index.ts                       # 📦 Barrel exports
 │   │   ├── database.ts                    # 💾 DatabaseManager [~928 LOC]
 │   │   ├── timeTrace.ts                   # ⏱️ Engine de rastreamento [~241 LOC]
@@ -105,22 +105,29 @@ MyTimeTraceVSCode/
 │   │   ├── apiKeyManager.ts               # 🔐 API Key via SecretStorage [~185 LOC]
 │   │   ├── deviceManager.ts               # 💻 device_key (UUID v4) [~165 LOC]
 │   │   ├── syncManager.ts                 # 🔄 Push orchestrator [~391 LOC]
-│   │   └── syncRetryManager.ts            # 🔁 Retry com backoff exponencial [~180 LOC]
+│   │   ├── syncRetryManager.ts            # 🔁 Retry com backoff exponencial [~180 LOC]
+│   │   ├── backupManager.ts               # 🗄️ BackupManager + wizard + scheduler [~600 LOC]
+│   │   ├── backupCommands.ts              # ⌨️ 7 comandos de backup [~120 LOC]
+│   │   └── backupRetryManager.ts          # 🔁 Retry de backup (3 tentativas) [~80 LOC]
 │   ├── 📁 ui/                              # 🎨 Componentes de interface
 │   │   ├── index.ts                       # 📦 Barrel exports
 │   │   ├── statsPanel.ts                  # 📊 Dashboard moderno [~450 LOC]
 │   │   ├── deletedProjectsPanel.ts        # 🗑️ Painel de soft-delete [~280 LOC]
+│   │   ├── backupPanel.ts                 # 🗄️ Painel WebView de backups [~450 LOC]
 │   │   ├── cssLoader.ts                   # 🎨 CSS dinâmico
 │   │   └── dashboard-styles.css           # 🎨 Estilos responsivos
 │   ├── 📁 config/                          # 🌐 Constantes globais
 │   │   └── constants.ts                   # API_BASE_URL, SYNC_BATCH_LIMIT, etc.
-│   └── 📁 test/                            # 🧪 6 suítes de testes (Mocha + Sinon)
+│   └── 📁 test/                            # 🧪 9 suítes de testes (Mocha + Sinon)
 │       ├── extension.test.ts              # ✅ Ativação, tracking, integração [~650 LOC]
 │       ├── apiKeyManager.test.ts          # 🔐 Validação de API Key [~245 LOC]
 │       ├── deviceManager.test.ts          # 💻 UUID, registro [~322 LOC]
 │       ├── syncRetryManager.test.ts       # 🔁 Retry logic [~199 LOC]
 │       ├── syncCommands.test.ts           # ⌨️ Comandos de sync [~259 LOC]
-│       └── sync-loop.test.ts              # 🔄 Loop automático [~310 LOC]
+│       ├── sync-loop.test.ts              # 🔄 Loop automático [~310 LOC]
+│       ├── backupManager.test.ts          # 🗄️ Backup, retenção, mutex [~13 testes]
+│       ├── backupPanel.test.ts            # 🖼️ Painel WebView [~10 testes]
+│       └── backupRetryManager.test.ts     # 🔁 Retry de backup [~5 testes]
 ├── 📁 docs/                                # 📖 Documentação (30+ arquivos)
 │   ├── AUTO_DELETE_SYSTEM.md
 │   ├── AUTO_LOOP_SYNC.md
@@ -135,7 +142,7 @@ MyTimeTraceVSCode/
 ├── 📁 out/                                 # Output compilado (TypeScript → JavaScript)
 ├── .github/                                # GitHub Actions CI/CD
 ├── .vscode-test/                           # Configuração de testes do VS Code
-├── package.json                            # Manifesto npm [v0.5.4]
+├── package.json                            # Manifesto npm [v0.6.0]
 ├── package-lock.json                       # Lock file
 ├── pnpm-lock.yaml                          # Lock file pnpm
 ├── tsconfig.json                           # TypeScript config (strict mode)
@@ -550,7 +557,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-testes"></a>
 ## 🧪 Testes e Qualidade
 
-### Estrutura de Testes (6 suítes, 109 testes passando)
+### Estrutura de Testes (9 suítes, 140 testes passando)
 
 | Suíte | Arquivo | Foco |
 |-------|---------|------|
@@ -560,6 +567,9 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 | **Retry** | syncRetryManager.test.ts | Config dinâmica, retry, delays, limites |
 | **Sync Commands** | syncCommands.test.ts | Sincronização manual |
 | **Sync Loop** | sync-loop.test.ts | Auto-sync agendado |
+| **Backup** | backupManager.test.ts | Backup, retenção, mutex, colisão de nome |
+| **Backup Panel** | backupPanel.test.ts | Tabela, estado vazio, exclusão, watcher |
+| **Backup Retry** | backupRetryManager.test.ts | Retry, notificação de falha |
 
 **Ferramentas:** Mocha + Sinon + @vscode/test-cli
 
@@ -585,7 +595,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 - ✅ Detecção automática de IDE com 3 camadas de fallback
 - ✅ Dashboard moderno com grid responsivo
 - ✅ 30+ documentos técnicos completos
-- ✅ 109 testes automatizados (Mocha + Sinon)
+- ✅ 140 testes automatizados (Mocha + Sinon)
 - ✅ i18n PT-BR + EN integrado
 
 ---
@@ -604,7 +614,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-roadmap"></a>
 ## 🎯 Roadmap Estratégico
 
-### 🔵 Curto Prazo (v0.5.5 - v0.6.0) — 2-4 semanas
+### 🔵 Curto Prazo (v0.6.0 - v0.7.0) — 2-4 semanas
 - [ ] Testes UI components (+300 LOC)
 - [ ] Otimização SQLite (índices, paginação)
 - [ ] Error handling global

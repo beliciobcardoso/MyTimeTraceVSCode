@@ -72,5 +72,18 @@
     "my-time-trace-vscode.showDeletedProjects.title": "My Time Trace: Projetos Deletados",
     "my-time-trace-vscode.configuration.properties.idleTimeout.description": "Tempo em minutos antes de considerar o usuário inativo",
     "my-time-trace-vscode.configuration.properties.autoStart.description": "Iniciar o rastreamento automaticamente ao abrir o VS Code",
-    "my-time-trace-vscode.configuration.properties.showInStatusBar.description": "Mostrar o tempo gasto na barra de status"
+    "my-time-trace-vscode.configuration.properties.showInStatusBar.description": "Mostrar o tempo gasto na barra de status",
+    "my-time-trace-vscode.backupNow.title": "MyTimeTrace: Fazer Backup Agora",
+    "my-time-trace-vscode.configureBackup.title": "MyTimeTrace: Configurar Backup",
+    "my-time-trace-vscode.manageBackups.title": "MyTimeTrace: Gerenciar Backups",
+    "my-time-trace-vscode.openBackupFolder.title": "MyTimeTrace: Abrir Pasta de Backup",
+    "my-time-trace-vscode.editBackupSettings.title": "MyTimeTrace: Editar Configurações de Backup",
+    "my-time-trace-vscode.pauseBackup.title": "MyTimeTrace: Pausar Backup Automático",
+    "my-time-trace-vscode.resumeBackup.title": "MyTimeTrace: Retomar Backup Automático",
+    "myTimeTraceVSCode.backup.enabled.markdownDescription": "Habilita o backup automático do banco de dados local. Configure a pasta de destino antes de ativar.",
+    "myTimeTraceVSCode.backup.destinationPath.markdownDescription": "Caminho absoluto da pasta onde os backups serão salvos. Use um disco local — pastas de nuvem (Dropbox, OneDrive, Google Drive) podem causar corrupção durante a cópia.",
+    "myTimeTraceVSCode.backup.intervalHours.markdownDescription": "Intervalo em horas entre backups automáticos. Mínimo: 1 hora.",
+    "myTimeTraceVSCode.backup.maxBackups.markdownDescription": "Número máximo de backups retidos. Backups mais antigos são removidos automaticamente. Mínimo: 3.",
+    "myTimeTraceVSCode.backup.notifyOnSuccess.markdownDescription": "Exibe notificação ao concluir cada backup automático com sucesso.",
+    "myTimeTraceVSCode.backup.showInStatusBar.markdownDescription": "Exibe ícone de status do backup na barra de status do VS Code."
 }

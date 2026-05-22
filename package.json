@@ -4,7 +4,7 @@
   "description": "Monitore seu tempo gasto em arquivos e projetos no VS Code com interface moderna e filtros avançados.",
   "icon": "images/my-time-trace-logo.png",
   "publisher": "BelicioBCardoso",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "author": {
     "name": "Belicio Batista Cardoso",
     "email": "belloinfo@gmail.com"
@@ -73,6 +73,34 @@
         "title": "%my-time-trace-vscode.viewSyncStatus.title%",
         "category": "MyTimeTrace",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "my-time-trace-vscode.backupNow",
+        "title": "%my-time-trace-vscode.backupNow.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.configureBackup",
+        "title": "%my-time-trace-vscode.configureBackup.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.manageBackups",
+        "title": "%my-time-trace-vscode.manageBackups.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.openBackupFolder",
+        "title": "%my-time-trace-vscode.openBackupFolder.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.editBackupSettings",
+        "title": "%my-time-trace-vscode.editBackupSettings.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.pauseBackup",
+        "title": "%my-time-trace-vscode.pauseBackup.title%"
+      },
+      {
+        "command": "my-time-trace-vscode.resumeBackup",
+        "title": "%my-time-trace-vscode.resumeBackup.title%"
       }
     ],
     "configuration": {
@@ -104,6 +132,44 @@
           "description": "Auto-sync check interval in minutes",
           "minimum": 5,
           "maximum": 1440
+        },
+        "myTimeTraceVSCode.backup.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.enabled.markdownDescription%"
+        },
+        "myTimeTraceVSCode.backup.destinationPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.destinationPath.markdownDescription%"
+        },
+        "myTimeTraceVSCode.backup.intervalHours": {
+          "type": "number",
+          "default": 24,
+          "minimum": 1,
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.intervalHours.markdownDescription%"
+        },
+        "myTimeTraceVSCode.backup.maxBackups": {
+          "type": "number",
+          "default": 7,
+          "minimum": 3,
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.maxBackups.markdownDescription%"
+        },
+        "myTimeTraceVSCode.backup.notifyOnSuccess": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.notifyOnSuccess.markdownDescription%"
+        },
+        "myTimeTraceVSCode.backup.showInStatusBar": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "markdownDescription": "%myTimeTraceVSCode.backup.showInStatusBar.markdownDescription%"
         }
       }
     },
@@ -146,6 +212,7 @@
     "i18n": "vscode-nls-dev-create"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "sqlite3": "^5.1.6",
     "uuid": "^10.0.0",
     "vscode-nls": "5.2.0"

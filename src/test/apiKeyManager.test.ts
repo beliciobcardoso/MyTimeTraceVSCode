@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import { ApiKeyManager } from '../modules/apiKeyManager';
+import { API_BASE_URL } from '../config/constants';
 
 /**
  * 🧪 Testes Unitários - ApiKeyManager
@@ -149,7 +150,7 @@ suite('ApiKeyManager Tests', () => {
       assert.strictEqual(fetchStub.calledOnce, true);
       assert.strictEqual(
         fetchStub.firstCall.args[0],
-        'http://localhost:8989/api/sync/status'
+        `${API_BASE_URL}/sync/status`
       );
       assert.deepStrictEqual(fetchStub.firstCall.args[1].headers, {
         'X-API-Key': validKey
