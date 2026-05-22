@@ -15,7 +15,7 @@ export class BackupCommands {
 
     const notReady = () => {
       vscode.window.showInformationMessage(
-        localize('backup.notReady', 'MyTimeTrace: Backup system is still initializing. Please try again in a moment.'),
+        localize('backup.notReady', 'My Time Trace: Backup system is still initializing. Please try again in a moment.'),
       );
     };
 
@@ -60,7 +60,7 @@ export class BackupCommands {
         const status = mgr.getStatus();
         if (!status.destinationPath) {
           vscode.window.showInformationMessage(
-            localize('backup.openFolder.notConfigured', 'MyTimeTrace: No backup folder configured. Run "MyTimeTrace: Configure Backup" first.'),
+            localize('backup.openFolder.notConfigured', 'My Time Trace: No backup folder configured. Run "My Time Trace: Configure Backup" first.'),
           );
           return;
         }
@@ -81,7 +81,7 @@ export class BackupCommands {
         mgr.pauseScheduler();
         const cfg = vscode.workspace.getConfiguration('myTimeTraceVSCode.backup');
         await cfg.update('enabled', false, vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage(localize('backup.paused', 'MyTimeTrace: Automatic backup paused.'));
+        vscode.window.showInformationMessage(localize('backup.paused', 'My Time Trace: Automatic backup paused.'));
       }),
     );
 
@@ -92,7 +92,7 @@ export class BackupCommands {
         const cfg = vscode.workspace.getConfiguration('myTimeTraceVSCode.backup');
         await cfg.update('enabled', true, vscode.ConfigurationTarget.Global);
         await mgr.initialize();
-        vscode.window.showInformationMessage(localize('backup.resumed', 'MyTimeTrace: Automatic backup resumed.'));
+        vscode.window.showInformationMessage(localize('backup.resumed', 'My Time Trace: Automatic backup resumed.'));
       }),
     );
 

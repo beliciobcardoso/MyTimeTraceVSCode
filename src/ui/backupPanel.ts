@@ -16,7 +16,6 @@ interface BackupFile {
 
 export class BackupPanel {
   static currentPanel: BackupPanel | undefined;
-  private static backupManagerRef: BackupManager | undefined;
 
   private readonly panel: vscode.WebviewPanel;
   private readonly backupManager: BackupManager;
@@ -24,8 +23,6 @@ export class BackupPanel {
   private disposables: vscode.Disposable[] = [];
 
   static createOrShow(backupManager: BackupManager) {
-    BackupPanel.backupManagerRef = backupManager;
-
     if (BackupPanel.currentPanel) {
       BackupPanel.currentPanel.panel.reveal();
       return;
@@ -33,7 +30,7 @@ export class BackupPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'myTimeTraceBackups',
-      'MyTimeTrace — Gerenciar Backups',
+      'My Time Trace — Gerenciar Backups',
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -149,7 +146,7 @@ export class BackupPanel {
       const remaining = this.listBackupFiles(status.destinationPath);
       if (remaining.length < 3) {
         vscode.window.showInformationMessage(
-          localize('backup.panel.belowMinimum', 'MyTimeTrace: You have only {0} backup(s). We recommend keeping at least 3.', String(remaining.length)),
+          localize('backup.panel.belowMinimum', 'My Time Trace: You have only {0} backup(s). We recommend keeping at least 3.', String(remaining.length)),
         );
       }
     } catch (err: any) {
@@ -254,21 +251,124 @@ export class BackupPanel {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gerenciar Backups</title>
 <style>
-  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); padding: 16px; }
-  h2 { margin-top: 0; }
-  .status-block { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px; background: var(--vscode-editorWidget-background); border-radius: 4px; }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h2 { margin: 0 0 10px; flex-shrink: 0; }
+
+  .status-block {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    margin-bottom: 10px; padding: 10px 12px;
+    background: var(--vscode-editorWidget-background);
+    border-radius: 4px; flex-shrink: 0;
+  }
   .status-item { display: flex; flex-direction: column; }
   .status-label { font-size: 11px; opacity: .7; margin-bottom: 2px; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; flex-shrink: 0; }
+
   button { padding: 4px 10px; cursor: pointer; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 3px; }
   button:hover { background: var(--vscode-button-hoverBackground); }
   button:disabled { opacity: .5; cursor: default; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--vscode-editorWidget-border); font-size: 12px; opacity: .8; }
+
+  /* ── Wrapper que ocupa todo o espaço restante ── */
+  .table-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--vscode-editorWidget-border, #333);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* ── Tabela como flex column para separar thead (fixo) de tbody (scroll) ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* thead permanece fixo no topo */
+  thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    flex-shrink: 0;
+    background: var(--vscode-editorWidget-background);
+  }
+
+  th {
+    text-align: left; padding: 6px 8px;
+    border-bottom: 2px solid var(--vscode-editorWidget-border, #333);
+    font-size: 12px; opacity: .8;
+  }
+
+  /* tbody rola verticalmente ocupando o restante */
+  tbody {
+    display: block;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* cada linha do tbody precisa replicar o contexto de tabela */
+  tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
   td { padding: 5px 8px; border-bottom: 1px solid var(--vscode-editorWidget-border, #333); font-size: 13px; }
+
+  /* larguras explícitas — obrigatórias para alinhar thead e tbody */
+  th:nth-child(1), td:nth-child(1) { width: 40px; }
+  th:nth-child(3), td:nth-child(3) { width: 165px; }
+  th:nth-child(4), td:nth-child(4) { width: 80px; }
+  th:nth-child(5), td:nth-child(5) { width: 80px; text-align: center; }
+  th:nth-child(6), td:nth-child(6) { width: 72px; text-align: center; }
+  /* coluna 2 (Arquivo) ocupa o restante automaticamente */
+
   .badge { font-size: 10px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); padding: 1px 5px; border-radius: 10px; }
   .empty-msg { text-align: center; padding: 24px; opacity: .7; }
-  .footer { margin-top: 24px; font-size: 12px; opacity: .7; border-top: 1px solid var(--vscode-editorWidget-border, #333); padding-top: 12px; }
+
+  .cloud-tip {
+    flex-shrink: 0;
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-bottom: 8px; padding: 8px 12px;
+    background: var(--vscode-editorInfo-background, rgba(0,120,212,0.08));
+    border-left: 3px solid var(--vscode-editorInfo-foreground, #0078d4);
+    border-radius: 0 4px 4px 0;
+    font-size: 12px;
+  }
+  .cloud-tip-icon { font-size: 16px; line-height: 1.4; flex-shrink: 0; }
+  .cloud-tip a { color: var(--vscode-textLink-foreground, #4da3ff); text-decoration: none; }
+  .cloud-tip a:hover { text-decoration: underline; }
+
+  .footer {
+    flex-shrink: 0;
+    margin-top: 8px; font-size: 12px; opacity: .7;
+    border-top: 1px solid var(--vscode-editorWidget-border, #333);
+    padding-top: 8px;
+  }
+
   #deleteSelectedBtn:disabled { opacity: .4; }
 </style>
 </head>
@@ -279,6 +379,7 @@ export class BackupPanel {
   <div class="status-item"><span class="status-label">Estado</span>${this.stateLabel(status.state)}</div>
   <div class="status-item"><span class="status-label">Último backup</span>${escHtml(lastBackup)}</div>
   <div class="status-item"><span class="status-label">Próximo backup</span>${status.nextBackupAt ? escHtml(new Date(status.nextBackupAt).toLocaleString()) : '—'}</div>
+  <div class="status-item"><span class="status-label">Total de backups</span><span>${files.length}</span></div>
   ${status.lastError ? `<div class="status-item"><span class="status-label">Último erro</span><span style="color:#f44336;font-size:12px">${escHtml(status.lastError)}</span></div>` : ''}
 </div>
 
@@ -289,19 +390,30 @@ export class BackupPanel {
   <button id="deleteSelectedBtn" disabled onclick="deleteSelected()">Excluir Selecionados</button>
 </div>
 
-<table>
-  <thead>
-    <tr>
-      <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
-      <th>Arquivo</th>
-      <th>Data / Hora</th>
-      <th>Tamanho</th>
-      <th>Restaurar</th>
-      <th>Excluir</th>
-    </tr>
-  </thead>
-  <tbody>${filesHtml}</tbody>
-</table>
+<div class="cloud-tip">
+  <span class="cloud-tip-icon">☁️</span>
+  <span>
+    <strong>Recomendação:</strong> Para maior segurança, sincronize sua pasta de backups com um serviço de nuvem
+    como <strong>OneDrive</strong>, <strong>Google Drive</strong>, <strong>Dropbox</strong> ou outro de sua preferência.
+    Assim seus dados ficam protegidos mesmo em caso de falha no disco local.
+  </span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+        <th>Arquivo</th>
+        <th>Data / Hora</th>
+        <th>Tamanho</th>
+        <th>Restaurar</th>
+        <th>Excluir</th>
+      </tr>
+    </thead>
+    <tbody>${filesHtml}</tbody>
+  </table>
+</div>
 
 <div class="footer">
   <strong>Restauração manual:</strong> Feche o VS Code, substitua o arquivo abaixo pelo backup desejado e reabra.<br>

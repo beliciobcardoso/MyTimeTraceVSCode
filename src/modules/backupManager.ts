@@ -240,7 +240,7 @@ export class BackupManager {
 
   private async performBackup(): Promise<void> {
     if (this.isBackingUp) {
-      vscode.window.showInformationMessage(localize('backup.alreadyRunning', 'MyTimeTrace: Backup already in progress.'));
+      vscode.window.showInformationMessage(localize('backup.alreadyRunning', 'My Time Trace: Backup already in progress.'));
       return;
     }
     this.isBackingUp = true;
@@ -318,7 +318,7 @@ export class BackupManager {
 
       const { notifyOnSuccess } = this.getConfig();
       if (notifyOnSuccess) {
-        vscode.window.showInformationMessage(localize('backup.success', 'MyTimeTrace: Backup complete — {0}', fileName));
+        vscode.window.showInformationMessage(localize('backup.success', 'My Time Trace: Backup complete — {0}', fileName));
       }
     } catch (err) {
       await this.handleBackupError(err);
@@ -483,7 +483,7 @@ export class BackupManager {
       const gapDays = gapMs / 86_400_000;
       if (gapDays > BACKUP_ALERT_GAP_DAYS) {
         vscode.window.showWarningMessage(
-          localize('backup.gapAlert', 'MyTimeTrace: The last backup was {0} days ago. A backup has been performed now.', String(Math.round(gapDays))),
+          localize('backup.gapAlert', 'My Time Trace: The last backup was {0} days ago. A backup has been performed now.', String(Math.round(gapDays))),
         );
       }
     }
@@ -552,7 +552,7 @@ export class BackupManager {
       );
       this.log(`Restaurado de ${backupFilePath}`);
     } catch (err: any) {
-      vscode.window.showErrorMessage(localize('backup.restore.error', 'MyTimeTrace: Error restoring backup — {0}', err.message));
+      vscode.window.showErrorMessage(localize('backup.restore.error', 'My Time Trace: Error restoring backup — {0}', err.message));
       return;
     }
 

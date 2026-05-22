@@ -9,6 +9,9 @@ vsc-extension-quickstart.md
 note.txt
 index.html
 
+# Template de variáveis de ambiente (apenas referência para devs)
+.env.example
+
 # CI/CD e configuração de desenvolvimento
 .github/
 .claude/

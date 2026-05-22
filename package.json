@@ -65,13 +65,11 @@
       {
         "command": "my-time-trace-vscode.syncNow",
         "title": "%my-time-trace-vscode.syncNow.title%",
-        "category": "MyTimeTrace",
         "icon": "$(sync)"
       },
       {
         "command": "my-time-trace-vscode.viewSyncStatus",
         "title": "%my-time-trace-vscode.viewSyncStatus.title%",
-        "category": "MyTimeTrace",
         "icon": "$(dashboard)"
       },
       {
@@ -204,7 +202,7 @@
     "compile": "tsc -p ./ && npm run copy-assets",
     "copy-assets": "mkdir -p out/ui && cp src/ui/*.css out/ui/",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package",
+    "package": "vsce package --allow-package-env-file",
     "build": "npm run compile && npm run package",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",

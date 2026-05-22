@@ -562,7 +562,7 @@ export class CommandManager {
         
         <div style="margin-top: 30px; padding: 15px; background-color: var(--vscode-textBlockQuote-background); border-left: 4px solid var(--vscode-textLink-foreground); border-radius: 4px;">
           <p style="margin: 0; color: var(--vscode-descriptionForeground);">
-            💡 <strong>Dica:</strong> Use o comando <code>MyTimeTrace: Sync Now</code> para sincronizar manualmente a qualquer momento.
+            💡 <strong>Dica:</strong> Use o comando <code>My Time Trace: Sync Now</code> para sincronizar manualmente a qualquer momento.
           </p>
         </div>
       </body>
