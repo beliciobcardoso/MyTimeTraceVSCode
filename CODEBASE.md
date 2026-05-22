@@ -1,12 +1,12 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.5.4
+**Versão:** 0.6.0
 **Status:** 🌟 PRODUÇÃO PRONTA
-**Última Atualização:** 26 de abril de 2026
+**Última Atualização:** 21 de maio de 2026
 **Linguagem:** TypeScript 5.8.3 (Strict Mode)
 **Database:** SQLite 5.1.6
-**Cobertura de Testes:** 88% - 21 testes automatizados
-**LOC (Linhas de Código):** ~3.913 em src/
+**Cobertura de Testes:** 140 testes automatizados passando
+**LOC (Linhas de Código):** ~4.100 em src/
 
 ---
 
@@ -41,8 +41,9 @@
 - ✅ **Dashboard Moderno** — Layout grid 40/60, gráfico donut interativo, filtros por data e projeto
 - ✅ **Soft Delete** — Exclusão reversível com TTL de 30 dias e histórico de auditoria
 - ✅ **Identificação de Dispositivo** — UUID v4 gerado na primeira ativação + hostname do SO
-- ✅ **Arquitetura Modular Enterprise** — 12 módulos especializados com separação clara de concerns
-- ✅ **88% Cobertura de Testes** — 6 suítes com 21 testes passando, usando Mocha + Sinon
+- ✅ **Detecção Automática de IDE** — Identifica VS Code, Cursor, Windsurf, Code-Insiders, Google Antigravity com 3 camadas de fallback
+- ✅ **Arquitetura Modular Enterprise** — 15 módulos especializados com separação clara de concerns
+- ✅ **140 Testes Automatizados** — 9 suítes passando, usando Mocha + Sinon
 
 ---
 
@@ -92,7 +93,7 @@
 MyTimeTraceVSCode/
 ├── 📁 src/                                 # Código fonte principal
 │   ├── extension.ts                        # 🚪 Ponto de entrada (activate/deactivate) [~233 LOC]
-│   ├── 📁 modules/                         # 🧩 12 módulos especializados
+│   ├── 📁 modules/                         # 🧩 15 módulos especializados
 │   │   ├── index.ts                       # 📦 Barrel exports
 │   │   ├── database.ts                    # 💾 DatabaseManager [~928 LOC]
 │   │   ├── timeTrace.ts                   # ⏱️ Engine de rastreamento [~241 LOC]
@@ -104,22 +105,29 @@ MyTimeTraceVSCode/
 │   │   ├── apiKeyManager.ts               # 🔐 API Key via SecretStorage [~185 LOC]
 │   │   ├── deviceManager.ts               # 💻 device_key (UUID v4) [~165 LOC]
 │   │   ├── syncManager.ts                 # 🔄 Push orchestrator [~391 LOC]
-│   │   └── syncRetryManager.ts            # 🔁 Retry com backoff exponencial [~180 LOC]
+│   │   ├── syncRetryManager.ts            # 🔁 Retry com backoff exponencial [~180 LOC]
+│   │   ├── backupManager.ts               # 🗄️ BackupManager + wizard + scheduler [~600 LOC]
+│   │   ├── backupCommands.ts              # ⌨️ 7 comandos de backup [~120 LOC]
+│   │   └── backupRetryManager.ts          # 🔁 Retry de backup (3 tentativas) [~80 LOC]
 │   ├── 📁 ui/                              # 🎨 Componentes de interface
 │   │   ├── index.ts                       # 📦 Barrel exports
 │   │   ├── statsPanel.ts                  # 📊 Dashboard moderno [~450 LOC]
 │   │   ├── deletedProjectsPanel.ts        # 🗑️ Painel de soft-delete [~280 LOC]
+│   │   ├── backupPanel.ts                 # 🗄️ Painel WebView de backups [~450 LOC]
 │   │   ├── cssLoader.ts                   # 🎨 CSS dinâmico
 │   │   └── dashboard-styles.css           # 🎨 Estilos responsivos
 │   ├── 📁 config/                          # 🌐 Constantes globais
 │   │   └── constants.ts                   # API_BASE_URL, SYNC_BATCH_LIMIT, etc.
-│   └── 📁 test/                            # 🧪 6 suítes de testes (Mocha + Sinon)
+│   └── 📁 test/                            # 🧪 9 suítes de testes (Mocha + Sinon)
 │       ├── extension.test.ts              # ✅ Ativação, tracking, integração [~650 LOC]
 │       ├── apiKeyManager.test.ts          # 🔐 Validação de API Key [~245 LOC]
 │       ├── deviceManager.test.ts          # 💻 UUID, registro [~322 LOC]
 │       ├── syncRetryManager.test.ts       # 🔁 Retry logic [~199 LOC]
 │       ├── syncCommands.test.ts           # ⌨️ Comandos de sync [~259 LOC]
-│       └── sync-loop.test.ts              # 🔄 Loop automático [~310 LOC]
+│       ├── sync-loop.test.ts              # 🔄 Loop automático [~310 LOC]
+│       ├── backupManager.test.ts          # 🗄️ Backup, retenção, mutex [~13 testes]
+│       ├── backupPanel.test.ts            # 🖼️ Painel WebView [~10 testes]
+│       └── backupRetryManager.test.ts     # 🔁 Retry de backup [~5 testes]
 ├── 📁 docs/                                # 📖 Documentação (30+ arquivos)
 │   ├── AUTO_DELETE_SYSTEM.md
 │   ├── AUTO_LOOP_SYNC.md
@@ -134,7 +142,7 @@ MyTimeTraceVSCode/
 ├── 📁 out/                                 # Output compilado (TypeScript → JavaScript)
 ├── .github/                                # GitHub Actions CI/CD
 ├── .vscode-test/                           # Configuração de testes do VS Code
-├── package.json                            # Manifesto npm [v0.5.4]
+├── package.json                            # Manifesto npm [v0.6.0]
 ├── package-lock.json                       # Lock file
 ├── pnpm-lock.yaml                          # Lock file pnpm
 ├── tsconfig.json                           # TypeScript config (strict mode)
@@ -286,7 +294,8 @@ CREATE TABLE IF NOT EXISTS time_entries (
   is_idle INTEGER DEFAULT 0,                -- 0 = trabalho, 1 = idle
   synced INTEGER DEFAULT 0,                 -- 0 = não sincronizado, 1 = sincronizado
   deleted_at TEXT DEFAULT NULL,             -- Soft delete: NULL = ativo, data = deletado
-  device_name TEXT DEFAULT NULL             -- Nome do dispositivo/computador
+  device_name TEXT DEFAULT NULL,            -- Nome do dispositivo/computador
+  ide_name TEXT DEFAULT NULL                -- IDE detectada (VS Code, Cursor, Windsurf…)
 );
 
 -- 📝 Tabela de histórico de exclusões (auditoria)
@@ -312,6 +321,7 @@ CREATE TABLE IF NOT EXISTS sync_metadata (
 **Migrações Automáticas:**
 - `ALTER TABLE time_entries ADD COLUMN deleted_at` (v0.5.2)
 - `ALTER TABLE time_entries ADD COLUMN device_name` (v0.5.3)
+- `ALTER TABLE time_entries ADD COLUMN ide_name` (v0.5.5)
 - Erros "duplicate column name" ignorados silenciosamente
 
 **Interface Pública (Métodos Principais):**
@@ -324,6 +334,7 @@ export interface ActivityData {
   duration: number;                        // em segundos
   isIdle?: boolean;
   device_name?: string;
+  ide_name?: string;                       // IDE detectada (v0.5.5+)
 }
 
 export class DatabaseManager {
@@ -362,13 +373,15 @@ export class DatabaseManager {
 
 ---
 
-### 4. **statusBar.ts** — StatusBarManager (120 LOC)
+### 4. **statusBar.ts** — StatusBarManager (134 LOC)
 
-**Responsabilidade:** Gerenciar item da barra de status do VS Code
+**Responsabilidade:** Gerenciar itens da barra de status do VS Code
 
-**Texto Display:** `${syncIcon}$(clock) ${fileName} > ${HHh MMm SSs}`
+**Item principal (prioridade 1000):** `${syncIcon}$(clock) ${fileName} > ${HHh MMm SSs}`
+**Item de IDE (prioridade 999):** `$(code) ${ideName} (v${ideVersion})`
 **Cores:** `activeBackground` (rastreando) ou `warningBackground` (pausado)
 **Clique:** Abre dashboard
+**Método `setIdeInfo(ideName, ideVersion)`:** Atualiza item de IDE na ativação
 
 ---
 
@@ -406,12 +419,28 @@ export interface UserConfig {
 
 ---
 
-### 8. **deviceInfo.ts** — Hardware Information
+### 8. **deviceInfo.ts** — Hardware & IDE Information
 
 ```typescript
-export function getDeviceName(): string {
-  return os.hostname();  // "usuario-desktop", "meu-laptop", etc
-}
+// Informações de dispositivo
+export function getDeviceName(): string        // os.hostname()
+export function getDeviceInfo(): object        // plataforma, arch, etc.
+
+// Detecção de IDE (3 camadas de fallback)
+export function getIdeName(globalStorageUriPath: string): string
+  // 1ª: analisa path do globalStorageUri (Code/Cursor/Windsurf/...)
+  // 2ª: variáveis de ambiente (VSCODE_RELEASE)
+  // 3ª: process.execPath
+  // Fallback: 'unknown'
+
+export function getIdeVersion(ideName: string): string
+  // VS Code / Code-Insiders: vscode.version (nativo)
+  // Forks: lê resources/app/package.json da instalação
+  // Fallback: `vscode.version + "-base"`
+
+// @internal — expostos apenas para testes
+export function _detectIdeFromEnv(): string | null
+export function _detectIdeFromProcess(): string | null
 ```
 
 ---
@@ -429,6 +458,8 @@ export function getDeviceName(): string {
 - Gera UUID v4 na primeira ativação
 - Persiste em `sync_metadata`
 - Registra device_key + hostname no backend
+- `getIdeName()` — detecta IDE atual com cache (`_ideName`)
+- `getIdeVersion()` — versão da IDE com cache (`_ideVersion`)
 
 ---
 
@@ -475,7 +506,7 @@ Entries locais (synced=0)
         ↓
 Loop: GET unsynced (limit = batchLimit)
         ↓
-POST /api/sync/entries
+POST /api/sync/push
         ↓
 [SyncRetryManager.retry()] max 3x
         ↓
@@ -526,20 +557,21 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-testes"></a>
 ## 🧪 Testes e Qualidade
 
-### Estrutura de Testes (6 suítes, 21 testes)
+### Estrutura de Testes (9 suítes, 140 testes passando)
 
-| Suíte | Arquivo | Testes | LOC | Foco |
-|-------|---------|--------|-----|------|
-| **Core** | extension.test.ts | 8 | 650 | Ativação, tracking, integração |
-| **ApiKey** | apiKeyManager.test.ts | 4 | 245 | Validação de formato e servidor |
-| **Device** | deviceManager.test.ts | 3 | 322 | UUID, persistência, registro |
-| **Retry** | syncRetryManager.test.ts | 2 | 199 | Backoff exponencial, limite |
-| **Sync Commands** | syncCommands.test.ts | 2 | 259 | Sincronização manual |
-| **Sync Loop** | sync-loop.test.ts | 2 | 310 | Auto-sync agendado |
+| Suíte | Arquivo | Foco |
+|-------|---------|------|
+| **Core** | extension.test.ts | Ativação, tracking, migração `ide_name` |
+| **ApiKey** | apiKeyManager.test.ts | Validação de formato e servidor |
+| **Device** | deviceManager.test.ts | UUID, persistência, `getIdeName`, `getIdeVersion` |
+| **Retry** | syncRetryManager.test.ts | Config dinâmica, retry, delays, limites |
+| **Sync Commands** | syncCommands.test.ts | Sincronização manual |
+| **Sync Loop** | sync-loop.test.ts | Auto-sync agendado |
+| **Backup** | backupManager.test.ts | Backup, retenção, mutex, colisão de nome |
+| **Backup Panel** | backupPanel.test.ts | Tabela, estado vazio, exclusão, watcher |
+| **Backup Retry** | backupRetryManager.test.ts | Retry, notificação de falha |
 
-**Total:** ~1.985 LOC de testes (88% cobertura)
-
-**Ferramentas:** Mocha + Sinon + @vscode/test-cli + nyc
+**Ferramentas:** Mocha + Sinon + @vscode/test-cli
 
 ---
 
@@ -560,9 +592,10 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 - ✅ Arquitetura robusta com Manager Pattern
 - ✅ TypeScript Strict em toda base
 - ✅ Sincronização com retry inteligente e config dinâmica
+- ✅ Detecção automática de IDE com 3 camadas de fallback
 - ✅ Dashboard moderno com grid responsivo
 - ✅ 30+ documentos técnicos completos
-- ✅ 88% cobertura com 21 testes Mocha + Sinon
+- ✅ 140 testes automatizados (Mocha + Sinon)
 - ✅ i18n PT-BR + EN integrado
 
 ---
@@ -581,7 +614,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-roadmap"></a>
 ## 🎯 Roadmap Estratégico
 
-### 🔵 Curto Prazo (v0.5.5 - v0.6.0) — 2-4 semanas
+### 🔵 Curto Prazo (v0.6.0 - v0.7.0) — 2-4 semanas
 - [ ] Testes UI components (+300 LOC)
 - [ ] Otimização SQLite (índices, paginação)
 - [ ] Error handling global
@@ -619,7 +652,8 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-historico"></a>
 ## 📝 Histórico de Versões
 
-- **v0.5.4** (26 Abr 2026) — Status: Produção pronta, 88% cobertura
+- **v0.5.5** (20 Mai 2026) — Detecção automática de IDE, status bar de IDE, `ide_name` no DB e sync
+- **v0.5.4** (26 Abr 2026) — URL de produção da API atualizada
 - **v0.5.3** — Device registration, multi-device sync
 - **v0.5.2** — Soft delete system, TTL 30 dias
 - **v0.5.1** — Modern dashboard, donut chart
@@ -627,7 +661,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 
 ---
 
-**Documento Atualizado:** 26 de abril de 2026
+**Documento Atualizado:** 20 de maio de 2026
 **Compatibilidade:** VS Code 1.100.0+
 **Licença:** MIT
 **Contato:** belloinfo@gmail.com

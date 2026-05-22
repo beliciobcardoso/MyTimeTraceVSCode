@@ -14,7 +14,8 @@
  * 
  * @constant
  */
-export const API_BASE_URL = 'https://mytimetrace.com.br/api';
+// Definir API_BASE_URL no ambiente antes de publicar (vsce package)
+export const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
 
 /**
  * Timeout padrão para requisições HTTP (ms)
@@ -53,3 +54,25 @@ export const CLEANUP_INTERVAL = 24 * 60 * 60 * 1000; // 24 horas em ms
  * @default 5 minutos (300000 ms)
  */
 export const CLEANUP_INITIAL_DELAY = 5 * 60 * 1000; // 5 minutos
+
+// ========================================
+// 🗄️ Backup automático
+// ========================================
+
+/** Retenção mínima de backups (nunca remover abaixo deste número) */
+export const BACKUP_MIN_RETENTION = 3;
+
+/** Intervalo padrão entre backups em horas */
+export const BACKUP_DEFAULT_INTERVAL_HOURS = 24;
+
+/** Número máximo de tentativas de retry em caso de falha */
+export const BACKUP_MAX_RETRIES = 3;
+
+/** Delay entre tentativas de retry em ms */
+export const BACKUP_RETRY_DELAY_MS = 30_000; // 30 segundos
+
+/** Delay inicial antes do primeiro backup após ativação da extensão */
+export const BACKUP_INITIAL_DELAY = 5_000; // 5 segundos
+
+/** Gap em dias que dispara alerta de backup não realizado há muito tempo */
+export const BACKUP_ALERT_GAP_DAYS = 7;

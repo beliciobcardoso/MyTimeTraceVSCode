@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import * as nls from "vscode-nls";
+import { localize } from '../i18n';
 import { CssLoader } from "./cssLoader";
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
  * Interface para dados de arquivo com tempo

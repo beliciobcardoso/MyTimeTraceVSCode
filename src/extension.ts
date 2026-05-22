@@ -1,5 +1,6 @@
+import './env-loader'; // deve ser o primeiro import — carrega .env antes de process.env ser lido
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from './i18n';
 import { DatabaseManager } from "./modules/database";
 import { StatusBarManager } from "./modules/statusBar";
 import { timeTrace } from "./modules/timeTrace";
@@ -9,9 +10,11 @@ import { getConfig } from "./modules/config";
 import { ApiKeyManager } from "./modules/apiKeyManager";
 import { DeviceManager } from "./modules/deviceManager";
 import { SyncManager } from "./modules/syncManager";
-import { CLEANUP_INTERVAL, CLEANUP_INITIAL_DELAY } from "./config/constants";
+import { CLEANUP_INTERVAL, CLEANUP_INITIAL_DELAY, BACKUP_INITIAL_DELAY } from "./config/constants";
+import { BackupManager, setBackupPanelRef } from "./modules/backupManager";
+import { BackupCommands } from "./modules/backupCommands";
+import { BackupPanel } from "./ui/backupPanel";
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 // Variáveis globais para gerenciar a extensão
 let globalContext: vscode.ExtensionContext | null = null;
@@ -22,7 +25,13 @@ let statsManager: StatsManager;
 let apiKeyManager: ApiKeyManager;
 let deviceManager: DeviceManager;
 let syncManager: SyncManager;
+let backupManager: BackupManager;
+let outputChannel: vscode.OutputChannel;
 let cleanupInterval: NodeJS.Timeout | undefined; // Timer para cleanup automático
+
+// IDE detectada na ativação — reutilizada durante toda a sessão
+let currentIdeName: string = 'unknown';
+let currentIdeVersion: string = 'unknown';
 
 // Ativação da extensão
 export async function activate(context: vscode.ExtensionContext) {
@@ -31,7 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Logs de ativação
   console.log("=======================================");
   console.log(localize('extension.activated', 'Extension "my-time-trace-vscode" activated!'));
-  console.log("Versão: 0.5.4");
+  console.log("Versão: 0.6.0");
   console.log("Data/Hora: " + new Date().toISOString());
   console.log("=======================================");
 
@@ -43,12 +52,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Inicializa os gerenciadores
     statusBarManager = new StatusBarManager();
-    myTimeTrace = new timeTrace(dbManager, statusBarManager);
+    myTimeTrace = new timeTrace(dbManager, statusBarManager, () => currentIdeName);
     statsManager = new StatsManager(dbManager, context);
     
     // Inicializa gerenciadores de sincronização
     apiKeyManager = new ApiKeyManager(context);
     deviceManager = new DeviceManager(context);
+
+    // Detecta IDE na ativação e armazena para reuso na sessão
+    currentIdeName = deviceManager.getIdeName();
+    currentIdeVersion = deviceManager.getIdeVersion();
+    console.log(`🖥️ IDE detectada: ${currentIdeName} v${currentIdeVersion}`);
+
     syncManager = new SyncManager(
       apiKeyManager,
       deviceManager,
@@ -56,8 +71,9 @@ export async function activate(context: vscode.ExtensionContext) {
       statusBarManager
     );
 
-    // Cria e configura o status bar
+    // Cria e configura o status bar (exibe IDE detectada)
     statusBarManager.create();
+    statusBarManager.setIdeInfo(currentIdeName, currentIdeVersion);
 
     // Registra os comandos
     const commands = CommandManager.registerCommands(
@@ -95,6 +111,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const eventWindowStateChange = vscode.window.onDidChangeWindowState((windowState) => {
       myTimeTrace.onWindowStateChange(windowState);
+      backupManager?.checkMissedBackup();
+    });
+
+    const eventConfigChange = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('myTimeTraceVSCode.backup')) {
+        backupManager?.onConfigChange();
+      }
     });
 
     // Adiciona todos os subscriptions ao contexto
@@ -104,6 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(eventEditorChange);
     context.subscriptions.push(eventTextChange);
     context.subscriptions.push(eventWindowStateChange);
+    context.subscriptions.push(eventConfigChange);
 
     // Adiciona handlers de limpeza
     context.subscriptions.push({
@@ -131,6 +155,32 @@ export async function activate(context: vscode.ExtensionContext) {
     // Inicializar SyncManager (busca config do servidor e agenda auto-sync)
     console.log("🔄 Inicializando SyncManager...");
     await syncManager.initialize();
+
+    // ========================================
+    // 🗄️ BACKUP AUTOMÁTICO
+    // ========================================
+    outputChannel = vscode.window.createOutputChannel('MyTimeTrace');
+    context.subscriptions.push(outputChannel);
+
+    // Registra comandos imediatamente para que estejam disponíveis desde o início
+    setBackupPanelRef(BackupPanel);
+    const backupCmds = BackupCommands.registerBackupCommands(context, () => backupManager);
+    context.subscriptions.push(...backupCmds);
+
+    // Inicializa o BackupManager com pequeno delay para não atrasar o startup
+    setTimeout(async () => {
+      try {
+        backupManager = new BackupManager(dbManager, myTimeTrace, outputChannel);
+        context.subscriptions.push({ dispose: () => backupManager.dispose() });
+        await backupManager.initialize();
+        outputChannel.appendLine('[BackupManager] ✅ Inicializado com sucesso');
+        console.log("✅ BackupManager inicializado");
+      } catch (err: any) {
+        outputChannel.appendLine(`[BackupManager] ❌ Falha na inicialização: ${err?.message ?? err}`);
+        console.error("❌ Erro ao inicializar BackupManager:", err);
+        vscode.window.showErrorMessage(`MyTimeTrace Backup: Falha ao inicializar — ${err?.message ?? err}`);
+      }
+    }, BACKUP_INITIAL_DELAY);
 
     // ========================================
     // 🧹 CLEANUP AUTOMÁTICO DE PROJETOS EXPIRADOS (>30 DIAS)

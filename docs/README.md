@@ -3,6 +3,7 @@
 ```
 docs/
 ├── README.md                      # 📖 Índice geral (este arquivo)
+├── PRD_BACKUP_AUTOMATIZADO.md     # 📦 PRD do backup com agendamento
 ├── IDENTIDADE_VISUAL.md           # 🎨 Brand guidelines e design system
 ├── DASHBOARD_MODERNO.md           # 📊 Interface e UX do dashboard
 ├── UI_COMPONENTS.md               # 🧩 Componentes de interface
@@ -32,6 +33,9 @@ Esta pasta contém toda a documentação técnica e de design do projeto MyTimeT
 - **[UNDO_GUIDE.md](./UNDO_GUIDE.md)** - ⭐ Guia prático de como recuperar projetos deletados
 - **[DELETED_PROJECTS_PANEL.md](./DELETED_PROJECTS_PANEL.md)** - 🆕 Painel visual com auto-delete 30 dias
 - **[DELETION_HISTORY_RESUMO.md](./DELETION_HISTORY_RESUMO.md)** - Resumo rápido do histórico
+
+### 📦 Backup e Proteção
+- **[PRD_BACKUP_AUTOMATIZADO.md](./PRD_BACKUP_AUTOMATIZADO.md)** - PRD do backup automatizado com agendamento do usuário
 
 ### 🧪 Qualidade e Testes
 - **[COVERAGE_REPORT.md](./COVERAGE_REPORT.md)** - Relatório detalhado de cobertura de testes (88%)
