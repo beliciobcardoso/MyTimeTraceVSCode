@@ -148,9 +148,9 @@ suite('BackupPanel Tests', () => {
       BackupPanel.createOrShow(mockBackupManager as BackupManager);
 
       const html: string = mockWebview.html;
-      // Contar ocorrências do badge "● atual"
-      const count = (html.match(/● atual/g) || []).length;
-      assert.strictEqual(count, 1, 'Badge "● atual" deve aparecer exatamente uma vez');
+      // localize() retorna EN no ambiente de testes; aceitar ambos os idiomas
+      const count = (html.match(/● atual|● current/g) || []).length;
+      assert.strictEqual(count, 1, 'Badge de "atual/current" deve aparecer exatamente uma vez');
     });
 
     test('Estado vazio: mensagem orientativa quando pasta está vazia', () => {
@@ -162,8 +162,9 @@ suite('BackupPanel Tests', () => {
       BackupPanel.createOrShow(mockBackupManager as BackupManager);
 
       const html: string = mockWebview.html;
+      // localize() retorna EN no ambiente de testes; aceitar ambos os idiomas
       assert.ok(
-        html.includes('Nenhum backup encontrado'),
+        html.includes('Nenhum backup encontrado') || html.includes('No backups found'),
         'Deve exibir mensagem orientativa quando pasta está vazia',
       );
     });
@@ -176,8 +177,10 @@ suite('BackupPanel Tests', () => {
       BackupPanel.createOrShow(mockBackupManager as BackupManager);
 
       const html: string = mockWebview.html;
+      // localize() retorna EN no ambiente de testes; aceitar ambos os idiomas
       assert.ok(
-        html.includes('Nenhum backup encontrado') || html.includes('Fazer Backup Agora'),
+        html.includes('Nenhum backup encontrado') || html.includes('No backups found') ||
+        html.includes('Fazer Backup Agora') || html.includes('Backup Now'),
         'Deve exibir mensagem orientativa ou botão de ação',
       );
     });
