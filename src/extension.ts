@@ -1,6 +1,6 @@
 import './env-loader'; // deve ser o primeiro import — carrega .env antes de process.env ser lido
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from './i18n';
 import { DatabaseManager } from "./modules/database";
 import { StatusBarManager } from "./modules/statusBar";
 import { timeTrace } from "./modules/timeTrace";
@@ -15,7 +15,6 @@ import { BackupManager, setBackupPanelRef } from "./modules/backupManager";
 import { BackupCommands } from "./modules/backupCommands";
 import { BackupPanel } from "./ui/backupPanel";
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 // Variáveis globais para gerenciar a extensão
 let globalContext: vscode.ExtensionContext | null = null;

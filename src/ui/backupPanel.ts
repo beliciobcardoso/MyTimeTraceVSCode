@@ -1,10 +1,8 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import * as path from 'path';
 import * as fs from 'fs';
 import { BackupManager } from '../modules/backupManager';
-
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 interface BackupFile {
   name: string;
@@ -30,7 +28,7 @@ export class BackupPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'myTimeTraceBackups',
-      'My Time Trace — Gerenciar Backups',
+      localize('backup.panel.title', 'My Time Trace — Manage Backups'),
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -81,7 +79,7 @@ export class BackupPanel {
     switch (msg.command) {
       case 'triggerBackup':
         await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: 'MyTimeTrace', cancellable: false },
+          { location: vscode.ProgressLocation.Notification, title: 'My Time Trace', cancellable: false },
           async (p) => {
             p.report({ message: localize('backup.progress.running', 'Running backup...') });
             await this.backupManager.triggerManualBackup();
@@ -142,7 +140,6 @@ export class BackupPanel {
     try {
       await vscode.workspace.fs.delete(vscode.Uri.file(fullPath));
 
-      // Avisar se abaixo do mínimo de retenção
       const remaining = this.listBackupFiles(status.destinationPath);
       if (remaining.length < 3) {
         vscode.window.showInformationMessage(
@@ -150,7 +147,7 @@ export class BackupPanel {
         );
       }
     } catch (err: any) {
-      vscode.window.showErrorMessage(localize('backup.panel.deleteError', 'MyTimeTrace: Error deleting — {0}', err.message));
+      vscode.window.showErrorMessage(localize('backup.panel.deleteError', 'My Time Trace: Error deleting — {0}', err.message));
     }
     this.render();
   }
@@ -170,7 +167,7 @@ export class BackupPanel {
     for (const name of fileNames) {
       try {
         await vscode.workspace.fs.delete(vscode.Uri.file(path.join(status.destinationPath, name)));
-      } catch { /* ignorar arquivos já removidos */ }
+      } catch { /* ignore already-removed files */ }
     }
     this.render();
   }
@@ -201,7 +198,7 @@ export class BackupPanel {
         .sort((a, b) => b.name.localeCompare(a.name));
 
       if (files.length > 0) { files[0].isLatest = true; }
-    } catch { /* pasta inacessível */ }
+    } catch { /* inaccessible folder */ }
 
     return files;
   }
@@ -219,10 +216,10 @@ export class BackupPanel {
 
   private stateLabel(state: string): string {
     switch (state) {
-      case 'active': return '<span style="color:#4caf50">● Ativo</span>';
-      case 'paused': return '<span style="color:#9e9e9e">⏸ Pausado</span>';
-      case 'failed': return '<span style="color:#f44336">✕ Falha</span>';
-      default: return '<span style="color:#9e9e9e">● Inativo</span>';
+      case 'active':  return `<span style="color:#4caf50">${escHtml(localize('backup.panel.state.active',   '● Active'))}</span>`;
+      case 'paused':  return `<span style="color:#9e9e9e">${escHtml(localize('backup.panel.state.paused',   '⏸ Paused'))}</span>`;
+      case 'failed':  return `<span style="color:#f44336">${escHtml(localize('backup.panel.state.failed',   '✕ Failed'))}</span>`;
+      default:        return `<span style="color:#9e9e9e">${escHtml(localize('backup.panel.state.inactive', '● Inactive'))}</span>`;
     }
   }
 
@@ -232,24 +229,56 @@ export class BackupPanel {
       ? new Date(status.lastBackupAt).toLocaleString()
       : '—';
 
+    // ── Localized strings ──────────────────────────────────────────────────
+    const loc = {
+      pageTitle:           localize('backup.panel.pageTitle',                   'Manage Backups'),
+      heading:             localize('backup.panel.heading',                     'Manage Backups — My Time Trace'),
+      statusState:         localize('backup.panel.status.state',                'State'),
+      statusLastBackup:    localize('backup.panel.status.lastBackup',           'Last backup'),
+      statusNextBackup:    localize('backup.panel.status.nextBackup',           'Next backup'),
+      statusTotal:         localize('backup.panel.status.total',                'Total backups'),
+      statusLastError:     localize('backup.panel.status.lastError',            'Last error'),
+      btnBackupNow:        localize('backup.panel.btn.backupNow',               'Backup Now'),
+      btnBackingUp:        localize('backup.panel.btn.backingUp',               'Backing up...'),
+      btnConfigure:        localize('backup.panel.btn.configure',               'Configure Backup'),
+      btnOpenFolder:       localize('backup.panel.btn.openFolder',              'Open Folder'),
+      btnDeleteSelected:   localize('backup.panel.btn.deleteSelected',          'Delete Selected'),
+      btnDeleteSelectedN:  localize('backup.panel.btn.deleteSelectedCount',     'Delete Selected ({0})'),
+      cloudRec:            localize('backup.panel.cloud.recommendation',        'Recommendation'),
+      cloudTip:            localize('backup.panel.cloud.tip',                   'For greater security, sync your backup folder with a cloud service such as OneDrive, Google Drive, Dropbox, or another of your preference. This way your data is protected even in case of local disk failure.'),
+      colFile:             localize('backup.panel.col.file',                    'File'),
+      colDateTime:         localize('backup.panel.col.dateTime',                'Date / Time'),
+      colSize:             localize('backup.panel.col.size',                    'Size'),
+      colRestore:          localize('backup.panel.col.restore',                 'Restore'),
+      colDelete:           localize('backup.panel.col.delete',                  'Delete'),
+      badgeCurrent:        localize('backup.panel.badge.current',               '● current'),
+      emptyMsg:            localize('backup.panel.empty',                       'No backups found. Click "Backup Now" to create the first one.'),
+      btnRestoreTitle:     localize('backup.panel.btn.restore.title',           'Restore this backup'),
+      btnDeleteTitle:      localize('backup.panel.btn.delete.title',            'Delete this backup'),
+      footerManualRestore: localize('backup.panel.footer.manualRestore',        'Manual restore:'),
+      footerDesc:          localize('backup.panel.footer.manualRestoreDesc',    'Close VS Code, replace the file below with the desired backup, and reopen.'),
+      footerDbPath:        localize('backup.panel.footer.currentDbPath',        'Current database path:'),
+    };
+    // ─────────────────────────────────────────────────────────────────────
+
     const filesHtml = files.length === 0
-      ? `<tr><td colspan="6" class="empty-msg">Nenhum backup encontrado. Clique em "Fazer Backup Agora" para criar o primeiro.</td></tr>`
+      ? `<tr><td colspan="6" class="empty-msg">${escHtml(loc.emptyMsg)}</td></tr>`
       : files.map(f => `
           <tr>
             <td><input type="checkbox" class="row-check" data-name="${escHtml(f.name)}"></td>
-            <td>${escHtml(f.displayName)}${f.isLatest ? ' <span class="badge">● atual</span>' : ''}</td>
+            <td>${escHtml(f.displayName)}${f.isLatest ? ` <span class="badge">${escHtml(loc.badgeCurrent)}</span>` : ''}</td>
             <td>${escHtml(f.dateTime)}</td>
             <td>${f.sizeKb >= 1024 ? (f.sizeKb / 1024).toFixed(1) + ' MB' : f.sizeKb + ' KB'}</td>
-            <td><button onclick="restoreFile('${escHtml(f.name)}')" title="Restaurar este backup">↩</button></td>
-            <td><button onclick="deleteFile('${escHtml(f.name)}')" title="Excluir este backup">🗑</button></td>
+            <td><button onclick="restoreFile('${escHtml(f.name)}')" title="${escHtml(loc.btnRestoreTitle)}">↩</button></td>
+            <td><button onclick="deleteFile('${escHtml(f.name)}')" title="${escHtml(loc.btnDeleteTitle)}">🗑</button></td>
           </tr>`).join('');
 
     return `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${escHtml(vscode.env.language)}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerenciar Backups</title>
+<title>${escHtml(loc.pageTitle)}</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -285,7 +314,6 @@ export class BackupPanel {
   button:hover { background: var(--vscode-button-hoverBackground); }
   button:disabled { opacity: .5; cursor: default; }
 
-  /* ── Wrapper que ocupa todo o espaço restante ── */
   .table-wrap {
     flex: 1;
     min-height: 0;
@@ -296,7 +324,6 @@ export class BackupPanel {
     overflow: hidden;
   }
 
-  /* ── Tabela como flex column para separar thead (fixo) de tbody (scroll) ── */
   table {
     width: 100%;
     border-collapse: collapse;
@@ -306,7 +333,6 @@ export class BackupPanel {
     min-height: 0;
   }
 
-  /* thead permanece fixo no topo */
   thead {
     display: table;
     width: 100%;
@@ -321,7 +347,6 @@ export class BackupPanel {
     font-size: 12px; opacity: .8;
   }
 
-  /* tbody rola verticalmente ocupando o restante */
   tbody {
     display: block;
     overflow-y: auto;
@@ -329,7 +354,6 @@ export class BackupPanel {
     min-height: 0;
   }
 
-  /* cada linha do tbody precisa replicar o contexto de tabela */
   tbody tr {
     display: table;
     width: 100%;
@@ -338,13 +362,11 @@ export class BackupPanel {
 
   td { padding: 5px 8px; border-bottom: 1px solid var(--vscode-editorWidget-border, #333); font-size: 13px; }
 
-  /* larguras explícitas — obrigatórias para alinhar thead e tbody */
   th:nth-child(1), td:nth-child(1) { width: 40px; }
   th:nth-child(3), td:nth-child(3) { width: 165px; }
   th:nth-child(4), td:nth-child(4) { width: 80px; }
   th:nth-child(5), td:nth-child(5) { width: 80px; text-align: center; }
   th:nth-child(6), td:nth-child(6) { width: 72px; text-align: center; }
-  /* coluna 2 (Arquivo) ocupa o restante automaticamente */
 
   .badge { font-size: 10px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); padding: 1px 5px; border-radius: 10px; }
   .empty-msg { text-align: center; padding: 24px; opacity: .7; }
@@ -359,8 +381,6 @@ export class BackupPanel {
     font-size: 12px;
   }
   .cloud-tip-icon { font-size: 16px; line-height: 1.4; flex-shrink: 0; }
-  .cloud-tip a { color: var(--vscode-textLink-foreground, #4da3ff); text-decoration: none; }
-  .cloud-tip a:hover { text-decoration: underline; }
 
   .footer {
     flex-shrink: 0;
@@ -373,30 +393,26 @@ export class BackupPanel {
 </style>
 </head>
 <body>
-<h2>Gerenciar Backups — MyTimeTrace</h2>
+<h2>${escHtml(loc.heading)}</h2>
 
 <div class="status-block">
-  <div class="status-item"><span class="status-label">Estado</span>${this.stateLabel(status.state)}</div>
-  <div class="status-item"><span class="status-label">Último backup</span>${escHtml(lastBackup)}</div>
-  <div class="status-item"><span class="status-label">Próximo backup</span>${status.nextBackupAt ? escHtml(new Date(status.nextBackupAt).toLocaleString()) : '—'}</div>
-  <div class="status-item"><span class="status-label">Total de backups</span><span>${files.length}</span></div>
-  ${status.lastError ? `<div class="status-item"><span class="status-label">Último erro</span><span style="color:#f44336;font-size:12px">${escHtml(status.lastError)}</span></div>` : ''}
+  <div class="status-item"><span class="status-label">${escHtml(loc.statusState)}</span>${this.stateLabel(status.state)}</div>
+  <div class="status-item"><span class="status-label">${escHtml(loc.statusLastBackup)}</span>${escHtml(lastBackup)}</div>
+  <div class="status-item"><span class="status-label">${escHtml(loc.statusNextBackup)}</span>${status.nextBackupAt ? escHtml(new Date(status.nextBackupAt).toLocaleString()) : '—'}</div>
+  <div class="status-item"><span class="status-label">${escHtml(loc.statusTotal)}</span><span>${files.length}</span></div>
+  ${status.lastError ? `<div class="status-item"><span class="status-label">${escHtml(loc.statusLastError)}</span><span style="color:#f44336;font-size:12px">${escHtml(status.lastError)}</span></div>` : ''}
 </div>
 
 <div class="actions">
-  <button onclick="doBackup()" ${isBacking ? 'disabled' : ''}>${isBacking ? 'Fazendo backup...' : 'Fazer Backup Agora'}</button>
-  <button onclick="openWizard()">Configurar Backup</button>
-  <button onclick="openFolder()">Abrir Pasta</button>
-  <button id="deleteSelectedBtn" disabled onclick="deleteSelected()">Excluir Selecionados</button>
+  <button onclick="doBackup()" ${isBacking ? 'disabled' : ''}>${isBacking ? escHtml(loc.btnBackingUp) : escHtml(loc.btnBackupNow)}</button>
+  <button onclick="openWizard()">${escHtml(loc.btnConfigure)}</button>
+  <button onclick="openFolder()">${escHtml(loc.btnOpenFolder)}</button>
+  <button id="deleteSelectedBtn" disabled onclick="deleteSelected()">${escHtml(loc.btnDeleteSelected)}</button>
 </div>
 
 <div class="cloud-tip">
   <span class="cloud-tip-icon">☁️</span>
-  <span>
-    <strong>Recomendação:</strong> Para maior segurança, sincronize sua pasta de backups com um serviço de nuvem
-    como <strong>OneDrive</strong>, <strong>Google Drive</strong>, <strong>Dropbox</strong> ou outro de sua preferência.
-    Assim seus dados ficam protegidos mesmo em caso de falha no disco local.
-  </span>
+  <span><strong>${escHtml(loc.cloudRec)}:</strong> ${escHtml(loc.cloudTip)}</span>
 </div>
 
 <div class="table-wrap">
@@ -404,11 +420,11 @@ export class BackupPanel {
     <thead>
       <tr>
         <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
-        <th>Arquivo</th>
-        <th>Data / Hora</th>
-        <th>Tamanho</th>
-        <th>Restaurar</th>
-        <th>Excluir</th>
+        <th>${escHtml(loc.colFile)}</th>
+        <th>${escHtml(loc.colDateTime)}</th>
+        <th>${escHtml(loc.colSize)}</th>
+        <th>${escHtml(loc.colRestore)}</th>
+        <th>${escHtml(loc.colDelete)}</th>
       </tr>
     </thead>
     <tbody>${filesHtml}</tbody>
@@ -416,12 +432,14 @@ export class BackupPanel {
 </div>
 
 <div class="footer">
-  <strong>Restauração manual:</strong> Feche o VS Code, substitua o arquivo abaixo pelo backup desejado e reabra.<br>
-  Caminho do banco atual: <code>${escHtml(dbPath)}</code>
+  <strong>${escHtml(loc.footerManualRestore)}</strong> ${escHtml(loc.footerDesc)}<br>
+  ${escHtml(loc.footerDbPath)} <code>${escHtml(dbPath)}</code>
 </div>
 
 <script>
 const vscode = acquireVsCodeApi();
+const _lblDeleteSelected = '${escHtml(loc.btnDeleteSelected)}';
+const _lblDeleteSelectedN = '${escHtml(loc.btnDeleteSelectedN)}';
 
 function doBackup() { vscode.postMessage({ command: 'triggerBackup' }); }
 function openWizard() { vscode.postMessage({ command: 'openWizard' }); }
@@ -442,7 +460,9 @@ function updateDeleteBtn() {
   const checked = [...document.querySelectorAll('.row-check:checked')];
   const btn = document.getElementById('deleteSelectedBtn');
   btn.disabled = checked.length === 0;
-  btn.textContent = checked.length > 0 ? 'Excluir Selecionados (' + checked.length + ')' : 'Excluir Selecionados';
+  btn.textContent = checked.length > 0
+    ? _lblDeleteSelectedN.replace('{0}', checked.length)
+    : _lblDeleteSelected;
 }
 
 function deleteSelected() {

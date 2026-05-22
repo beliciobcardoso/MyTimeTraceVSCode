@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
 import { randomUUID } from 'crypto';
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 export interface ActivityData {
   timestamp: string;

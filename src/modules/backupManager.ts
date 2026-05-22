@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as sqlite3 from 'sqlite3';
 import { DatabaseManager } from './database';
 import { timeTrace } from './timeTrace';
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 import {
   BACKUP_MIN_RETENTION,
   BACKUP_ALERT_GAP_DAYS,

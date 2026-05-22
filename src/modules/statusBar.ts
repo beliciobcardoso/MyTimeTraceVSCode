@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import * as path from "path";
 import { getConfig } from "./config";
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
  * Classe responsável por gerenciar o status bar item

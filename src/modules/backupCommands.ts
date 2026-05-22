@@ -1,10 +1,8 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import { CommandManager } from './commands';
 import { BackupManager } from './backupManager';
 import { BackupPanel } from '../ui/backupPanel';
-
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 export class BackupCommands {
   static registerBackupCommands(
