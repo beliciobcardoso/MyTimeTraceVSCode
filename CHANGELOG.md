@@ -5,6 +5,67 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adhere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-21
+
+### Adicionado
+
+- **Sistema de Backup Automático Local**: Proteção completa de dados para usuários sem sincronização em nuvem
+  - `BackupManager` — cópia segura do banco via `VACUUM INTO` com verificação de integridade dupla (`PRAGMA quick_check` na origem e no destino)
+  - `BackupRetryManager` — retry automático com 3 tentativas e delay de 30s entre elas
+  - Arquivo temporário `.sqlite.tmp` com rename atômico — nunca deixa arquivo parcialmente gravado no destino
+  - Verificação de espaço em disco (1,5× o tamanho do banco) antes de iniciar
+  - Limpeza automática de arquivos `.sqlite.tmp` órfãos
+
+- **Wizard de Configuração** (4 passos interativos):
+  - Passo 1: Seleção de pasta de destino com aviso para pastas de nuvem/rede
+  - Passo 2: Intervalo de backup (1h, 4h, 8h, 12h, 24h ou personalizado)
+  - Passo 3: Política de retenção máxima (mínimo 3 backups)
+  - Passo 4: Resumo, confirmação e primeiro backup imediato
+  - Abort total ao pressionar `Esc` em qualquer passo
+
+- **Painel WebView `BackupPanel`**: Interface visual para gerenciamento de backups
+  - Tabela ordenada por data (mais recente primeiro) com badge `● atual` no backup mais novo
+  - Colunas: seleção, nome, data/hora, tamanho, restaurar e excluir
+  - Exclusão individual com confirmação e aviso se remanescente < 3
+  - Exclusão em lote com checkbox "selecionar todos" e confirmação com contagem
+  - Bloco de status com badge colorido (Ativo/Pausado/Falha), último backup e próximo backup
+  - `FileSystemWatcher` para atualização em tempo real ao criar/deletar arquivos externamente
+  - Estado vazio com mensagem orientativa
+  - Rodapé com instrução de restauração manual e caminho do banco atual
+
+- **Política de Retenção Automática**: Remove o backup mais antigo ao atingir o limite configurado (mínimo 3)
+
+- **Agendamento Automático**: `setTimeout` + `setInterval` com alinhamento correto de ciclos
+  - Detecta backup perdido durante sleep/wake no `onDidChangeWindowState`
+  - Reagendamento automático ao alterar configurações (debounce de 500ms)
+  - Alerta informativo para gap > 7 dias sem backup
+
+- **7 Novos Comandos** na paleta (`Ctrl+Shift+P`):
+  - `MyTimeTrace: Fazer Backup Agora`
+  - `MyTimeTrace: Configurar Backup`
+  - `MyTimeTrace: Gerenciar Backups`
+  - `MyTimeTrace: Abrir Pasta de Backup`
+  - `MyTimeTrace: Editar Configurações de Backup`
+  - `MyTimeTrace: Pausar Backup Automático`
+  - `MyTimeTrace: Retomar Backup Automático`
+
+- **6 Novas Settings** com `scope: machine` (não sincronizam entre dispositivos):
+  - `myTimeTraceVSCode.backup.enabled`
+  - `myTimeTraceVSCode.backup.destinationPath`
+  - `myTimeTraceVSCode.backup.intervalHours`
+  - `myTimeTraceVSCode.backup.maxBackups`
+  - `myTimeTraceVSCode.backup.notifyOnSuccess`
+  - `myTimeTraceVSCode.backup.showInStatusBar`
+
+- **Output Channel `MyTimeTrace`**: Todas as operações de backup registradas em `View → Output → MyTimeTrace`
+
+### Alterado
+
+- `DatabaseManager`: adição de `getDbPath()`, `checkIntegrity()` e `vacuumInto()` como métodos públicos
+- `src/config/constants.ts`: 6 novas constantes de backup (`BACKUP_MIN_RETENTION`, `BACKUP_DEFAULT_INTERVAL_HOURS`, `BACKUP_MAX_RETRIES`, `BACKUP_RETRY_DELAY_MS`, `BACKUP_INITIAL_DELAY`, `BACKUP_ALERT_GAP_DAYS`)
+
+---
+
 ## [0.5.5] - 2026-05-20
 
 ### Adicionado

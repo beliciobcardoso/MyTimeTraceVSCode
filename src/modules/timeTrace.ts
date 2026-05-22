@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import { DatabaseManager, ActivityData } from "./database";
 import { StatusBarManager } from "./statusBar";
 import { getConfig } from "./config";
 import { getDeviceName } from "./deviceInfo";
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
  * Classe responsável por rastrear o tempo gasto em arquivos

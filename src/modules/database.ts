@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import * as nls from 'vscode-nls';
+import { localize } from '../i18n';
 import * as path from "path";
 import * as fs from "fs";
 import * as sqlite3 from "sqlite3";
 import { randomUUID } from 'crypto';
 
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 export interface ActivityData {
   timestamp: string;
@@ -22,12 +21,19 @@ export interface ActivityData {
  */
 export class DatabaseManager {
   private db: sqlite3.Database | undefined;
+  private dbPath: string = '';
+
+  getDbPath(): string {
+    return this.dbPath;
+  }
 
   /**
    * Inicializa o banco de dados SQLite
+   * journal_mode atual: WAL (verificado via PRAGMA journal_mode na abertura do banco)
    */
   async initialize(storagePath: string): Promise<void> {
     const dbPath = path.join(storagePath, "time_tracker.sqlite");
+    this.dbPath = dbPath;
     console.log(`Caminho do banco de dados: ${dbPath}`);
 
     // Garante que o diretório de armazenamento global exista
@@ -69,7 +75,7 @@ export class DatabaseManager {
               return reject(tableErr);
             }
             console.log('Tabela "time_entries" verificada/criada com sucesso.');
-            
+
             // Migração: Adicionar coluna deleted_at se não existir
             this.db!.run(
               `ALTER TABLE time_entries ADD COLUMN deleted_at TEXT DEFAULT NULL`,
@@ -84,7 +90,7 @@ export class DatabaseManager {
                 } else {
                   console.log('✅ Coluna deleted_at adicionada com sucesso (migração aplicada)');
                 }
-                
+
                 // Migração: Adicionar coluna device_name se não existir
                 this.db!.run(
                   `ALTER TABLE time_entries ADD COLUMN device_name TEXT DEFAULT NULL`,
@@ -132,7 +138,7 @@ export class DatabaseManager {
                                 } else {
                                   console.log('✅ Índice único de client_id verificado/criado com sucesso');
                                 }
-                    
+
                                 // Criar tabela de histórico de exclusões
                                 this.db!.run(
                                   `CREATE TABLE IF NOT EXISTS deletion_history (
@@ -149,7 +155,7 @@ export class DatabaseManager {
                                     } else {
                                       console.log('✅ Tabela deletion_history verificada/criada com sucesso');
                                     }
-                                    
+
                                     // 🔄 FASE 2: Criar tabela de metadados de sincronização
                                     this.db!.run(
                                       `CREATE TABLE IF NOT EXISTS sync_metadata (
@@ -282,15 +288,15 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       // SOFT DELETE: Marca como deletado com timestamp
       const sql = `UPDATE time_entries SET deleted_at = datetime('now') WHERE project = ? AND deleted_at IS NULL`;
-      
+
       console.log(`🗑️ Executando SOFT DELETE para projeto: ${projectName}`);
-      
+
       const self = this; // Captura contexto para usar dentro do callback
-      
-      this.db.run(sql, [projectName], function(err: Error | null) {
+
+      this.db.run(sql, [projectName], function (err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao deletar projeto ${projectName}:`, err);
           reject(err);
@@ -298,7 +304,7 @@ export class DatabaseManager {
           // this.changes retorna o número de linhas afetadas (contexto do SQLite)
           const deletedCount = this.changes;
           console.log(`✅ ${deletedCount} registro(s) marcado(s) como deletado(s) do projeto ${projectName}`);
-          
+
           // Registrar no histórico de exclusões
           self.logDeletion(projectName, deletedCount, 'soft')
             .then(() => resolve(deletedCount))
@@ -323,22 +329,22 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       // HARD DELETE: Remove permanentemente apenas projetos que já estão soft-deleted
       const sql = `DELETE FROM time_entries WHERE project = ? AND deleted_at IS NOT NULL`;
-      
+
       console.log(`💥 Executando HARD DELETE para projeto: ${projectName}`);
-      
+
       const self = this;
-      
-      this.db.run(sql, [projectName], function(err: Error | null) {
+
+      this.db.run(sql, [projectName], function (err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao deletar permanentemente projeto ${projectName}:`, err);
           reject(err);
         } else {
           const deletedCount = this.changes;
           console.log(`✅ ${deletedCount} registro(s) deletado(s) PERMANENTEMENTE do projeto ${projectName}`);
-          
+
           // Registrar no histórico de exclusões
           self.logDeletion(projectName, deletedCount, 'hard')
             .then(() => resolve(deletedCount))
@@ -362,21 +368,21 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       const sql = `UPDATE time_entries SET deleted_at = NULL WHERE project = ? AND deleted_at IS NOT NULL`;
-      
+
       console.log(`♻️ Restaurando projeto: ${projectName}`);
-      
+
       const self = this;
-      
-      this.db.run(sql, [projectName], function(err: Error | null) {
+
+      this.db.run(sql, [projectName], function (err: Error | null) {
         if (err) {
           console.error(`❌ Erro ao restaurar projeto ${projectName}:`, err);
           reject(err);
         } else {
           const restoredCount = this.changes;
           console.log(`✅ ${restoredCount} registro(s) restaurado(s) do projeto ${projectName}`);
-          
+
           // Registrar restauração no histórico
           self.logRestoration(projectName)
             .then(() => resolve(restoredCount))
@@ -399,7 +405,7 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       const sql = `
         SELECT DISTINCT project
         FROM time_entries 
@@ -407,7 +413,7 @@ export class DatabaseManager {
         GROUP BY project
         ORDER BY MAX(deleted_at) DESC
       `;
-      
+
       this.db.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
           reject(err);
@@ -432,12 +438,12 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       const sql = `
         INSERT INTO deletion_history (project_name, deleted_at, records_count, deletion_type)
         VALUES (?, datetime('now'), ?, ?)
       `;
-      
+
       this.db.run(sql, [projectName, recordsCount, deletionType], (err: Error | null) => {
         if (err) {
           console.error('❌ Erro ao registrar histórico de exclusão:', err);
@@ -460,7 +466,7 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       // SQLite não permite ORDER BY/LIMIT diretamente no UPDATE
       // Solução: Usar WHERE id IN (SELECT...) para pegar o registro mais recente
       const sql = `
@@ -475,7 +481,7 @@ export class DatabaseManager {
           LIMIT 1
         )
       `;
-      
+
       this.db.run(sql, [projectName], (err: Error | null) => {
         if (err) {
           console.error('❌ Erro ao registrar restauração:', err);
@@ -499,7 +505,7 @@ export class DatabaseManager {
         reject(new Error("Banco de dados não inicializado"));
         return;
       }
-      
+
       let sql = `
         SELECT 
           id,
@@ -515,13 +521,13 @@ export class DatabaseManager {
           END as status
         FROM deletion_history
       `;
-      
+
       if (!includeRestored) {
         sql += ` WHERE restored_at IS NULL`;
       }
-      
+
       sql += ` ORDER BY deleted_at DESC`;
-      
+
       this.db.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
           console.error('❌ Erro ao buscar histórico de exclusões:', err);
@@ -581,7 +587,7 @@ export class DatabaseManager {
         GROUP BY project, deleted_at
         ORDER BY deleted_at DESC
       `;
-      
+
       this.db!.all(sql, [], (err: Error | null, rows: any[]) => {
         if (err) {
           console.error('❌ Erro ao buscar projetos deletados com dias:', err);
@@ -643,7 +649,7 @@ export class DatabaseManager {
            WHERE deleted_at IS NOT NULL 
            AND CAST((julianday('now') - julianday(deleted_at)) AS INTEGER) > 30`,
           [],
-          function(err: Error | null) {
+          function (err: Error | null) {
             if (err) {
               console.error('❌ Erro ao limpar projetos expirados:', err);
               reject(err);
@@ -942,5 +948,31 @@ export class DatabaseManager {
       });
     });
   }
+
+  /** Executa PRAGMA quick_check no banco ativo e retorna 'ok' se íntegro. */
+  checkIntegrity(): Promise<void> {
+    if (!this.db) { return Promise.reject(new Error('Database não inicializado')); }
+    return new Promise((resolve, reject) => {
+      this.db!.get('PRAGMA quick_check', (err, row: any) => {
+        if (err) { return reject(new Error(`PRAGMA quick_check falhou: ${err.message}`)); }
+        if (!row || row.quick_check !== 'ok') {
+          return reject(new Error(`Banco de dados corrompido: ${JSON.stringify(row)}`));
+        }
+        resolve();
+      });
+    });
+  }
+
+  /** Cria snapshot consistente do banco via VACUUM INTO. Path deve ser validado antes de chamar. */
+  vacuumInto(destPath: string): Promise<void> {
+    if (!this.db) { return Promise.reject(new Error('Database não inicializado')); }
+    return new Promise((resolve, reject) => {
+      this.db!.run(`VACUUM INTO '${destPath}'`, (err) => {
+        if (err) { return reject(new Error(`VACUUM INTO falhou: ${err.message}`)); }
+        resolve();
+      });
+    });
+  }
+
 }
 

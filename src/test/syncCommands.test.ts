@@ -226,7 +226,7 @@ suite('Sync Commands Test Suite', () => {
       );
       
       assert.ok(syncNowCommand, 'syncNow deve estar registrado');
-      assert.strictEqual(syncNowCommand.category, 'MyTimeTrace', 'Categoria deve ser MyTimeTrace');
+      assert.ok(!syncNowCommand.category, 'syncNow não deve ter category (evita prefixo duplo no título)');
     });
 
     test('viewSyncStatus deve estar registrado no package.json', async () => {
@@ -238,7 +238,7 @@ suite('Sync Commands Test Suite', () => {
       );
       
       assert.ok(viewStatusCommand, 'viewSyncStatus deve estar registrado');
-      assert.strictEqual(viewStatusCommand.category, 'MyTimeTrace', 'Categoria deve ser MyTimeTrace');
+      assert.ok(!viewStatusCommand.category, 'viewSyncStatus não deve ter category (evita prefixo duplo no título)');
     });
 
     test('Configuração syncEnabled deve existir no package.json', () => {

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import * as nls from 'vscode-nls';
-const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
+import { localize } from '../i18n';
 import { DatabaseManager } from "./database";
 import { StatsPanel, ProjectsData, TimeEntry } from "../ui";
 

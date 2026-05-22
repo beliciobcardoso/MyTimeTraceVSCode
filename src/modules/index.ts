@@ -6,3 +6,6 @@ export { StatsManager } from "./stats";
 export { CommandManager } from "./commands";
 export { getConfig, UserConfig } from "./config";
 export { getDeviceName, getDeviceInfo } from "./deviceInfo";
+export { BackupManager, BackupStatus, BackupState, setBackupPanelRef } from "./backupManager";
+export { BackupCommands } from "./backupCommands";
+export { BackupRetryManager } from "./backupRetryManager";

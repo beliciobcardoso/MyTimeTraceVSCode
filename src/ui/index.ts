@@ -10,3 +10,5 @@ export {
 export { CssLoader } from './cssLoader';
 
 export { DeletedProjectsPanel, DeletedProject } from './deletedProjectsPanel';
+
+export { BackupPanel } from './backupPanel';

@@ -1,27 +1,39 @@
-.vscode/**
-.vscode-test/**
-src/**
-.gitignore
-.yarnrc
+# Documentação
+docs/
+openspec/
+UI/
+CODEBASE.md
+GEMINI.md
+CHANGELOG.md
 vsc-extension-quickstart.md
-**/tsconfig.json
-**/eslint.config.mjs
-**/*.map
-**/*.ts
-**/.vscode-test.*
-**/src/**
 note.txt
 index.html
+
+# Template de variáveis de ambiente (apenas referência para devs)
+.env.example
+
+# CI/CD e configuração de desenvolvimento
+.github/
+.claude/
+.vscode/**
+.vscode-test/
+**/.vscode-test.*
+.nycrc.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+**/tsconfig.json
+**/eslint.config.mjs
+.gitignore
+.yarnrc
+
+# Código-fonte TypeScript (o compilado já está em out/)
+src/
+**/src/**
+**/*.ts
+**/*.map
+
+# Testes
+out/test/
+
+# Artefatos de pacote
 my-time-trace-vscode-*.vsix
-node_modules/**/test/**
-node_modules/**/tests/**
-node_modules/**/*.d.ts
-node_modules/**/*.map
-node_modules/**/README.md
-node_modules/**/readme.md
-node_modules/**/CHANGELOG.md
-node_modules/**/changelog.md
-node_modules/**/LICENSE
-node_modules/**/license
-node_modules/**/docs/**
-node_modules/**/.github/**
