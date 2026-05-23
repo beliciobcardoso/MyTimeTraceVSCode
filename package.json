@@ -203,7 +203,7 @@
     "copy-assets": "mkdir -p out/ui && cp src/ui/*.css out/ui/",
     "watch": "tsc -watch -p ./",
     "package": "vsce package --allow-package-env-file",
-    "publish:ovsx": "ovsx publish --allow-package-env-file --pat",
+    "publish:ovsx": "npm run package && node -e \"const {execSync}=require('child_process'),{version}=require('./package.json');execSync('npx ovsx publish my-time-trace-vscode-'+version+'.vsix --pat '+process.argv[1],{stdio:'inherit',shell:true})\" --",
     "build": "npm run compile && npm run package",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
