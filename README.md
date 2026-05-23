@@ -382,6 +382,32 @@ vsce package
 
 Esse comando gera um arquivo como `my-time-trace-vscode-X.X.X.vsix`, que pode ser instalado localmente em outra máquina ou ambiente de teste.
 
+### Publicação nos Marketplaces
+
+A extensão é publicada em dois registros:
+
+| Registro | URL |
+|---|---|
+| VS Code Marketplace | https://marketplace.visualstudio.com/items?itemName=BelicioBCardoso.my-time-trace-vscode |
+| Open VSX | https://open-vsx.org/extension/BelicioBCardoso/my-time-trace-vscode |
+
+#### VS Code Marketplace (vsce)
+
+```bash
+vsce publish --allow-package-env-file
+```
+
+#### Open VSX
+
+O `ovsx` não aceita `--allow-package-env-file`, então o fluxo é em dois passos: criar o VSIX com `vsce` e passar o arquivo pronto para o `ovsx`.
+
+```bash
+# Um comando só — cria o .vsix e publica no Open VSX
+npm run publish:ovsx -- <seu-pat-open-vsx>
+```
+
+> **Pré-requisito:** o arquivo `.env` com `API_BASE_URL=https://mytimetrace.com.br/api` deve estar presente na raiz antes de publicar.
+
 ### Como Contribuir
 
 1. Faça um fork deste repositório.
