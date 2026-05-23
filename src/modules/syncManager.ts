@@ -291,7 +291,7 @@ export class SyncManager {
    * 3. Marca como synced=1 no SQLite
    * 
    * @param apiKey - API Key do usuário
-   * @returns Objeto com syncedCount e conflictsCount
+   * @returns Objeto com syncedCount e conflictsCount (skippedCount do servidor)
    * @throws Error se push falhar
    */
   private async pushEntries(apiKey: string): Promise<{ syncedCount: number; conflictsCount: number }> {
@@ -351,21 +351,21 @@ export class SyncManager {
     const syncedIds = unsyncedEntries.map(e => e.id);
     await this.dbManager.markAsSynced(syncedIds);
     
-    const savedCount = result.savedCount || 0;
-    const conflictsCount = result.conflictsCount || 0;
-    
+    const pushedCount = result.pushedCount || 0;
+    const skippedCount = result.skippedCount || 0;
+
     console.log(`✅ Push: ${unsyncedEntries.length} entries marcadas como synced`);
-    if (savedCount > 0) {
-      console.log(`   └─ ${savedCount} novas salvas na cloud`);
+    if (pushedCount > 0) {
+      console.log(`   └─ ${pushedCount} novas salvas na cloud`);
     }
-    if (conflictsCount > 0) {
-      console.log(`   └─ ${conflictsCount} já existiam na cloud (ignoradas)`);
+    if (skippedCount > 0) {
+      console.log(`   └─ ${skippedCount} já existiam na cloud (ignoradas)`);
     }
-    
+
     // Retorna quantidade enviada (não importa se salvou ou conflitou)
     return {
       syncedCount: unsyncedEntries.length,
-      conflictsCount: conflictsCount
+      conflictsCount: skippedCount
     };
   }
   
