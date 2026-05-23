@@ -14,8 +14,8 @@
  * 
  * @constant
  */
-// Definir API_BASE_URL no ambiente antes de publicar (vsce package)
-export const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
+// Produção por padrão; sobrescrever com .env (API_BASE_URL=http://localhost:3000/api) para desenvolvimento local
+export const API_BASE_URL = process.env.API_BASE_URL ?? 'https://mytimetrace.com.br/api';
 
 /**
  * Timeout padrão para requisições HTTP (ms)
