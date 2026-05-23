@@ -9,9 +9,10 @@ vsc-extension-quickstart.md
 note.txt
 index.html
 
-# Variáveis de ambiente — não incluir no pacote
-.env
-.env.*
+# .env.example e outros templates — o .env de produção é incluído intencionalmente
+.env.example
+.env.local
+.env.*.local
 
 # CI/CD e configuração de desenvolvimento
 .github/

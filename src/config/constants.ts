@@ -14,8 +14,8 @@
  * 
  * @constant
  */
-// Produção por padrão; sobrescrever com .env (API_BASE_URL=http://localhost:3000/api) para desenvolvimento local
-export const API_BASE_URL = process.env.API_BASE_URL ?? 'https://mytimetrace.com.br/api';
+// URL definida no .env (produção) ou localhost (desenvolvimento sem .env)
+export const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
 
 /**
  * Timeout padrão para requisições HTTP (ms)
