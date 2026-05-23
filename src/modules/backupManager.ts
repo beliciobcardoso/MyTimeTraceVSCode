@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { localize } from '../i18n';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as sqlite3 from 'sqlite3';
 import { DatabaseManager } from './database';
 import { timeTrace } from './timeTrace';
@@ -56,11 +57,27 @@ export class BackupManager {
     this.outputChannel.appendLine(`[BackupManager] ${msg}`);
   }
 
+  private expandPath(p: string): string {
+    if (p === '~' || p.startsWith('~/') || p.startsWith('~\\')) {
+      return path.join(os.homedir(), p.slice(1));
+    }
+    return p;
+  }
+
+  private contractPath(p: string): string {
+    const home = os.homedir();
+    if (p === home) { return '~'; }
+    if (p.startsWith(home + path.sep)) {
+      return '~' + p.slice(home.length);
+    }
+    return p;
+  }
+
   private getConfig() {
     const cfg = vscode.workspace.getConfiguration('myTimeTraceVSCode.backup');
     return {
       enabled: cfg.get<boolean>('enabled', false),
-      destinationPath: cfg.get<string>('destinationPath', '').trim(),
+      destinationPath: this.expandPath(cfg.get<string>('destinationPath', '').trim()),
       intervalHours: Math.max(1, cfg.get<number>('intervalHours', 24) || 1),
       maxBackups: Math.max(BACKUP_MIN_RETENTION, cfg.get<number>('maxBackups', 7) || BACKUP_MIN_RETENTION),
       notifyOnSuccess: cfg.get<boolean>('notifyOnSuccess', false),
@@ -74,6 +91,7 @@ export class BackupManager {
     if (!path.isAbsolute(destPath)) { return localize('backup.error.notAbsolute', 'Backup destination path must be absolute.'); }
     if (destPath.includes("'")) { return localize('backup.error.singleQuote', "Backup destination path cannot contain single quotes."); }
     if (destPath.includes('\0')) { return localize('backup.error.nullByte', 'Backup destination path contains invalid characters.'); }
+    if (destPath.split(/[\\/]/).some(seg => seg === '..')) { return localize('backup.error.pathTraversal', 'Backup destination path cannot contain traversal components (..); use an absolute path.'); }
     return null;
   }
 
@@ -358,7 +376,7 @@ export class BackupManager {
     });
     if (!folderUri || folderUri.length === 0) { return; } // Esc → abortar
 
-    const destPath = folderUri[0].fsPath;
+    const destPath = this.contractPath(folderUri[0].fsPath);
 
     // Aviso para pastas de nuvem/rede
     const cloudPatterns = ['dropbox', 'onedrive', 'google drive', 'gdrive', 'icloud', 'nextcloud'];

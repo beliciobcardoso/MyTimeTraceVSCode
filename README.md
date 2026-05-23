@@ -1,4 +1,4 @@
-# My Time Trace VSCode (v0.6.0)
+# My Time Trace VSCode (v0.6.1)
 
 <div align="center">
 <img src="images/my-time-trace-logo.png" alt="My Time Trace Logo" width="400" height="400"/>
@@ -6,7 +6,7 @@
 [![Status](https://img.shields.io/badge/Status-Published-green?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-139%20passing-brightgreen?style=flat-square)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue?style=flat-square)]()
-[![Version](https://img.shields.io/badge/Version-0.6.0-blue?style=flat-square)]()
+[![Version](https://img.shields.io/badge/Version-0.6.1-blue?style=flat-square)]()
 
 </div>
 
@@ -231,14 +231,14 @@ Após gerar o pacote, você pode instalá-lo de **três maneiras**:
 
 ```bash
 # Para o VS Code normal
-code --install-extension my-time-trace-vscode-0.6.0.vsix
+code --install-extension my-time-trace-vscode-0.6.1.vsix
 ```
 
 #### Opção 3: Pelo Terminal (VS Code Insiders)
 
 ```bash
 # Para o VS Code Insiders
-code-insiders --install-extension my-time-trace-vscode-0.6.0.vsix
+code-insiders --install-extension my-time-trace-vscode-0.6.1.vsix
 ```
 
 > **Nota para VS Code Insiders no Linux:** Se o comando `code-insiders` não for encontrado, use a **Opção 1** (instalação pela interface).
@@ -397,6 +397,10 @@ Esse comando gera um arquivo como `my-time-trace-vscode-X.X.X.vsix`, que pode se
 - Se a mudança afetar UI, revise também os documentos de `docs/DASHBOARD_MODERNO.md` e `docs/UI_COMPONENTS.md`.
 
 ## Notas de Lançamento
+
+### 0.6.1 (23/05/2026)
+
+- **Segurança**: `validateDestinationPath` rejeita caminhos com componentes `..` (path traversal)
 
 ### 0.6.0 (21/05/2026)
 

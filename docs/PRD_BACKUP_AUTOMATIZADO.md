@@ -357,7 +357,7 @@ O painel deve:
 1. **Listar backups** — exibir em tabela todos os arquivos `.sqlite` encontrados na pasta de destino, ordenados do mais recente ao mais antigo, com as colunas: checkbox de seleção, nome do arquivo, data/hora de criação, tamanho e botão de ação individual.
 2. **Excluir backup individual** — botão `🗑` por linha. Exige confirmação antes de excluir. Exibe aviso (sem bloqueio) se o total remanescente ficar abaixo de 3.
 3. **Excluir backups em lote** — seleção múltipla via checkbox. O botão "Excluir Selecionados" fica habilitado apenas com ao menos uma seleção ativa, exibindo a contagem no rótulo. Exige confirmação antes de excluir.
-4. **Expor ações globais** — botões sempre visíveis: Fazer Backup Agora, Configurar Backup (wizard), Abrir Pasta, e Configurar Backup no GitHub (Fase 4).
+4. **Expor ações globais** — botões sempre visíveis: Fazer Backup Agora, Configurar Backup (wizard) e Abrir Pasta.
 5. **Exibir estado atual** — bloco de status com badge (Ativo / Pausado / Falha), data/hora do último backup e, a partir da Fase 2, data/hora do próximo backup agendado.
 6. **Atualizar automaticamente** — a tabela e o bloco de status se atualizam após cada operação (backup concluído, exclusão, restauração).
 7. **Estado vazio** — se a pasta estiver vazia ou inacessível, exibir mensagem orientativa em vez de tabela vazia.
@@ -473,9 +473,7 @@ O `refresh()` interno do painel lê a pasta de destino, monta o array de backups
   "myTimeTraceVSCode.backup.enabled": false,
   "myTimeTraceVSCode.backup.intervalHours": 4,
   "myTimeTraceVSCode.backup.maxBackups": 10,
-  "myTimeTraceVSCode.backup.destinationPath": "",
-  "myTimeTraceVSCode.backup.github.enabled": false,
-  "myTimeTraceVSCode.backup.github.repository": ""
+  "myTimeTraceVSCode.backup.destinationPath": ""
 }
 ```
 
@@ -508,18 +506,6 @@ O `refresh()` interno do painel lê a pasta de destino, monta o array de backups
   "scope": "machine",
   "markdownDescription": "Caminho absoluto da pasta onde os backups serão salvos. **Recomendado:** use o comando `MyTimeTrace: Configurar Backup` para definir via seletor de pasta — evita erros de digitação."
 },
-"myTimeTraceVSCode.backup.github.enabled": {
-  "type": "boolean",
-  "default": false,
-  "scope": "machine",
-  "markdownDescription": "Indica se o backup offsite no GitHub está ativo. Configure via `MyTimeTrace: Configurar Backup no GitHub`."
-},
-"myTimeTraceVSCode.backup.github.repository": {
-  "type": "string",
-  "default": "",
-  "scope": "machine",
-  "markdownDescription": "Nome do repositório GitHub privado criado para os backups. Definido automaticamente pelo wizard de configuração."
-}
 ```
 
 > **`"scope": "machine"` obrigatório em todas as settings de backup:** o VS Code Settings Sync sincroniza configurações entre dispositivos por padrão. Sem `scope: machine`, o `destinationPath` de uma máquina apareceria nas configurações de outra onde o caminho não existe — o backup falharia silenciosamente ou criaria pasta em local errado. O mesmo vale para `enabled` (pausar numa máquina não deve pausar em todas) e para as demais settings de backup. Configurações de backup são intrinsecamente locais — nunca devem sincronizar entre dispositivos.
@@ -542,13 +528,6 @@ O `refresh()` interno do painel lê a pasta de destino, monta o array de backups
   - A pasta precisa existir antes de salvar a configuração, ou a extensão tentará criá-la automaticamente.
   - Se a pasta estiver em um pendrive ou HD externo, o backup pausará automaticamente quando o dispositivo for desconectado.
 
-- `github.enabled`: indica se o backup offsite no GitHub está ativo (Fase 4).
-- `github.repository`: nome do repositório privado criado para os backups (Fase 4).
-
-**Estado interno (não exposto no settings.json):**
-- `github.notificationDismissed`: flag persistida via `context.globalState` (API nativa do VS Code para estado interno da extensão). É `true` quando o usuário clicou em "Não perguntar novamente". Não aparece no settings.json porque não é uma preferência do usuário — é estado interno da extensão.
-- O token PAT do GitHub é armazenado no `context.secrets` (VS Code Secret Storage, mesmo mecanismo da API Key atual), nunca em texto plano.
-
 ### Tela de Gerenciamento de Backups
 
 A extensão expõe um painel **WebView** dedicado (`BackupPanel` com padrão `createOrShow`) para visualizar e gerenciar todos os backups existentes na pasta de destino.
@@ -563,7 +542,7 @@ A extensão expõe um painel **WebView** dedicado (`BackupPanel` com padrão `cr
 │              │  Próximo: 21/05/2026 18:30  (em 4h)         [Fase 2] │
 ├──────────────┴──────────────────────────────────────────────────────┤
 │  AÇÕES GLOBAIS                                                       │
-│  [▶ Fazer Backup Agora]  [⚙ Configurar Backup]  [☁ GitHub]          │
+│  [▶ Fazer Backup Agora]  [⚙ Configurar Backup]                        │
 │  [🗑 Excluir Selecionados ─ desabilitado sem seleção]  [↗ Abrir Pasta]│
 ├─────────────────────────────────────────────────────────────────────┤
 │  LISTA DE BACKUPS                               Exibindo 4 de 4     │
@@ -593,7 +572,6 @@ A extensão expõe um painel **WebView** dedicado (`BackupPanel` com padrão `cr
 |---|---|---|
 | **Fazer Backup Agora** | Executa backup imediato (RF07). Desabilita o botão durante a execução e exibe indicador de progresso | 1 |
 | **Configurar Backup** | Abre o wizard de configuração completo (RF08), permitindo redefinir pasta, intervalo e retenção | 1 |
-| **GitHub** | Abre o wizard de configuração do backup offsite no GitHub. Se já configurado, abre tela de status da integração | 4 |
 | **Excluir Selecionados** | Habilitado apenas quando pelo menos um backup estiver selecionado. Exibe diálogo de confirmação antes de excluir | 1 |
 | **Abrir Pasta** | Abre a pasta de destino no explorador de arquivos do sistema operacional | 1 |
 
@@ -637,11 +615,6 @@ A tabela lista todos os arquivos `.sqlite` encontrados na pasta de destino, orde
 
 Abre o wizard de RF08 já preenchido com os valores atuais, permitindo que o usuário altere qualquer campo. Ao concluir, os novos valores são salvos no `settings.json` e o agendador é reiniciado com o novo intervalo.
 
-#### Fluxo do Botão "GitHub"
-
-- **Se não configurado:** inicia o wizard de configuração do backup offsite (Fase 4, RF equivalente). Botão exibido com texto *"Configurar Backup no GitHub"*.
-- **Se já configurado:** abre tela de status da integração com GitHub, exibindo repositório vinculado, último push e opção de desconectar. Botão exibido com texto *"GitHub: Conectado ✓"*.
-
 ### Saídas Na UI (Resumo)
 
 - Painel de gerenciamento com tabela de backups, ações globais e bloco de status.
@@ -652,7 +625,6 @@ Abre o wizard de RF08 já preenchido com os valores atuais, permitindo que o usu
 - Botão de abrir pasta de destino.
 - Seleção múltipla com exclusão em lote confirmada.
 - Botão de reconfiguração do backup automático (wizard).
-- Botão de configuração/reconfiguração do backup no GitHub (Fase 4).
 
 ### Comandos da Extensão
 
@@ -667,7 +639,6 @@ Todos os comandos ficam disponíveis na paleta de comandos do VS Code (`Ctrl+Shi
 | `MyTimeTrace: Editar Configurações de Backup` | `my-time-trace-vscode.editBackupSettings` | Abre diretamente a seção de backup nas configurações do VS Code (`settings.json`) | 1 |
 | `MyTimeTrace: Pausar Backup Automático` | `my-time-trace-vscode.pauseBackup` | Pausa o agendamento automático (equivale a `backup.enabled = false`) | 2 |
 | `MyTimeTrace: Retomar Backup Automático` | `my-time-trace-vscode.resumeBackup` | Retoma o agendamento pausado (equivale a `backup.enabled = true`) | 2 |
-| `MyTimeTrace: Configurar Backup no GitHub` | `my-time-trace-vscode.configureGithubBackup` | Inicia o fluxo assistido de configuração do backup offsite no GitHub | 4 |
 
 > Os IDs seguem o padrão `my-time-trace-vscode.*` já adotado pelo projeto. São necessários no `package.json` (contributes.commands), no `backupCommands.ts` (registro via `safeRegisterCommand`) e em qualquer `vscode.commands.executeCommand()` invocado dentro do painel WebView.
 
@@ -812,8 +783,6 @@ flowchart TD
   > Esse arquivo sobrevive a corrupção do `time_tracker.sqlite` e pode ser anexado a um bug report pelo usuário. O `sync_metadata` mantém apenas `backup.lastError` (último erro) e `backup.lastTimestamp` para a lógica de agendamento — não o histórico completo.
   >
   > Não é requisito do MVP — mas o custo de adicionar na Fase 1 é menor que refatorar depois, e a resiliência em relação ao `sync_metadata` justifica a escolha.
-
-  > **`device_name` disponível via `DeviceManager`:** o projeto já coleta `device_name` e `ide_name` para cada `time_entry` (via `src/modules/deviceInfo.ts`). O `BackupManager` pode incluir `backup.deviceName` como chave adicional em `sync_metadata` — útil na Fase 4 para identificar qual máquina gerou cada backup no histórico do GitHub, sem custo adicional de implementação. Não é requisito do MVP, mas custa apenas um `setMetadata('backup.deviceName', getDeviceName())` após o primeiro backup bem-sucedido.
 
   > **UTC vs hora local:** os valores em `sync_metadata` são armazenados em UTC (ISO 8601). O **nome do arquivo** de backup usa hora local (`time_tracker_2026-05-21_17-00-00.sqlite` em UTC-3 = 20h UTC). Isso é intencional: o nome legível pelo usuário reflete o horário local, enquanto o timestamp interno é inequívoco para comparações. A política de retenção e os cálculos de intervalo devem operar sempre sobre os timestamps ISO 8601 do `sync_metadata` — nunca sobre o nome do arquivo para cálculos de tempo, e nunca sobre `mtime` do filesystem.
 
@@ -1036,14 +1005,11 @@ flowchart TD
 **Módulos existentes reutilizados:**
 - `src/modules/database.ts` — `DatabaseManager`: acesso ao SQLite, ao `sync_metadata` (métodos `getMetadata()` / `setMetadata()`), e ao path do banco via `getDbPath()` (método a ser adicionado).
 - `src/modules/syncRetryManager.ts` — modelo direto para o `BackupRetryManager` (mesma interface pública).
-- `src/modules/apiKeyManager.ts` — **base direta** para o `GithubTokenManager` da Fase 4. A classe já implementa o ciclo completo: armazenamento em `context.secrets`, masking para exibição, validação por regex e revogação com confirmação. Para a Fase 4, criar `GithubTokenManager` **estendendo ou copiando** o `ApiKeyManager` — ajustando apenas a chave de storage (`SECRET_KEYS.GITHUB_PAT`) e a validação (tokens PAT começam com `ghp_`). Não recriar o padrão do zero.
 - `src/ui/cssLoader.ts` — `CssLoader.loadDashboardStyles()`: carregamento de CSS externo para o painel WebView, seguindo o padrão de `statsPanel.ts` e `deletedProjectsPanel.ts`. O `BackupPanel` deve usar o mesmo mecanismo para consistência visual.
 
 **APIs do VS Code:**
 - `vscode.workspace.getConfiguration()` — leitura das settings `myTimeTraceVSCode.backup.*`.
 - `vscode.workspace.onDidChangeConfiguration()` — reação a mudanças nas settings em tempo real.
-- `context.globalState` — persistência de estado interno como `backup.github.notificationDismissed`.
-- `context.secrets` — armazenamento seguro do token PAT do GitHub (Fase 4).
 - `vscode.window.showOpenDialog()` — file picker nativo para seleção da pasta de destino no wizard. Retorna `vscode.Uri[] | undefined` — extrair `.fsPath` do primeiro elemento para obter string de path:
   ```typescript
   const folders = await vscode.window.showOpenDialog({
@@ -1099,7 +1065,7 @@ flowchart TD
 **Arquivos existentes a modificar:**
 - `src/extension.ts` — instanciar `BackupManager` após `BACKUP_INITIAL_DELAY` e registrar via `context.subscriptions.push({ dispose: () => backupManager.dispose() })`; registrar também o listener `onDidChangeConfiguration` (Fase 2) via `context.subscriptions`. **Não** adicionar `BackupManager` ao `deactivate()` — o `context.subscriptions` é suficiente e é o padrão correto.
 - `src/config/constants.ts` — adicionar constantes do backup (`BACKUP_MIN_RETENTION`, `BACKUP_DEFAULT_INTERVAL_HOURS`, `BACKUP_MAX_RETRIES`, `BACKUP_RETRY_DELAY_MS`, `BACKUP_INITIAL_DELAY`).
-- `package.json` — adicionar em `contributes.configuration` as 6 settings `myTimeTraceVSCode.backup.*` e em `contributes.commands` os novos comandos de backup.
+- `package.json` — adicionar em `contributes.configuration` as 4 settings `myTimeTraceVSCode.backup.*` e em `contributes.commands` os novos comandos de backup.
 
 ## Métricas De Sucesso
 
@@ -1164,7 +1130,7 @@ flowchart TD
 - **Múltiplas janelas do VS Code:** dois processos lendo o mesmo banco e gravando na mesma pasta de destino podem conflitar na política de retenção (tentar deletar o mesmo arquivo duas vezes). A operação de delete com erro de "arquivo não encontrado" deve ser tratada como sucesso silencioso.
 - **Sleep/wake sem reinício do VS Code:** timers `setTimeout` podem ser congelados pelo Electron durante sleep. Mitigação: `onDidChangeWindowState` para verificar backup perdido ao recuperar foco (Fase 2).
 - **Clock skew (relógio retroagido):** ajuste de NTP, correção de fuso horário ou data/hora manual do sistema pode fazer `(agora - lastTimestamp)` retornar valor negativo, impedindo que o backup disparepara sempre. Mitigação: se delta < 0, tratar como "timestamp ausente" e executar backup imediatamente, registrando aviso no Output Channel.
-- **Fase 4 sem compressão (Fase 3):** arquivos `.sqlite` acima de 50MB violam os limites de arquivo do GitHub. A Fase 4 requer Fase 3 concluída ou limitação de tamanho de banco antes do push.
+
 
 ## Fases Sugeridas
 
@@ -1216,7 +1182,7 @@ flowchart TD
 | `src/modules/database.ts` | Três mudanças obrigatórias: (1) declarar propriedade `private dbPath: string = ''` na classe; (2) adicionar `this.dbPath = path.join(storagePath, 'time_tracker.sqlite')` no início de `initialize()`, antes de abrir o banco — `close()` zera `this.db` mas não toca em `this.dbPath`, garantindo que `getDbPath()` seja seguro mesmo após `close()`; (3) adicionar método `getDbPath(): string { return this.dbPath; }` |
 | `src/modules/index.ts` | Exportar `BackupManager` e `BackupCommands` — apenas módulos de lógica, seguindo o padrão do barrel file existente |
 | `src/ui/index.ts` | Exportar `BackupPanel` — painéis WebView são exportados de `src/ui/index.ts`, não de `src/modules/index.ts` (padrão do projeto: `StatsPanel`, `DeletedProjectsPanel` e `CssLoader` já estão lá) |
-| `package.json` | Adicionar em `contributes.configuration` o schema completo das 6 settings `myTimeTraceVSCode.backup.*` (ver seção UX/UI) e em `contributes.commands` os 5 comandos de backup da Fase 1 |
+| `package.json` | Adicionar em `contributes.configuration` o schema completo das 4 settings `myTimeTraceVSCode.backup.*` (ver seção UX/UI) e em `contributes.commands` os 5 comandos de backup da Fase 1 |
 
 **Orientação de restauração manual na Fase 1 (sem o fluxo guiado da Fase 2):**
 
@@ -1315,48 +1281,6 @@ O retry automático entra apenas na Fase 2 com o `BackupRetryManager`.
 - Compressão dos arquivos de backup (ex: `.sqlite.gz`).
 - Exportação para outros formatos (CSV, JSON).
 - Notificação de backup bem-sucedido (opcional, configurável).
-
-> **Fase 3 é pré-requisito da Fase 4:** um banco SQLite de uso intenso pode atingir 50–200MB. O GitHub impõe limite de 100MB por arquivo (hard limit) e 50MB de aviso. Enviar arquivos `.sqlite` não comprimidos para o GitHub tornaria o repositório inutilizável com o tempo e violaria os limites de arquivo. A Fase 4 só deve ser implementada com compressão ativa da Fase 3. Se a ordem de implementação precisar ser invertida por prioridade de negócio, a Fase 4 deve ser limitada a bancos pequenos (< 50MB) com validação de tamanho antes do push.
-
-### Fase 4
-
-Backup offsite opcional no GitHub, totalmente automatizado após configuração inicial guiada pelo usuário.
-
-> **Decisão arquitetural obrigatória — API REST vs Git local:** a operação de "commit e push" pode ser implementada de duas formas com trade-offs distintos:
->
-> | Abordagem | Pró | Contra |
-> |---|---|---|
-> | **API REST do GitHub** (recomendada) | Sem dependência de Git instalado; funciona em qualquer máquina | Mais código (criar blob → tree → commit → update ref); sem histórico local |
-> | **Git local** (`child_process.exec('git ...')`) | Simples de implementar | Requer Git instalado; falha silenciosamente se Git não estiver no PATH |
->
-> **Recomendação:** usar a API REST do GitHub. Usuários da extensão não são necessariamente desenvolvedores com Git instalado. A API REST usa o token PAT já armazenado e não introduz dependência de sistema. O fluxo completo via API é: `POST /repos/{owner}/{repo}/git/blobs` → `POST /repos/{owner}/{repo}/git/trees` → `POST /repos/{owner}/{repo}/git/commits` → `PATCH /repos/{owner}/{repo}/git/refs/heads/main`.
-
-#### Ativação (opt-in)
-
-A extensão oferece a opção via notificação após cada backup local concluído com sucesso, enquanto o backup no GitHub não estiver configurado e o usuário não tiver marcado "Não perguntar novamente". A notificação apresenta duas ações: **"Configurar backup no GitHub"** e **"Não perguntar novamente"**.
-
-- Se o usuário clicar em "Não perguntar novamente", a notificação nunca mais é exibida e a flag é persistida nas configurações locais.
-- Independente da escolha, o comando **`MyTimeTrace: Configurar Backup no GitHub`** fica sempre disponível na paleta de comandos do VS Code. O usuário pode iniciar o fluxo de configuração a qualquer momento por ali.
-- Nada acontece sem consentimento explícito.
-
-#### Fluxo de configuração inicial (assistido)
-
-Ao aceitar, a extensão conduz o usuário passo a passo:
-
-1. **Token PAT** — a extensão explica o que é um Personal Access Token, aponta o link de geração nas configurações do GitHub e solicita o token. O escopo mínimo necessário é `repo` (acesso a repositórios privados).
-2. **Nome do repositório** — o usuário informa o nome desejado. A extensão deixa claro que o repositório **precisa ser privado** e explica o risco de um repositório público conter dados de rastreamento pessoal.
-3. **Criação do repositório** — a extensão cria o repositório privado via API do GitHub automaticamente, sem que o usuário precise acessar o site.
-4. **Confirmação** — a extensão exibe um resumo da configuração e confirma que está pronta para operar.
-
-Após a configuração, o usuário não precisa fazer mais nada.
-
-#### Operação automática (pós-configuração)
-
-- A cada backup local concluído com sucesso, a extensão faz commit e push do arquivo para o repositório privado automaticamente.
-- A mensagem de commit segue o padrão: `backup: time_tracker_YYYY-MM-DD_HH-mm-ss.sqlite`.
-- O token PAT fica armazenado no VS Code Secret Storage (mesmo mecanismo da API Key atual), nunca em texto plano.
-- A política de retenção local continua valendo normalmente; o GitHub mantém o histórico completo via Git.
-- Em caso de falha no push, o backup local já está seguro — o erro é registrado em log e avisado ao usuário, mas não cancela nem desfaz o backup local.
 
 ## Decisões Registradas
 

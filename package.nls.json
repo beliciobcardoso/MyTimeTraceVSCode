@@ -111,7 +111,7 @@
     "my-time-trace-vscode.pauseBackup.title": "My Time Trace: Pause Automatic Backup",
     "my-time-trace-vscode.resumeBackup.title": "My Time Trace: Resume Automatic Backup",
     "myTimeTraceVSCode.backup.enabled.markdownDescription": "Enable automatic local backup of the database. Configure the destination folder before enabling.",
-    "myTimeTraceVSCode.backup.destinationPath.markdownDescription": "Absolute path of the folder where backups will be saved. Use a local disk — cloud folders (Dropbox, OneDrive, Google Drive) may cause corruption during copying.",
+    "myTimeTraceVSCode.backup.destinationPath.markdownDescription": "Path of the folder where backups will be saved. You can use `~` for your home directory (e.g. `~/Documents/my-backups`). Use a local disk — cloud folders (Dropbox, OneDrive, Google Drive) may cause corruption during copying.",
     "myTimeTraceVSCode.backup.intervalHours.markdownDescription": "Interval in hours between automatic backups. Minimum: 1 hour.",
     "myTimeTraceVSCode.backup.maxBackups.markdownDescription": "Maximum number of backups to keep. Older backups are automatically removed. Minimum: 3.",
     "myTimeTraceVSCode.backup.notifyOnSuccess.markdownDescription": "Show a notification when each automatic backup completes successfully.",

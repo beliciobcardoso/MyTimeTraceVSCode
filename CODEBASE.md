@@ -1,8 +1,8 @@
 # 📚 MyTimeTrace VSCode - Codebase Completo
 
-**Versão:** 0.6.0
+**Versão:** 0.6.1
 **Status:** 🌟 PRODUÇÃO PRONTA
-**Última Atualização:** 21 de maio de 2026
+**Última Atualização:** 23 de maio de 2026
 **Linguagem:** TypeScript 5.8.3 (Strict Mode)
 **Database:** SQLite 5.1.6
 **Cobertura de Testes:** 140 testes automatizados passando
@@ -142,7 +142,7 @@ MyTimeTraceVSCode/
 ├── 📁 out/                                 # Output compilado (TypeScript → JavaScript)
 ├── .github/                                # GitHub Actions CI/CD
 ├── .vscode-test/                           # Configuração de testes do VS Code
-├── package.json                            # Manifesto npm [v0.6.0]
+├── package.json                            # Manifesto npm [v0.6.1]
 ├── package-lock.json                       # Lock file
 ├── pnpm-lock.yaml                          # Lock file pnpm
 ├── tsconfig.json                           # TypeScript config (strict mode)
@@ -614,13 +614,13 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 <a id="sec-roadmap"></a>
 ## 🎯 Roadmap Estratégico
 
-### 🔵 Curto Prazo (v0.6.0 - v0.7.0) — 2-4 semanas
+### 🔵 Curto Prazo (v0.6.1 - v0.7.0) — 2-4 semanas
 - [ ] Testes UI components (+300 LOC)
 - [ ] Otimização SQLite (índices, paginação)
 - [ ] Error handling global
 - Objetivo: Cobertura 95%, Dashboard rápido
 
-### 🟡 Médio Prazo (v0.6.0 - v0.7.0) — 1-2 meses
+### 🟡 Médio Prazo (v0.6.1 - v0.7.0) — 1-2 meses
 - [ ] Exportação (CSV/JSON/XLSX)
 - [ ] Integração Git (tempo vs commits)
 - [ ] Análises avançadas (tendências, ML)
@@ -628,7 +628,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 
 ### 🔴 Longo Prazo (v0.7.0 - v1.0.0) — 2-3 meses
 - [ ] Mobile app (React Native)
-- [ ] Backend full-managed (SaaS)
+- [x] Backend full-managed (SaaS) — **em produção** em `https://mytimetrace.com.br/api`
 - [ ] Team features (compartilhamento)
 - [ ] Enterprise (SSO, 2FA, compliance)
 - Objetivo: Market fit corporativo
