@@ -628,7 +628,7 @@ setApiKey, viewApiKey, revokeApiKey, syncNow, viewSyncStatus
 
 ### 🔴 Longo Prazo (v0.7.0 - v1.0.0) — 2-3 meses
 - [ ] Mobile app (React Native)
-- [ ] Backend full-managed (SaaS)
+- [x] Backend full-managed (SaaS) — **em produção** em `https://mytimetrace.com.br/api`
 - [ ] Team features (compartilhamento)
 - [ ] Enterprise (SSO, 2FA, compliance)
 - Objetivo: Market fit corporativo
